@@ -352,7 +352,7 @@ small{color:#8e99dd}
 #k5f i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#ff4a3d,#b3141f)}
 #k5f u{position:absolute;left:20%;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;opacity:.85}
 #k5f b{position:absolute;left:0;right:0;top:0;text-align:center;font:800 10px/12px "Courier New",ui-monospace,monospace;letter-spacing:.06em;color:#fff;text-shadow:1px 1px 0 #000,-1px 0 0 #000,0 -1px 0 #000}
-#k5c{position:fixed;left:50%;transform:translateX(-50%);top:84px;width:220px;height:16px;border:2px solid #0a0b14;background:#1a0509;box-shadow:0 0 0 1px #6e1119,0 2px 8px rgba(0,0,0,.6);pointer-events:none;overflow:hidden;z-index:30}#k5c i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#ff4a3d,#b3141f)}#k5c u{position:absolute;left:20%;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;opacity:.85}#k5c b{position:absolute;left:0;right:0;top:0;text-align:center;font:800 10px/12px "Courier New",ui-monospace,monospace;letter-spacing:.06em;color:#fff;text-shadow:1px 1px 0 #000,-1px 0 0 #000,0 -1px 0 #000}#k5c.on{box-shadow:0 0 0 1px #ff3b30,0 0 12px #ff2a2a}
+#k5c{position:fixed;left:50%;transform:translateX(-50%);top:84px;width:220px;height:16px;border:2px solid #0a0b14;background:#1a0509;box-shadow:0 0 0 1px #6e1119,0 2px 8px rgba(0,0,0,.6);pointer-events:none;overflow:hidden;z-index:30}#k5c i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#ff4a3d,#b3141f)}#k5c u{position:absolute;left:40%;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;opacity:.85}#k5c b{position:absolute;left:0;right:0;top:0;text-align:center;font:800 10px/12px "Courier New",ui-monospace,monospace;letter-spacing:.06em;color:#fff;text-shadow:1px 1px 0 #000,-1px 0 0 #000,0 -1px 0 #000}#k5c.on{box-shadow:0 0 0 1px #ff3b30,0 0 12px #ff2a2a}
 #k5f.chg{box-shadow:0 0 0 1px #ff3b30,0 0 12px #ff2a2a}#k5f.low i{background:linear-gradient(#7a7a7a,#444)}#k5f.low b{color:#ff8a8a}
 #itm img{width:34px;height:34px;image-rendering:pixelated;pointer-events:none}
 #itmT{position:absolute;left:0;right:0;text-align:center;bottom:calc(var(--atk) + var(--ctx) + 24px + 62px + 3px);font:800 15px/1 "Courier New",ui-monospace,monospace;color:var(--ic,#fff);text-shadow:0 0 6px rgba(0,0,0,.9),0 1px 0 #000,1px 0 0 #000,-1px 0 0 #000,0 -1px 0 #000;pointer-events:none}   /* LAST STAND: 3-2-1 before the held item re-rolls */
@@ -1560,7 +1560,7 @@ function genStep(now, dtMs, killer) {   // every hunt tick: expire disabled time
     if (!k) { g.ping = 0; continue; }
     if (was === 0 || now >= g.ping) { if (cnt[i].some(id => { const q = HP.get(id); return !(q && q.hatLeft > 0); })) genPing(i); g.ping = now + CFG.GEN_PING_MS; }   // first repairer, then every GEN_PING_MS while it is being repaired
     let nb = 0; for (const id of cnt[i]) { const q = HP.get(id); if (q && q.snakeEnd > now) nb++; }   // Snake Oil: a boosted repairer counts SNAKE_REPAIR_MULT times
-    let wsum = 0; for (const id of cnt[i]) { const q = HP.get(id); wsum += (q && q.snakeEnd > now ? CFG.SNAKE_REPAIR_MULT : 1) * k1Slow(q, now); }   // killer_1: each repairer's fear slows their contribution
+    let wsum = 0; for (const id of cnt[i]) { const q = HP.get(id); wsum += (q && q.snakeEnd > now ? CFG.SNAKE_REPAIR_MULT : 1) * k1Slow(q, now) * k5Slow(q); }   // killer_1: each repairer's fear slows their contribution
     const kr = CFG.GEN_RATE_BY_K[clampN(k, 1, 9)], boost = wsum / k;
     let sl = 0; for (const id of cnt[i]) { const pg = K0.ping[id]; sl += pg && pg.sc && now - pg.s < K0_SCAN_SLOW_MS ? K0_SCAN_SLOW : 1; } sl /= k;   // IR scanner: pinged repairers are slower
     g.prog += 100 * kr * boost * sl * split / charges * dt;
@@ -1737,7 +1737,7 @@ function stepCombat(now, dtMs, killer) {
     const h = MAP.hooks[v.hookIdx]; let on = false, mul = 0;
     for (const r of HP.values()) {   // rescuers do NOT stack: the best one counts (a Snake Oil user rescues x SNAKE_UNHOOK_MULT; killer_1 fear slows each rescuer)
       if (r === v || r.role !== 'survivor' || !r.on || !r.hold || now < (r.stunEnd || 0) || (r.st !== 'healthy' && r.st !== 'injured')) continue;
-      if (Math.hypot(r.x - h[0], r.y - h[1]) <= CFG.RESCUE_R + CFG.ACT_SLACK) { on = true; r.hatWork = true; mul = Math.max(mul, (r.snakeEnd > now ? CFG.SNAKE_UNHOOK_MULT : 1) * k1Slow(r, now)); } }   // (r.hatWork: unhooking drains a Magician's Hat faster)
+      if (Math.hypot(r.x - h[0], r.y - h[1]) <= CFG.RESCUE_R + CFG.ACT_SLACK) { on = true; r.hatWork = true; mul = Math.max(mul, (r.snakeEnd > now ? CFG.SNAKE_UNHOOK_MULT : 1) * k1Slow(r, now) * k5Slow(r)); } }   // (r.hatWork: unhooking drains a Magician's Hat faster)
     if (on) { v.hookEnd += dtMs;   // unhook in progress: the hook timer is paused
       v.prog += dtMs * mul; if (v.prog >= rescueMs()) { rescueDone(v, now); continue; } }   // released/out of range: progress just pauses
     if (!on) mul = 1;
@@ -1893,6 +1893,7 @@ const K4_COL = ['#6c8ff2', '#ff8cc8', '#6ee27f'], K4_NAME = ['Blue', 'Pink', 'Gr
 const K4_SPOTS = [null, [770, 1600], [2620, 1640]];   // where PINK (bottom-left room) and GREEN (bottom-right room) stand; BLUE starts at MAP.killerSpawn
 const K4_CD = 1000, K4_GEN_NEAR = 122, K4_HOOK_NEAR = 91, K4_DIS_MS = 9000, K4_DIS_R = 70, K4_IMM_MS = 7000, K4_SC_TO = 9000;   // K4_IMM_MS: a body can't be disabled for this long after a failed check, or after a disable runs out / K4_SC_TO: an unanswered disable skill check is dropped after this long;   // Transfer cooldown (ms, always the same 1 s) / how close an idle body must stand to a generator (122 = the old 175 minus 30%) or to a hook (91 = the old 70 plus 30%) to count as "near" / how long a survivor's DISABLE lasts (ms) / how close a survivor must stand to the body to disable it
 const K4_TAP_MS = 220, K4_CH_FULL = 1100, K4_CH_MAX_MS = 4000, K4_CH_SLOW = .75;   // LUNGE: holding ATTACK shorter than K4_TAP_MS is a normal swing / full charge after this many ms of holding / a charge held this long fires the lunge by itself (at full charge) / walking speed while charging (x0.75 = 25% slower)
+const K4_REC_SLOW = .1, K4_REC_MS = 1000;   // when his first dash ends Huggy himself is slowed to x0.1 (90% slower) for 1 s (the follow-up dash is not affected, it drives him by itself)
 const K4_LG_MIN = 75, K4_LG_MAX = 158, K4_LG_SPD = 900, K4_LG_W = 60, K4_LG_CD = 15000, K4_XT_MS = 1000, K4_XT_FRAC = .5, K4_LG_SLOW = .3, K4_LG_SLOW_MS = 3000;   // LUNGE: shortest / longest distance (a full charge) / dash speed (units per s) / width of the path (survivors inside are hit) / cooldown after a lunge (ms, shared by all three bodies; 10 s) / K4_XT_MS = window after a dash ends in which tapping ATTACK fires one follow-up dash / K4_XT_FRAC = its length as a fraction of a full-charge dash / survivor speed multiplier after being caught (x0.3 = 70% slower) / for how long
 function k4Empty() { return { cur: 0, ps: [MAP.killerSpawn.slice(), K4_SPOTS[1].slice(), K4_SPOTS[2].slice()], cd: 0, at: 0, dis: [0, 0, 0], imm: [0, 0, 0], pend: null, lcd: 0, ch: 0, lg: null, lt: 0, xt: 0, lh: null }; }   // lcd = lunge cooldown end (ONE value for all three bodies) / ch = when the current charge started (0 = not charging) / lg = the lunge in flight   // cur = the body he controls / ps = where each body stands / cd = cooldown end
 let K4 = k4Empty();
@@ -1921,7 +1922,7 @@ function k4Lunge(B, now) {   // LUNGE: charging slows him; a lunge in flight dri
     if (Math.hypot(v.x - (px + sx * t), v.y - (py + sy * t)) > K4_LG_W / 2 + CFG.RADIUS) continue;
     L.hit[v.id] = 1; addMod(v, 'k4lg', K4_LG_SLOW, K4_LG_SLOW_MS, now); msgTo(v, 'Caught in the lunge!');
   }
-  if (L.trav >= L.dist - .5 || mv < step * .4) { K4.lg = null; K4.at = 0; if (L.ext) { K4.xt = 0; K4.lh = null; } else { K4.xt = now + K4_XT_MS; K4.lh = L.hit; } woSend('k4'); }   // a finished dash opens a K4_XT_MS window for ONE follow-up dash
+  if (L.trav >= L.dist - .5 || mv < step * .4) { K4.lg = null; K4.at = 0; if (L.ext) { K4.xt = 0; K4.lh = null; } else { K4.xt = now + K4_XT_MS; K4.lh = L.hit; addMod(B, 'k4rec', K4_REC_SLOW, K4_REC_MS, now); } woSend('k4'); }   // a finished FIRST dash leaves Huggy heavily slowed for K4_REC_MS; it also opens a K4_XT_MS window for ONE follow-up dash
 }
 function k4Extend(B, now) {   // FOLLOW-UP DASH: ATTACK tapped inside the window after a dash -> one more short dash (K4_XT_FRAC of a full charge) the way he is facing right now
   K4.xt = 0;
@@ -2005,7 +2006,7 @@ function woList(k, now) {
     case 'k3m': return K3.min.map(m => [m.id, m.ki, left(m.end)]);   // wish 1: the summoned killers
     case 'k3x': return [K3.love ? K3.love.id : -1, K3.love ? left(K3.love.end) : 0, K3.gone ? left(K3.gone) : 0];
     case 'k1': { if (!k1Player()) return []; const r = v => Math.round(v); return [left(K1.wailAt), left(K1.illAt), Object.keys(K1.f).map(id => [+id, Math.round(K1.f[id] * 10) / 10]), K1.clones.map(c => [c.id, r(c.x), r(c.y), r(c.vx), r(c.vy), left(c.end)]), K1.ill.map(i => [i.id, i.hk, r(i.x), r(i.y), i.vid, left(i.end), i.tot, r(i.prog), i.on ? 1 : 0, i.mul]), Object.keys(K1.brk).concat(Object.keys(K1.imm).filter(id => !(id in K1.brk))).map(id => [+id, left(K1.brk[id] || 0), left(K1.imm[id] || 0)]).filter(e => e[1] || e[2])]; }   // killer_1 (see the KILLER_1 section)
-    case 'k5': { if (!k5Player()) return []; return [K5.act ? 1 : 0, Math.round(K5.torm * 10) / 10, left(K5.cd), K5.rings.map(r => [r.id, r.k, r.i, r.x, r.y, r.end ? Math.max(1, left(r.end)) : 0, Math.round(now - r.t0)]), K5.mv ? 1 : 0, K5.chg ? 1 : 0, Object.keys(K5.cond).map(id => [+id, Math.round(K5.cond[id].b), K5.cond[id].c])]; }   // killer_5 (see the KILLER_5 section)
+    case 'k5': { if (!k5Player()) return []; return [K5.act ? 1 : 0, Math.round(K5.torm * 10) / 10, left(K5.cd), K5.rings.map(r => [r.id, r.k, r.i, r.x, r.y, r.end ? Math.max(1, left(r.end)) : 0, Math.round(now - r.t0)]), K5.mv ? 1 : 0, K5.chg ? 1 : 0, Object.keys(K5.cond).map(id => [+id, Math.round(K5.cond[id].b), K5.cond[id].c]), Object.keys(K5.ping).map(id => [+id, Math.max(1, left(K5.ping[id]))])]; }   // killer_5 (see the KILLER_5 section)
     case 'k6': { if (!k6Player()) return []; return [K6.form, K6.tid, left(K6.tfEnd), left(K6.chEnd), left(K6.cd), left(K6.chAt), K6.fh, Math.round(K6.fp), K6.fo ? 1 : 0]; }   // killer_6 (see the KILLER_6 section)
     case 'k4': { if (!k4Player()) return []; return [K4.cur, K4.ps.map(q => [Math.round(q[0]), Math.round(q[1])]), left(K4.cd), K4.dis.map(left), left(K4.lcd), K4.ch ? Math.round(now - K4.ch) : -1, K4.lg ? 1 : 0, left(K4.xt), K4.imm.map(left)]; }   // killer_4 (see the KILLER_4 section)
     case 'k2': { if (!k2Player()) return []; return [K2.tid, K2.n, K2.sc.map(q => [q.id, q.x, q.y, Math.round(now - q.t0)]), K2.pt, left(K2.pe), left(K2.cd)]; }
@@ -2677,7 +2678,7 @@ function k1Step(now, dtMs) {
     if (HU[il.hk] !== -1) { K1.ill = K1.ill.filter(q => q !== il); ch = true; continue; }   // she really hooked someone there: the illusion just goes
     let on = false, mul = 0;
     for (const r of HP.values()) { if (r.role !== 'survivor' || !r.on || !r.hold || (r.st !== 'healthy' && r.st !== 'injured')) continue;
-      if (Math.hypot(r.x - il.x, r.y - il.y) <= CFG.RESCUE_R + CFG.ACT_SLACK) { on = true; r.hatWork = true; mul = Math.max(mul, (r.snakeEnd > now ? CFG.SNAKE_UNHOOK_MULT : 1) * k1Slow(r, now)); } }   // fear slows the illusion's "unhook" exactly like a real one
+      if (Math.hypot(r.x - il.x, r.y - il.y) <= CFG.RESCUE_R + CFG.ACT_SLACK) { on = true; r.hatWork = true; mul = Math.max(mul, (r.snakeEnd > now ? CFG.SNAKE_UNHOOK_MULT : 1) * k1Slow(r, now) * k5Slow(r)); } }   // fear slows the illusion's "unhook" exactly like a real one
     if (!on) mul = 1; else il.prog += dtMs * mul;
     if (on !== il.on || mul !== il.mul) { il.on = on; il.mul = mul; ch = true; }
     if (il.prog >= K1_ILL_POP * rescueMs()) { k1Pop(il, now, true); continue; }
@@ -3151,24 +3152,29 @@ function k6Ev(m, now) {
    ##                                                                                            ##
    ################################################################################################
 
-   WHAT HE DOES (VISUALS ONLY SO FAR: the effect on survivors comes in a later prompt)
+   WHAT HE DOES (THORNS + CONDEMN)
    - ABILITY BUTTON (or Q) toggles TRAIL on / off. Every toggle (on, off, or the automatic off) starts a K5_CD (2 s) cooldown before the next toggle.
    - While TRAIL is on he burns TORMENT (K5_DRAIN % per second, ONLY while he is moving) and leaves a wide, tall trail of red thorns (K5_W wide) behind him: one patch of thorns
      every K5_STEP units he moves, each lives K5_TRAIL_MS (20 s), then it withers away.
    - Torment refills at K5_REGEN % per second while TRAIL is off. At 0% the trail switches itself off. A new trail needs at least K5_MIN (20%) torment.
-   - Independent of the toggle: when a survivor is HOOKED a circle of thorns erupts around that hook (it stays until the hook is free again), and
-     when a generator is KICKED a circle erupts around it (it lasts K5_GEN_RING_MS = 20 s). Radius = K5_RING_R.
+   - Independent of the toggle: when a survivor is HOOKED a circle of thorns erupts around that hook (it stays until the hook is free again, at most K5_HOOK_RING_MS = 15 s), and
+     when a generator is KICKED a circle erupts around it (it lasts K5_GEN_RING_MS = 15 s). Radius = K5_RING_R.
    - SPEED: the moment TRAIL is switched on he walks K5_SLOW (70%) of his speed; the slow fades linearly back to normal over K5_SLOW_DECAY_MS (3 s) while the trail stays on (speedOf, K5.actAt).
      With TRAIL OFF, standing in his own trail gives him K5_TRAIL_BOOST (+5%) (K5.onTrail, set in k5Step).
-   - SURVIVORS: a condemned survivor needs 50% longer on thorns to be hit (K5_CMULT); a survivor must stay K5_INFECT_S (4 s) within K5_SPREAD_R of a condemned one to be condemned; a dotted circle (drawK5Over) shows that radius. While a survivor is inside another condemned survivor's circle their condemn bar is PAUSED (no fill, no drain; infection still ticks).
+   - SURVIVORS ON THORNS (circle, his trail, a shockwave's trail or ANOTHER survivor's exit trail): slowed K5_TSLOW (20%), and generator repair + unhook run at K5_WORK (70%) speed (k5Slow, read by genStep / the unhook loops).
+   - CONDEMN BAR (0..100, k5Cond). It FILLS from: a shockwave hit (+K5_SHOCK_FILL, once per throw), standing on thorns (K5_FILL per s, own exit trail included) and staying within K5_SPREAD_R of condemned survivors (K5_NEAR per s each, up to K5_NEAR_MAX of them).
+     With nothing filling it, it drains K5_DECAY per s: the way to get clean is to stay away from thorns and from other condemned survivors.
+     At K5_COND (40%) the survivor is CONDEMNED: halo + red glow for everybody, and the radius around them (drawn as a dotted circle for survivors) now fills nearby survivors' bars. Below K5_UNCOND the status ends again.
+     A survivor who steps into thorns and walks OUT lays a trail of thorns for K5_EXIT_S (4 s) (k5Cond, K5.tr; independent of the bar). Their own trail fills THEIR bar but never slows them; other survivors on it are slowed and filled like on any thorns.
+     FULL BAR: the survivor gets a hit sound + screen shake ('k5f' event), the killer gets a ping on them for K5_PING_MS (K5.ping -> drawK5Pings), and the bar drops back to K5_COND. It also counts as a hit from the killer (K5_FULL_HIT = true: injured, then downed); set it to false for feedback + ping only.
    - CHARGE: burning K5_CHARGE (15) torment within ONE toggle makes him glow red (visible through the darkness). He stays charged until he fires (toggling off does not lose it).
      While charged his ATTACK button (it reads THORNS) throws a red shockwave of thorns instead of a swing: it flies straight along the way he faces (S.face) at K5_SHOCK_SPD until a wall
-     or K5_SHOCK_RANGE, leaving thorns that wither after 3 s. HITTING A SURFACE it bounces: 3 shockwaves fan out from the impact (mirrored direction +- K5_SPLIT_FAN, each flies until a wall or K5_SPLIT_RANGE, no further splitting). It then needs another K5_CHARGE burned (counted from 0 again) and the normal miss cooldown applies. It has NO effect on survivors yet.
+     or K5_SHOCK_RANGE, leaving thorns that wither after 3 s. HITTING A SURFACE it bounces: 3 shockwaves fan out from the impact (mirrored direction +- K5_SPLIT_FAN, each flies until a wall or K5_SPLIT_RANGE, no further splitting). It then needs another K5_CHARGE burned (counted from 0 again) and the normal miss cooldown applies. A survivor it touches gains K5_SHOCK_FILL (20) % condemn bar (the three bounced shockwaves share the hit of their throw). While charged, the killer sees a preview of the main flight only (k5Aim).
    - The host keeps the real lists (K5.pts = thorn patches, K5.rings = circles) so the later survivor effects can read them.
 
    WHERE EVERYTHING IS (search for the names)
-   A) HOST SIDE:   K5_* constants, k5Empty / K5, k5Player, k5Off, k5Ability, k5Ring, k5Fire, k5ShockPos, k5Step.
-   B) CLIENT SIDE: k5Grow / k5Thorn / k5Pool / k5Ico / k5Icon (pixel art), K5C, k5Apply, k5Ev, k5MakePt, k5MakeRing, drawK5World, drawK5Over, k5ShockOn, k5Torment.
+   A) HOST SIDE:   K5_* constants, k5Empty / K5, k5Player, k5Off, k5Ability, k5Ring, k5Plan, k5Fire, k5ShockPos, k5Hazard, k5Own, k5Slow, k5Full, k5Cond, k5Step.
+   B) CLIENT SIDE: k5Grow / k5Thorn / k5Pool / k5Ico / k5Icon (pixel art), K5C, k5Apply, k5Ev, k5MakePt, k5MakeRing, drawK5World, drawK5Over, drawK5Pings, k5Aim, k5ShockOn, k5Torment.
    C) SMALL HOOKS ELSEWHERE IN THE FILE (search these strings):
       - hostAct / ACTS:   'k5ab'
       - hook / kick:      the hook branch of the HOOK action ("k5Ring(1") and genKick ("k5Ring(2")
@@ -3182,16 +3188,17 @@ const K5_TRAIL_MS = 20000, K5_STEP = 26, K5_W = 110, K5_SEND_MS = 150;   // life
 const K5_BASE = .9;   // killer_5's base speed (10% slower than the other killers)
 const K5_SLOW = .7, K5_CHARGE = 15;   // speed multiplier at the instant TRAIL is switched on (30% slower; it decays back to 1 over K5_SLOW_DECAY_MS) / torment burned in ONE toggle to charge the shockwave
 const K5_SLOW_DECAY_MS = 3000, K5_TRAIL_BOOST = 1.05;   // the TRAIL slow fades out linearly over this long / speed multiplier while TRAIL is OFF and he stands in his own trail
-const K5_CMULT = 1 / 1.5, K5_INFECT_S = 4;   // a condemned survivor fills the bar on thorns at 1/1.5 of K5_FILL (hit takes 50% longer) / seconds a survivor must stay within K5_SPREAD_R of a condemned one to become condemned
+const K5_TSLOW = .8, K5_WORK = .7, K5_FILL = 10, K5_DECAY = 3;   // survivors on thorns: speed (20% slower) / generator repair + unhook speed (30% slower) / condemn bar fill per second on thorns (full in 10 s) / bar drain per second when nothing fills it
 const K5_SHOCK_SPD = 560, K5_SHOCK_RANGE = 760, K5_SHOCK_R = 13, K5_SHOCK_W = 75;   // shockwave: speed / max distance / wall check radius / width of the thorn front (all world units, speed per second)
 const K5_SPLIT_RANGE = 420, K5_SPLIT_FAN = .5;   // when the shockwave hits a surface it bounces into 3 shockwaves: how far each flies at most / angle between them (rad)
 const K5_CW = K5_W * .7;   // a condemned survivor's trail is 30% narrower than the killer's (hazard width + drawn size)
 const K5_LINGER = .6;   // a thorn patch ages 60% slower while at least one survivor stands on it
-const K5_TSLOW = .8, K5_FILL = 10, K5_DECAY = 2.5, K5_COND = 20, K5_PBAR = 40, K5_SPREAD_R = 140, K5_CTRAIL_MS = 20000;   // survivors: speed on thorns (20% slower) / condemn bar fill per s on thorns (full in 10 s) / drain per s off thorns / bar % where 'Condemned' starts / bar a shockwave hit sets (at least) / how close to a condemned survivor spreads it / lifetime of a condemned survivor's thorn patch (same size as the killer's)
-const K5_GEN_RING_MS = 20000;   // a kicked generator's thorn circle lasts exactly 20 s (it still ends early if the generator gets finished)
-const K5_RING_MS = .7;   // circles last 70% of what they used to (generator: its disable time, hook: the hook timer)
+const K5_COND = 40, K5_UNCOND = 35, K5_SPREAD_R = 140, K5_NEAR = 10, K5_NEAR_MAX = 2, K5_SHOCK_FILL = 20;   // bar % where 'Condemned' starts (halo + glow + its radius fills others) / it ends again below this / radius around a condemned survivor / fill per second from EACH condemned survivor that close (at most K5_NEAR_MAX count) / bar a shockwave hit adds
+const K5_EXIT_S = 4, K5_CTRAIL_MS = 4000, K5_PING_MS = 3000, K5_FULL_HIT = true;   // seconds a survivor keeps laying thorns after walking OUT of thorns / lifetime of one of those patches / how long a full bar pings the survivor to the killer / true = a full bar is also a hit from the killer (healthy -> injured -> downed), false = feedback + ping only
+const K5_GEN_RING_MS = 15000, K5_HOOK_RING_MS = 15000;   // a kicked generator's / a hooked survivor's thorn circle lasts 15 s at most (it still ends early if the generator is finished / the hook is free again)
+
 const K5_RING_R = [0, 182.4, 182.4], K5_FADE_MS = 700;   // circle radius per kind (1 = hook, 2 = generator) / how long a vanishing circle takes to fade
-function k5Empty() { return { has: false, init: false, act: false, torm: 100, cd: 0, pts: [], pend: [], sendAt: 0, rings: [], n: 1, mv: false, mvAt: 0, lx: null, ly: 0, syncAt: 0, spent: 0, chg: false, shocks: [], cond: {}, cAt: 0, actAt: 0, onTrail: false }; }   // act = TRAIL is on; spent = torment burned since this toggle began; chg = charged (red glow, the next attack is a shockwave); shocks = flying shockwaves { id, x0, y0, a, t0, d, end }; mv = he moved in the last 150 ms (torment only burns then); rings: { id, k: 1 hook | 2 generator, i: hook / generator index, x, y, t0, end (0 = until the hook is free) }
+function k5Empty() { return { has: false, init: false, act: false, torm: 100, cd: 0, pts: [], pend: [], sendAt: 0, rings: [], n: 1, mv: false, mvAt: 0, lx: null, ly: 0, syncAt: 0, spent: 0, chg: false, shocks: [], cond: {}, tr: {}, on: {}, ping: {}, cAt: 0, actAt: 0, onTrail: false }; }   // tr = per survivor { in, tr (until when he lays thorns after walking out), l }, on = who stands on thorns right now, ping = survivor id -> ping end; act = TRAIL is on; spent = torment burned since this toggle began; chg = charged (red glow, the next attack is a shockwave); shocks = flying shockwaves { id, x0, y0, a, t0, d, end }; mv = he moved in the last 150 ms (torment only burns then); rings: { id, k: 1 hook | 2 generator, i: hook / generator index, x, y, t0, end (0 = until the hook is free) }
 let K5 = k5Empty();
 const isK5 = id => kIdx(id) === 5;   // killer_5 = the sixth KILLERS entry; its ability code never mentions the character's name
 function k5Player() { for (const p of HP.values()) if (p.role === 'killer' && p.on && isK5(p.id)) return p; return null; }
@@ -3207,7 +3214,7 @@ function k5Ability(p, now) {   // the ability button: toggle
 function k5Ring(kind, idx, x, y, now) {   // a hook / a generator kick makes a circle of thorns (called from the hook action and genKick); only when killer_5 is the killer
   if (!k5Player()) return;
   K5.rings = K5.rings.filter(r => !(r.k === kind && r.i === idx));
-  K5.rings.push({ id: K5.n++, k: kind, i: idx, x: Math.round(x), y: Math.round(y), t0: now, end: now + (kind === 2 ? K5_GEN_RING_MS : CFG.HOOK_GRACE_MS * K5_RING_MS) }); woSend('k5');
+  K5.rings.push({ id: K5.n++, k: kind, i: idx, x: Math.round(x), y: Math.round(y), t0: now, end: now + (kind === 2 ? K5_GEN_RING_MS : K5_HOOK_RING_MS) }); woSend('k5');
 }
 function k5ShockPos(s, now) { const t = Math.max(0, Math.min(now - s.t0, s.end - s.t0)) * K5_SHOCK_SPD / 1000; return [s.x0 + Math.cos(s.a) * t, s.y0 + Math.sin(s.a) * t]; }   // where a flying shockwave is right now (for the survivor effects later)
 function k5Ray(x, y, a, rng) {   // fly straight from (x, y) until a wall or rng: { d = distance flown, hit = a wall stopped it }
@@ -3216,24 +3223,27 @@ function k5Ray(x, y, a, rng) {   // fly straight from (x, y) until a wall or rng
   const hit = d < rng; if (hit) { let lo = Math.max(0, d - 12), hi = d; for (let i = 0; i < 4; i++) { const m = (lo + hi) / 2; if (circleHits(x + ca * m, y + sa * m, K5_SHOCK_R)) hi = m; else lo = m; } d = lo; }   // find the wall more exactly
   return { d, hit };
 }
+function k5Plan(sx, sy, f) {   // where a shockwave thrown from (sx, sy) along f goes: { x0, y0, a, d, hit, kids }. Hitting a surface bounces it into 3 shockwaves (the middle one is the true reflection) that fly until a wall / K5_SPLIT_RANGE. Used by the host to throw it AND by the charged killer to preview it
+  const ca = Math.cos(f), sa = Math.sin(f), R = k5Ray(sx, sy, f, K5_SHOCK_RANGE), P = { x0: sx, y0: sy, a: f, d: R.d, hit: R.hit, kids: [] };
+  if (!R.hit) return P;
+  const px = sx + ca * R.d, py = sy + sa * R.d; let nx = -ca, ny = -sa, bd = 1e9;
+  for (const w of COLLIDERS) { const cx = Math.max(w[0], Math.min(px, w[0] + w[2])), cy = Math.max(w[1], Math.min(py, w[1] + w[3])), dd = Math.hypot(px - cx, py - cy); if (dd < bd) { bd = dd; if (dd > .01) { nx = (px - cx) / dd; ny = (py - cy) / dd; } else { nx = -ca; ny = -sa; } } }   // surface normal = from the nearest wall point to the impact point
+  const dot = ca * nx + sa * ny, ra = Math.atan2(sa - 2 * dot * ny, ca - 2 * dot * nx);
+  for (const off of [-K5_SPLIT_FAN, 0, K5_SPLIT_FAN]) {
+    let dx = Math.cos(ra + off), dy = Math.sin(ra + off); const dn = dx * nx + dy * ny; if (dn < .25) { dx += nx * (.25 - dn); dy += ny * (.25 - dn); const l = Math.hypot(dx, dy); dx /= l; dy /= l; }   // never fan back into the wall it just hit
+    const an = Math.atan2(dy, dx), r = k5Ray(px, py, an, K5_SPLIT_RANGE); P.kids.push({ x0: px, y0: py, a: an, d: r.d });
+  }
+  P.px = px; P.py = py; return P;
+}
 function k5Fire(K, now) {   // charged: the attack button throws a shockwave of thorns instead of a swing; the charge is spent and the normal miss cooldown starts. Hitting a surface bounces it into 3 shockwaves
   const f = S.face, ca = Math.cos(f), sa = Math.sin(f), sx = K.x + ca * 30, sy = K.y + sa * 30; K5.chg = false; K5.spent = 0;
-  const R = k5Ray(sx, sy, f, K5_SHOCK_RANGE), e = { id: K5.n++, x0: Math.round(sx), y0: Math.round(sy), a: Math.round(f * 100) / 100, t0: now, d: Math.round(R.d), end: now + R.d / K5_SHOCK_SPD * 1000, hit: {} }; K5.shocks.push(e);
-  const kids = [];
-  if (R.hit) {   // bounce: mirror the flight direction on the surface normal, fan out 3 ways (the middle one is the true reflection); the children fly until a wall / K5_SPLIT_RANGE and do not split again
-    const px = sx + ca * R.d, py = sy + sa * R.d; let nx = -ca, ny = -sa, bd = 1e9;
-    for (const w of COLLIDERS) { const cx = Math.max(w[0], Math.min(px, w[0] + w[2])), cy = Math.max(w[1], Math.min(py, w[1] + w[3])), dd = Math.hypot(px - cx, py - cy); if (dd < bd) { bd = dd; if (dd > .01) { nx = (px - cx) / dd; ny = (py - cy) / dd; } else { nx = -ca; ny = -sa; } } }   // surface normal = from the nearest wall point to the impact point
-    const dot = ca * nx + sa * ny, ra = Math.atan2(sa - 2 * dot * ny, ca - 2 * dot * nx), t1 = now + R.d / K5_SHOCK_SPD * 1000;
-    for (const off of [-K5_SPLIT_FAN, 0, K5_SPLIT_FAN]) {
-      let dx = Math.cos(ra + off), dy = Math.sin(ra + off); const dn = dx * nx + dy * ny; if (dn < .25) { dx += nx * (.25 - dn); dy += ny * (.25 - dn); const l = Math.hypot(dx, dy); dx /= l; dy /= l; }   // never fan back into the wall it just hit
-      const an = Math.round(Math.atan2(dy, dx) * 100) / 100, r = k5Ray(px, py, an, K5_SPLIT_RANGE), q = { id: K5.n++, x0: Math.round(px), y0: Math.round(py), a: an, t0: t1, d: Math.round(r.d), end: t1 + r.d / K5_SHOCK_SPD * 1000, hit: {} };
-      K5.shocks.push(q); kids.push([q.id, q.x0, q.y0, q.a, q.d]);
-    }
-  }
+  const P = k5Plan(sx, sy, f), e = { id: K5.n++, x0: Math.round(sx), y0: Math.round(sy), a: Math.round(f * 100) / 100, t0: now, d: Math.round(P.d), end: now + P.d / K5_SHOCK_SPD * 1000, hit: {} }; K5.shocks.push(e);
+  const kids = [], t1 = now + P.d / K5_SHOCK_SPD * 1000;
+  for (const c of P.kids) { const an = Math.round(c.a * 100) / 100, q = { id: K5.n++, x0: Math.round(c.x0), y0: Math.round(c.y0), a: an, t0: t1, d: Math.round(c.d), end: t1 + c.d / K5_SHOCK_SPD * 1000, hit: e.hit }; K5.shocks.push(q); kids.push([q.id, q.x0, q.y0, q.a, q.d]); }   // the bounced shockwaves share the hit list of their throw: one throw condemns a survivor only once
   K.cd = now + CFG.ATTACK_MISS_CD_MS; notifyCd(K, CFG.ATTACK_MISS_CD_MS);
   evSend({ k: 'k5s', id: e.id, x: e.x0, y: e.y0, a: e.a, d: e.d, c: kids }); woSend('k5');
 }
-function k5Hazard(v) {   // is survivor v standing on thorns? (a circle, the killer's trail, or somebody ELSE's condemned trail: your own trail never hurts you)
+function k5Hazard(v) {   // is survivor v standing on thorns? (a circle, the killer's trail, a shockwave's trail, or somebody ELSE's exit trail: your own trail never slows you)
   for (const g of K5.rings) if (Math.hypot(v.x - g.x, v.y - g.y) <= (K5_RING_R[g.k] || 152) * .92) return true;
   for (const q of K5.pts) if (q.by !== v.id && Math.hypot(v.x - q.x, v.y - q.y) <= (q.sm ? K5_CW : K5_W) / 2) return true;
   return false;
@@ -3243,28 +3253,37 @@ function k5Linger(now, dt) {   // patches with a survivor on them age slower: th
   if (sv.length) for (const q of K5.pts) { const R = (q.sm ? K5_CW : K5_W) / 2; if (sv.some(v => v.id !== q.by && Math.hypot(v.x - q.x, v.y - q.y) <= R)) { q.bonus = (q.bonus || 0) + dt * 1000 * K5_LINGER; q.bd = 1; } }
   if (now - (K5.xAt || 0) >= 250) { K5.xAt = now; const x = []; for (const q of K5.pts) if (q.bd) { q.bd = 0; x.push([q.id, Math.round(q.bonus)]); } if (x.length) evSend({ k: 'k5x', x }); }
 }
-function k5Cond(B, now, dt) {   // survivor effects: thorns slow 20% and fill the condemn bar; condemned (bar >= K5_COND) spreads to close survivors, leaves a small trail; a full bar = a hit from killer_5
-  const C = K5.cond; let ch = false;
-  for (const e of K5.shocks) { if (now < e.t0) continue; const hp = k5ShockPos(e, now), ca = Math.cos(e.a), sa = Math.sin(e.a);   // a flying shockwave condemns whoever it touches (once each)
-    for (const v of HP.values()) { if (v.role !== 'survivor' || !v.on || (v.st !== 'healthy' && v.st !== 'injured') || (GOD && v.host) || e.hit[v.id]) continue;
+function k5Own(v) { for (const q of K5.pts) if (q.by === v.id && Math.hypot(v.x - q.x, v.y - q.y) <= K5_CW / 2) return true; return false; }   // standing on the trail he laid himself: it fills his own bar but does not slow him
+function k5Slow(p) { return K5.has && p && K5.on[p.id] ? K5_WORK : 1; }   // generator repair + unhook speed factor: slower while standing on thorns
+function k5Full(v, now) {   // a full bar: hit sound + screen shake for the survivor, the killer sees them for K5_PING_MS; the bar drops back to K5_COND so they stay condemned
+  K5.ping[v.id] = now + K5_PING_MS; evSend({ k: 'k5f', id: v.id }); if (K5_FULL_HIT) hitSurvivor(v, now);
+}
+function k5Cond(B, now, dt) {   // survivor effects: thorns slow 20% and fill the condemn bar; a shockwave hit fills it; condemned survivors (bar >= K5_COND) fill the bars of survivors close to them; leaving thorns makes a survivor lay thorns for K5_EXIT_S seconds
+  const C = K5.cond, T = K5.tr; let ch = false;
+  const ok = u => u.role === 'survivor' && u.on && (u.st === 'healthy' || u.st === 'injured') && !(GOD && u.host);
+  for (const e of K5.shocks) { if (now < e.t0) continue; const hp = k5ShockPos(e, now), ca = Math.cos(e.a), sa = Math.sin(e.a);   // a flying shockwave fills the bar of whoever it touches (once per throw)
+    for (const v of HP.values()) { if (!ok(v) || e.hit[v.id]) continue;
       const dx = v.x - hp[0], dy = v.y - hp[1], al = dx * ca + dy * sa, la = -dx * sa + dy * ca;
       if (Math.abs(al) > 20 + CFG.RADIUS || Math.abs(la) > K5_SHOCK_W / 2 + CFG.RADIUS) continue;
-      e.hit[v.id] = 1; const c = C[v.id] || (C[v.id] = { b: 0, c: 0, s: -9, l: null }); if (!c.c) msgTo(v, 'Condemned!'); c.b = Math.max(c.b, K5_PBAR); c.c = 1; ch = true; } }
-  const cn = [...HP.values()].filter(u => C[u.id] && C[u.id].c);
+      e.hit[v.id] = 1; const c = C[v.id] || (C[v.id] = { b: 0, c: 0, s: -9 }); c.b = Math.min(100, c.b + K5_SHOCK_FILL); ch = true; } }
+  const cn = [...HP.values()].filter(u => ok(u) && C[u.id] && C[u.id].c);
   for (const v of HP.values()) {
     if (v.role !== 'survivor') continue;
-    const ok = v.on && (v.st === 'healthy' || v.st === 'injured') && !(GOD && v.host); let c = C[v.id];
-    if (!ok) { if (c) { delete C[v.id]; ch = true; } dropMod(v, 'k5thorn'); continue; }
-    const th = k5Hazard(v), near = cn.some(u => u !== v && Math.hypot(u.x - v.x, u.y - v.y) <= K5_SPREAD_R);
-    if (th) addMod(v, 'k5thorn', K5_TSLOW, 250, now); else dropMod(v, 'k5thorn');
-    if (!c && !th && !near) continue;
-    if (!c) c = C[v.id] = { b: 0, c: 0, s: -9, l: null };
-    if (near) { if (!c.c && c.b < K5_COND) c.b = Math.min(K5_COND, c.b + K5_COND / K5_INFECT_S * dt); }   // inside a condemned ally's circle: the bar is PAUSED (no thorn fill, no drain); only the infection itself still ticks, up to K5_COND
-    else if (th) c.b += K5_FILL * (c.c ? K5_CMULT : 1) * dt; else c.b -= K5_DECAY * dt;   // contagion only ever infects (stops at K5_COND); the bar only fills fully on thorns
+    let c = C[v.id];
+    if (!ok(v)) { if (c) { delete C[v.id]; ch = true; } delete T[v.id]; K5.on[v.id] = false; dropMod(v, 'k5thorn'); continue; }
+    const th = k5Hazard(v), t = T[v.id] || (T[v.id] = { in: false, tr: 0, l: null });
+    K5.on[v.id] = th; if (th) addMod(v, 'k5thorn', K5_TSLOW, 250, now); else dropMod(v, 'k5thorn');
+    if (th) t.in = true; else if (t.in) { t.in = false; t.tr = now + K5_EXIT_S * 1000; t.l = null; }   // stepped into thorns and walked out: he now lays thorns for K5_EXIT_S seconds (independent of the condemn bar)
+    if (t.tr > now && (!t.l || Math.hypot(v.x - t.l[0], v.y - t.l[1]) >= K5_STEP)) { const an = t.l ? Math.atan2(v.y - t.l[1], v.x - t.l[0]) : 0; t.l = [v.x, v.y]; const e = { id: K5.n++, x: Math.round(v.x), y: Math.round(v.y), t0: now, by: v.id, sm: 1, an: Math.round(an * 100) / 100 }; K5.pts.push(e); K5.pend.push(e); }
+    let nn = 0; for (const u of cn) if (u !== v && Math.hypot(u.x - v.x, u.y - v.y) <= K5_SPREAD_R) nn++;   // condemned survivors close by
+    const rate = (th || k5Own(v) ? K5_FILL : 0) + Math.min(nn, K5_NEAR_MAX) * K5_NEAR;   // the three ways to fill the bar (thorns, their own exit trail, other condemned survivors); the shockwave hit was added above
+    if (!c && !rate) continue;
+    if (!c) c = C[v.id] = { b: 0, c: 0, s: -9 };
+    if (rate) c.b += rate * dt; else c.b -= K5_DECAY * dt;   // nothing filling it: it drains (stay away from thorns and from condemned survivors)
     if (c.b >= K5_COND && !c.c) { c.c = 1; msgTo(v, 'Condemned!'); ch = true; }
+    else if (c.c && c.b < K5_UNCOND) { c.c = 0; ch = true; }
     if (c.b <= 0) { delete C[v.id]; ch = true; continue; }
-    if (c.b >= 100) { delete C[v.id]; ch = true; k5Say('Someone has been punished'); hitSurvivor(v, now); continue; }   // full bar = a hit from killer_5 (bar and status reset)
-    if (c.c && (!c.l || Math.hypot(v.x - c.l[0], v.y - c.l[1]) >= K5_STEP)) { const an = c.l ? Math.atan2(v.y - c.l[1], v.x - c.l[0]) : 0; c.l = [v.x, v.y]; const e = { id: K5.n++, x: Math.round(v.x), y: Math.round(v.y), t0: now, by: v.id, sm: 1, an: Math.round(an * 100) / 100 }; K5.pts.push(e); K5.pend.push(e); }   // a condemned survivor leaves its own trail (same size and spacing as the killer's, shorter lived)
+    if (c.b >= 100) { c.b = K5_COND; c.c = 1; ch = true; k5Full(v, now); }
   }
   if (now - K5.cAt >= 250) { let d = false; for (const id in C) if (Math.abs(C[id].b - C[id].s) >= 1) { d = true; break; } if (d) { K5.cAt = now; for (const id in C) C[id].s = C[id].b; ch = true; } }
   return ch;
@@ -3284,6 +3303,7 @@ function k5Step(now, dtMs) {
   k5Linger(now, dt);
   K5.pts = K5.pts.filter(q => now - q.t0 <= (q.sm ? K5_CTRAIL_MS : K5_TRAIL_MS) + (q.bonus || 0));
   K5.onTrail = !K5.act && K5.pts.some(q => !q.sm && Math.hypot(B.x - q.x, B.y - q.y) <= K5_W / 2);   // standing in HIS OWN trail (not a condemned survivor's) with TRAIL off: speedOf gives him the boost
+  for (const id in K5.ping) if (now >= K5.ping[id]) { delete K5.ping[id]; ch = true; }   // a ping on a survivor ends
   if (k5Cond(B, now, dt)) ch = true;
   for (const e of K5.shocks) {   // every flying shockwave lays the SAME trail as his own (same patch, spacing, width, lifetime, hazard, linger), one patch every K5_STEP along its path
     if (now < e.t0) continue; if (e.lay === undefined) e.lay = -K5_STEP;
@@ -3341,16 +3361,16 @@ const k5ShockOn = () => { const J = S.wo.k5; return !!J && !!J.chg && myRole() =
 const k5Torment = (J, now) => Math.max(0, Math.min(100, J.f0 + (J.act ? (J.mv ? -K5_DRAIN : 0) : K5_REGEN) * (now - J.f0At) / 1000));   // torment right now (both sides run the same numbers; every state message re-syncs it)
 function k5MakePt(id, x, y, t0, prev, o) {   // o = { w: width, life: ms, ang } for the afterglow of a shockwave   // one patch of the trail: 2 pools + 3 thorns scattered across the trail width, laid out once from the patch id
   const rng = k5Rng(id * 40503 + 7), W = o && o.w || K5_W, SM = o && o.sc || 1, ang = o && o.ang !== undefined ? o.ang : prev && Math.hypot(x - prev.x, y - prev.y) < K5_STEP * 3 ? Math.atan2(y - prev.y, x - prev.x) : 0, st = [];
-  for (let j = 0; j < 2; j++) st.push({ p: 1, lat: (rng() - .5) * W * .75, al: (rng() - .5) * K5_STEP, v: rng() * 3 | 0, sc: (1.15 + rng() * .5) * SM, rot: 0, fl: 1, d: 0 });
-  for (let j = 0; j < 3; j++) st.push({ p: 0, lat: (rng() - .5) * W * 1.1, al: (rng() - .5) * K5_STEP * 1.2, v: rng() * 6 | 0, sc: (.95 + rng() * .65) * SM, rot: (rng() - .5) * .5, fl: rng() < .5 ? -1 : 1, d: rng() * 160 });
+  st.push({ p: 1, lat: (rng() - .5) * W * .75, al: (rng() - .5) * K5_STEP, v: rng() * 3 | 0, sc: (1.15 + rng() * .5) * SM, rot: 0, fl: 1, d: 0 });
+  if (rng() < .22) st.push({ p: 0, lat: (rng() - .5) * W * 1.1, al: (rng() - .5) * K5_STEP * 1.2, v: rng() * 6 | 0, sc: (.95 + rng() * .65) * SM, rot: (rng() - .5) * .5, fl: rng() < .5 ? -1 : 1, d: rng() * 160 });
   return { id, x, y, t0, life: o && o.life || K5_TRAIL_MS, fw: o && o.fw || 3000, c: Math.cos(ang), s: Math.sin(ang), st };
 }
 function k5MakeRing(g) {   // a circle of thorns: pools over the whole disc, thorns in between (the middle stays clear for the hook / generator), a denser rim, all erupting outward from the centre
   const R = K5_RING_R[g.k] || 152, f = R / 152, rng = k5Rng(g.id * 7919 + 13), st = [];   // f = size vs the original 152 radius: the stamp counts scale with it so a bigger circle is not sparser
   const add = (p, rad, an, sc, rot) => st.push({ p, dx: Math.cos(an) * rad, dy: Math.sin(an) * rad * (p ? .9 : 1), v: p ? rng() * 3 | 0 : rng() * 6 | 0, sc, rot, fl: rng() < .5 ? -1 : 1, d: 40 + rad / R * 520 + rng() * 120 });
-  for (let j = 0, n = Math.round(12 * f * f); j < n; j++) add(1, Math.sqrt(rng()) * R * .92, rng() * TAU, 1.8 + rng(), 0);
-  for (let j = 0, n = Math.round(32 * f * f); j < n; j++) add(0, (.28 + .6 * Math.sqrt(rng())) * R, rng() * TAU, .95 + rng() * .6, (rng() - .5) * .5);
-  for (let j = 0, n = Math.round(24 * f); j < n; j++) add(0, R * (.9 + rng() * .1), j / n * TAU + (rng() - .5) * .2, 1.2 + rng() * .4, (rng() - .5) * .4);
+  for (let j = 0, n = Math.round(14 * f * f); j < n; j++) add(1, Math.sqrt(rng()) * R * .92, rng() * TAU, 1.8 + rng(), 0);
+  for (let j = 0, n = Math.round(4 * f * f); j < n; j++) add(0, (.28 + .6 * Math.sqrt(rng())) * R, rng() * TAU, .95 + rng() * .6, (rng() - .5) * .5);
+  for (let j = 0, n = Math.round(6 * f); j < n; j++) add(0, R * (.9 + rng() * .1), j / n * TAU + (rng() - .5) * .2, 1.2 + rng() * .4, (rng() - .5) * .4);
   g.R = R; g.st = st; return g;
 }
 function k5Apply(a, now) {   // host state -> S.wo.k5 (torment is extrapolated from f0; circles keep their layout between messages)
@@ -3358,14 +3378,15 @@ function k5Apply(a, now) {   // host state -> S.wo.k5 (torment is extrapolated f
   if (!a || !a.length) { S.wo.k5 = null; return; }
   const rings = a[3].map(e => { const o = old.find(q => q.id === e[0]); if (o) { o.end = e[5] ? now + e[5] : 0; return o; } return k5MakeRing({ id: e[0], k: e[1], i: e[2], x: e[3], y: e[4], t0: now - e[6], end: e[5] ? now + e[5] : 0, die: 0 }); });
   for (const o of old) if (!rings.includes(o) && !K5C.fade.includes(o)) { o.die = now + K5_FADE_MS; K5C.fade.push(o); }
-  S.wo.k5 = { act: !!a[0], f0: a[1], f0At: now, cd: now + a[2], rings, mv: !!a[4], chg: !!a[5], cond: a[6] || [] };
+  S.wo.k5 = { act: !!a[0], f0: a[1], f0At: now, cd: now + a[2], rings, mv: !!a[4], chg: !!a[5], cond: a[6] || [], pg: (a[7] || []).map(e => ({ id: e[0], end: now + e[1] })) };
 }
 function k5Ev(m, now) {   // a batch of new thorn patches / a shockwave leaving
   if (m.k === 'k5s') { K5C.sw.push({ id: m.id, x0: m.x, y0: m.y, a: m.a, d: m.d, t0: now, em: 0, n: 0 }); for (const c of m.c || []) K5C.sw.push({ id: c[0], x0: c[1], y0: c[2], a: c[3], d: c[4], t0: now + m.d / K5_SHOCK_SPD * 1000, em: 0, n: 0 }); if (K5C.sw.length > 24) K5C.sw.splice(0, K5C.sw.length - 24);   // the 3 bounced shockwaves start when the first one reaches the wall
     try { const v = Math.max(.3, evVol(m.x, m.y, 1100)); sfxNoise(.3, v * .6, 'lowpass', 2600, 260); sfxTone(190, 55, .32, v * .4, 'sawtooth'); } catch (e) {} return; }
+  if (m.k === 'k5f') { if (m.id === S.me) { try { sfxHit(.9); } catch (e) {} shake(CFG.SHAKE_VICTIM_PX * 1.4); vibrate([90, 40, 140]); } else if (myRole() === 'killer') { try { sfxGenPing(); } catch (e) {} } return; }   // my condemn bar is full: a hit sound + screen shake (the killer gets a soft blip: that survivor is pinged to him now)
   if (m.k === 'k5x') { for (const e of m.x) { const q = K5C.pts.find(o => o.id === e[0]); if (q) { if (q.l0 === undefined) q.l0 = q.life; q.life = q.l0 + e[1]; } } return; }
   if (m.k !== 'k5p') return; const P = K5C.pts;
-  for (const e of m.p) P.push(e[3] ? k5MakePt(e[0], e[1], e[2], now, null, { life: K5_CTRAIL_MS, ang: e[4] || 0, w: K5_CW, sc: .7 }) : k5MakePt(e[0], e[1], e[2], now, P[P.length - 1]));
+  for (const e of m.p) P.push(e[3] ? k5MakePt(e[0], e[1], e[2], now, null, { life: K5_CTRAIL_MS, fw: 1500, ang: e[4] || 0, w: K5_CW, sc: .7 }) : k5MakePt(e[0], e[1], e[2], now, P[P.length - 1]));
   if (P.length > 600) P.splice(0, P.length - 600);
 }
 function drawK5World(me, vw, vh, now) {   // on the floor, under the darkness, under hooks / generators / players: circles first, then the trail
@@ -3390,7 +3411,7 @@ function drawK5World(me, vw, vh, now) {   // on the floor, under the darkness, u
   for (const w of K5C.sw) {   // the front of a flying shockwave: a curved wall of big thorns
     if (now < w.t0) continue; const dist = Math.min(w.d, K5_SHOCK_SPD * (now - w.t0) / 1000), c = Math.cos(w.a), s = Math.sin(w.a), hx = w.x0 + c * dist, hy = w.y0 + s * dist, fa = Math.max(0, Math.min(1, (w.t0 + w.d / K5_SHOCK_SPD * 1000 + 400 - now) / 400));
     if (Math.abs(hx - me[0]) > vw / 2 + 160 || Math.abs(hy - me[1]) > vh / 2 + 160) continue;
-    for (let i = -4; i <= 4; i++) { const lat = i * (K5_SHOCK_W / 8), al = -Math.abs(i) * 7.5; thorns.push({ x: hx + c * al - s * lat, y: hy + s * al + c * lat, s: { v: (i + 4) % 6, rot: i * .07, fl: i & 1 ? -1 : 1, p: 0 }, sx: .83 - Math.abs(i) * .05, sy: .83 - Math.abs(i) * .05, a: fa }); }
+    for (let i = -2; i <= 2; i++) { const lat = i * (K5_SHOCK_W / 4), al = -Math.abs(i) * 12; thorns.push({ x: hx + c * al - s * lat, y: hy + s * al + c * lat, s: { v: (i + 2) % 6, rot: i * .07, fl: i & 1 ? -1 : 1, p: 0 }, sx: .9 - Math.abs(i) * .08, sy: .9 - Math.abs(i) * .08, a: fa }); }
   }
   ctx.save(); ctx.imageSmoothingEnabled = false;
   for (const q of pools) { const b = k5Pool(q.s.v), w = b.width * PSK * q.sx, h = b.height * PSK * q.sx * .9; ctx.globalAlpha = q.a * .92; ctx.drawImage(b, q.x - w / 2, q.y - h / 2, w, h); }
@@ -3398,11 +3419,27 @@ function drawK5World(me, vw, vh, now) {   // on the floor, under the darkness, u
   for (const q of thorns) { const b = k5Thorn(q.s.v); ctx.globalAlpha = q.a; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.s.rot); ctx.scale(q.s.fl * q.sx * PSK, q.sy * PSK); ctx.drawImage(b, -b.width / 2, -b.height + 2); ctx.restore(); }
   ctx.restore();
 }
+let K5AIM = { t: 0, x: 0, y: 0, f: 9, P: null };
+function k5Aim(q, f, now) {   // a charged killer_5 sees where the shockwave will fly: just the main flight, drawn as wide as the wave, ending in a ring where it stops or hits
+  const A = K5AIM; if (!A.P || now - A.t > 60 || Math.abs(A.f - f) > .004 || Math.hypot(A.x - q[0], A.y - q[1]) > 2) { A.t = now; A.x = q[0]; A.y = q[1]; A.f = f; const sx = q[0] + Math.cos(f) * 30, sy = q[1] + Math.sin(f) * 30; A.P = { x0: sx, y0: sy, a: f, d: k5Ray(sx, sy, f, K5_SHOCK_RANGE).d }; }
+  const P = A.P, ex = P.x0 + Math.cos(P.a) * P.d, ey = P.y0 + Math.sin(P.a) * P.d, pu = .5 + .5 * Math.sin(now / 150);
+  ctx.save(); ctx.lineCap = 'round'; ctx.shadowColor = '#ff2a2a'; ctx.shadowBlur = 8;
+  ctx.strokeStyle = 'rgba(255,50,40,.10)'; ctx.lineWidth = K5_SHOCK_W; ctx.beginPath(); ctx.moveTo(P.x0, P.y0); ctx.lineTo(ex, ey); ctx.stroke();   // how wide the wave is
+  ctx.setLineDash([14, 12]); ctx.lineDashOffset = -now / 25; ctx.strokeStyle = `rgba(255,95,75,${(.7 + .25 * pu).toFixed(3)})`; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(P.x0, P.y0); ctx.lineTo(ex, ey); ctx.stroke();   // the flight
+  ctx.setLineDash([]); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(ex, ey, 11 + pu * 3, 0, TAU); ctx.stroke();   // where it ends / hits
+  ctx.restore();
+}
+function drawK5Pings(me, k, W, H, now, vRole) {   // killer_5: a survivor whose condemn bar just filled is pinged to him for a short while
+  const J = S.wo.k5; if (vRole !== 'killer' || S.phase !== 'hunt' || !J || !J.pg || !J.pg.length) return; const b = pinBox(me, k, W, H); ctx.save();
+  for (const q of J.pg) { if (now >= q.end) continue; const pl = S.players.find(x => x.id === q.id); if (((S.st[q.id] || {}).s || 'healthy') === 'dead') continue; const pq = posOf(q.id); if (pq) pinAt(me, b, pq, pl ? pl.color : '#ff4f57', 44, now); }
+  ctx.restore();
+}
 function drawK5Over(me, k, W, H, now) {   // above the darkness: the red glow of a charged killer_5 and the light of the flying shockwaves
   const J = S.wo.k5, kid = killerIdRaw(), glow = (x, y, r, a) => { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x, y, 6, x, y, r); g.addColorStop(0, `rgba(255,50,40,${(.55 * a).toFixed(3)})`); g.addColorStop(.5, `rgba(200,15,25,${(.22 * a).toFixed(3)})`); g.addColorStop(1, 'rgba(120,0,10,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); ctx.restore(); };
   if (J && J.chg && kid >= 0) { const q = posOf(kid); if (q && Math.abs(q[0] - me[0]) < W / k / 2 + 160 && Math.abs(q[1] - me[1]) < H / k / 2 + 160) glow(q[0], q[1], 120, .75 + .25 * Math.sin(now / 130)); }
+  if (k5ShockOn() && kid >= 0) { const q = posOf(kid), fa = interpFace(); if (q && fa !== null) k5Aim(q, fa, now); }   // charged: show where the shockwave will go
   if (J && J.cond) for (const e of J.cond) if (e[2]) { const q = posOf(e[0]); if (!q) continue; if (Math.abs(q[0] - me[0]) < W / k / 2 + 100 && Math.abs(q[1] - me[1]) < H / k / 2 + 100) glow(q[0], q[1], 46, .55 + .2 * Math.sin(now / 160 + e[0])); const pu = Math.sin(now / 240 + e[0]); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineWidth = 3; ctx.strokeStyle = `rgba(255,60,50,${(.75 + .2 * pu).toFixed(3)})`; ctx.shadowColor = '#ff2a2a'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.ellipse(q[0], q[1] - 30, 17 + pu * 1.5, 5.5 + pu * .5, 0, 0, TAU); ctx.stroke(); ctx.restore(); }   // + a red halo ring floating above the head   // condemned survivors glow dull red + a halo ring (everybody sees it, the killer included, through the darkness)
-  if (J && J.cond && myRole() === 'survivor') for (const e of J.cond) if (e[2]) { const q = posOf(e[0]); if (!q || Math.abs(q[0] - me[0]) > W / k / 2 + K5_SPREAD_R + 40 || Math.abs(q[1] - me[1]) > H / k / 2 + K5_SPREAD_R + 40) continue; const pu = Math.sin(now / 300 + e[0]); ctx.save(); ctx.setLineDash([7, 9]); ctx.lineDashOffset = -now / 60; ctx.lineWidth = 2.5; ctx.strokeStyle = `rgba(255,70,60,${(.5 + .15 * pu).toFixed(3)})`; ctx.shadowColor = '#ff2a2a'; ctx.shadowBlur = 6; ctx.beginPath(); ctx.arc(q[0], q[1], K5_SPREAD_R, 0, TAU); ctx.stroke(); ctx.restore(); }   // dotted circle (survivors only, the killer does not see it) around every condemned survivor = how close another survivor must stay (K5_INFECT_S seconds) to be condemned too
+  if (J && J.cond && myRole() === 'survivor') for (const e of J.cond) if (e[2]) { const q = posOf(e[0]); if (!q || Math.abs(q[0] - me[0]) > W / k / 2 + K5_SPREAD_R + 40 || Math.abs(q[1] - me[1]) > H / k / 2 + K5_SPREAD_R + 40) continue; const pu = Math.sin(now / 300 + e[0]); ctx.save(); ctx.setLineDash([7, 9]); ctx.lineDashOffset = -now / 60; ctx.lineWidth = 2.5; ctx.strokeStyle = `rgba(255,70,60,${(.5 + .15 * pu).toFixed(3)})`; ctx.shadowColor = '#ff2a2a'; ctx.shadowBlur = 6; ctx.beginPath(); ctx.arc(q[0], q[1], K5_SPREAD_R, 0, TAU); ctx.stroke(); ctx.restore(); }   // dotted circle (survivors only, the killer does not see it) around every condemned survivor = how close another survivor must stay to be filled by it
   for (const w of K5C.sw) { if (now < w.t0) continue; const dist = Math.min(w.d, K5_SHOCK_SPD * (now - w.t0) / 1000), hx = w.x0 + Math.cos(w.a) * dist, hy = w.y0 + Math.sin(w.a) * dist; if (Math.abs(hx - me[0]) < W / k / 2 + 160 && Math.abs(hy - me[1]) < H / k / 2 + 160) glow(hx, hy, 47, Math.max(0, Math.min(1, (w.t0 + w.d / K5_SHOCK_SPD * 1000 + 400 - now) / 400))); }
 }
 /* ################################################################################################
@@ -4230,9 +4267,9 @@ const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite
     ['Ability', 'Transfer', 'Jumps into the next body in the cycle. The jump also clears any slow or blind on him. It always has a 1 s cooldown. Survivors can disable a body standing near a generator or a hook for 9 s: it shows stars, and Transfer skips it.'],
     ['Ability', 'Lunge', 'Tap attack to swing as usual, or hold it to charge a lunge: he walks a little slower while charging, and the longer he holds the further he dashes. A lunge that is held for too long fires by itself. Survivors in the path of the lunge are severely slowed for 3 s. Right after a lunge ends, tap attack again within 1 s for one more dash (no swing) the way he is facing. After a lunge there is a 10 s cooldown that all three bodies share, so jumping into another body does not reset it.']]],
   [5, [
-    ['Passive', 'Thorns', 'Thorns burst out around every hook with a survivor on it and around every generator he kicks. Survivors standing on thorns are slowed and slowly become condemned. A condemned survivor spreads it to anyone who stays close, and allies inside that circle have their bar paused. A full bar counts as a hit.'],
+    ['Passive', 'Thorns', 'Thorns burst out for 15 s around every hook with a survivor on it and around every generator he kicks. Survivors on thorns are slowed and repair and unhook slower. Thorns, shockwave hits and staying near condemned survivors all fill the condemn bar. At 40% a survivor is condemned: they glow, and their circle fills the bar of anyone close. A survivor who walks out of thorns leaves a thorn trail for 4 s that fills their own bar. Stay away from thorns and condemned survivors to get clean. A full bar pings them to him.'],
     ['Ability', 'Trail', 'Switch a thorn trail on or off behind him. It drains his torment while he moves and slows him at first, then torment refills while it is off.'],
-    ['Ability', 'Thorns shockwave', 'After burning enough torment he glows red and his attack becomes a shockwave of thorns. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as his own the whole way.']]],
+    ['Ability', 'Thorns shockwave', 'After burning enough torment he glows red and his attack becomes a shockwave of thorns, with a path preview of its main flight while it is charged. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as his own the whole way. Survivors it touches get 20% condemn bar.']]],
   [6, [
     ['Ability', 'Transform', 'Copies a random survivor, name and look. He leaves behind a pile of white cloth, the only clue. While disguised he moves like a survivor, shows no killer signs and can stay like that as long as he wants.'],
     ['Ability', 'Scream', 'Attacking while disguised makes him scream, stunning nearby survivors briefly as he changes back.'],
@@ -6956,6 +6993,7 @@ function mmFrame(now, V, me) { if(inUD(me[0],me[1])){$('mm').classList.add('hidd
     for (let j = 0; j < 2; j++) { const ph = (age / 1100 + j * .5) % 1; g.strokeStyle = `rgba(${rgb},${((1 - ph) * .9 * fd).toFixed(3)})`; g.lineWidth = Math.max(1.2, 1.5 * dpr); g.beginPath(); g.arc(x, y, r + ph * Math.max(7, 9 * dpr), 0, TAU); g.stroke(); }   // two ripples, half a cycle apart
     g.fillStyle = `rgba(${rgb},${fd.toFixed(3)})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.strokeStyle = `rgba(255,255,255,${fd.toFixed(3)})`; g.lineWidth = Math.max(1, dpr); g.stroke(); }
   if (myRole() === 'killer' && S.wo.k0) for (const q of S.wo.k0.pg) if (now < q.end) { const pq = posOf(q.id) || [q.x, q.y]; g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(2.8, 3.2 * dpr), 0, TAU); g.fill(); g.stroke(); }   // IR scanner pings
+  if (myRole() === 'killer' && S.wo.k5 && S.wo.k5.pg) for (const q of S.wo.k5.pg) if (now < q.end) { const pq = posOf(q.id); if (!pq) continue; g.fillStyle = '#ff3b30'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(2.8, 3.2 * dpr), 0, TAU); g.fill(); g.stroke(); }   // killer_5: survivors pinged by a full condemn bar
   { const X = S.wo.k3x; if (X && X.lid >= 0 && now < X.le && S.phase === 'hunt') { const kid = killerId(), pq = myRole() === 'killer' ? posOf(X.lid) : S.me === X.lid && kid >= 0 ? posOf(kid) : null; if (pq) { const pu = .5 + .5 * Math.sin(now / 200); g.fillStyle = '#ff4f8a'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(3, 3.4 * dpr) * (1 + .25 * pu), 0, TAU); g.fill(); g.stroke(); } } }   // "find love": the chosen survivor <-> her
   const dm = S.map.doors || [];   // doorways: dim brown = can still be barricaded, bright = barricaded; broken ones disappear
   for (let i = 0; i < dm.length; i++) { const v = S.ds.st[i]; if (v === 3 || (v === 0 && i >= S.map.nb)) continue; g.fillStyle = v === 0 ? 'rgba(160,115,70,.75)' : v === 4 ? '#ff5a5a' : '#e0a050'; g.fillRect(Math.round(dm[i][0] * k), Math.round(dm[i][1] * k), Math.max(2, Math.round(dm[i][2] * k)), Math.max(2, Math.round(dm[i][3] * k))); }
@@ -7095,7 +7133,7 @@ function drawK0Pings(me, k, W, H, now, vRole) {   // killer_0: IR-scanner / bear
   ctx.restore();
 }
 function drawKillerSight(me, k, W, H, now, vRole) {
-  drawK0Pings(me, k, W, H, now, vRole); drawK3Love(me, k, W, H, now, vRole);
+  drawK0Pings(me, k, W, H, now, vRole); drawK5Pings(me, k, W, H, now, vRole); drawK3Love(me, k, W, H, now, vRole);
   if (vRole !== 'killer' || !(S.eg.final || S.eg.solo) || S.phase !== 'hunt') return;   // monster form (full or LAST STAND)
   const on = S.eg.final ? CFG.EG_SEE_ON_MS : CFG.SOLO_SEE_ON_MS, off = S.eg.final ? CFG.EG_SEE_OFF_MS : CFG.SOLO_SEE_OFF_MS;
   if (((S.sightAt > 0 ? now - S.sightAt : now) % (on + off)) < off) return;   // hidden phase first, then shown
@@ -7215,7 +7253,7 @@ function onEv(m) {
     case 'set': ifx({ type: 'set', x: m.x, y: m.y, t0: now, end: now + 400 }); if (role && m.r === myR) sfxSet(Math.min(1, evVol(m.x, m.y, 500) + .3)); break;
     case 'k1w': case 'k1p': case 'k1i': k1Ev(m, now); break;
     case 'k6t': case 'k6s': k6Ev(m, now); break;
-    case 'k5p': case 'k5s': case 'k5x': k5Ev(m, now); break;
+    case 'k5p': case 'k5s': case 'k5x': case 'k5f': k5Ev(m, now); break;
     case 'k3tpw': K3FX.push({ type: 'tpw', x: m.x, y: m.y, t0: now, end: now + m.ms }); try { const v = Math.max(.3, evVol(m.x, m.y, 1000)); sfxTone(160, 900, m.ms / 1000, v * .28, 'sawtooth'); sfxTone(320, 1800, m.ms / 1000, v * .14, 'sine'); } catch (e) {} break;
     case 'k3shot': K3FX.push({ type: 'shot', x0: m.x0, y0: m.y0, x1: m.x1, y1: m.y1, hit: m.hit, t0: now, end: now + 240 }); try { const v = Math.max(.35, evVol(m.x0, m.y0, 1200)); sfxNoise(.1, v * .8, 'lowpass', 3200, 400); sfxTone(240, 55, .13, v * .5, 'square'); } catch (e) {} break;
     case 'snap': ifx({ type: 'snap', x: m.x, y: m.y, t0: now, end: now + 450 }); sfxSnap(Math.max(.3, evVol(m.x, m.y, 1000))); trigNotify(m, 0, V); break;
@@ -7600,7 +7638,7 @@ function updateControls(now) {
   { const f0 = S.fx2[S.me], bw = abil ? !!f0 && f0.ablock > now : (itI >= 0 && k3Sealed(now) > 0); if (bw !== UIC.bw) { UIC.bw = bw; $('itm').classList.toggle('bw', bw); } }   // an item / ability that is blocked turns black and white for as long as it is blocked
   { const Jc = S.wo.k5, ce = Jc && Jc.cond && myRole() === 'survivor' ? Jc.cond.find(e => e[0] === S.me) : null;   // survivor: my own condemn bar (only while it is above 0)
     let kc = $('k5c'); if (!kc && ce) { kc = document.createElement('div'); kc.id = 'k5c'; kc.innerHTML = '<i></i><u></u><b></b>'; document.body.appendChild(kc); }
-    if (kc) { const on = !!ce, v = ce ? ce[1] : 0, st = ce ? (ce[2] ? 'CONDEMNED ' : 'THORNS ') + v : '', k5 = on ? st : ''; kc.style.display = on ? '' : 'none'; if (k5 !== UIC.k5s) { UIC.k5s = k5; kc.firstElementChild.style.width = v + '%'; kc.lastElementChild.textContent = st; kc.classList.toggle('on', !!(ce && ce[2])); } } }
+    if (kc) { const on = !!ce, v = ce ? ce[1] : 0, st = ce ? (ce[2] ? 'CONDEMNED ' : 'CONDEMN ') + v : '', k5 = on ? st : ''; kc.style.display = on ? '' : 'none'; if (k5 !== UIC.k5s) { UIC.k5s = k5; kc.firstElementChild.style.width = v + '%'; kc.lastElementChild.textContent = st; kc.classList.toggle('on', !!(ce && ce[2])); } } }
   { let n = 0; if (itI >= 0 && S.eg.solo && S.itemRrAt) { const left = S.itemRrAt - now; if (left > 0 && left <= CFG.SOLO_WARN_MS) n = Math.ceil(left / 1000); }   // LAST STAND: 3-2-1 above the item button
     if (n !== UIC.rr) { UIC.rr = n; const t = $('itmT'); t.classList.toggle('hidden', !n); if (n) { t.textContent = n; t.style.setProperty('--ic', ITEMS[itI].col); t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop'); } } }
   { const lb = ctxKind === 'hook' && S.wo.k2 ? 'SEND' : CTX_LABEL[ctxKind]; if (ctxKind && (ctxKind !== UIC.ctx || UIC.lb !== lb)) { $('ctx').textContent = lb; UIC.ctx = ctxKind; UIC.lb = lb; } }   // killer_2: HOOK becomes SEND

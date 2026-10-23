@@ -1847,12 +1847,12 @@ function genFix(i) {
   if (GH.fixed === 1) { try { genBonusDrops(performance.now(), i); } catch (e) { console.warn('[drops]', e); } }   // the 1st generator: two free items next to it
   if (GH.done) egStart();   // 2nd generator: the endgame begins
 }
-function genKick(i, now) {   // killer_2 (Demogorgon): +0.25 s of disable time per scent he has collected - a scent buff like his speed and vision, lost together with them when he sends someone
+function genKick(i, now) {   // killer_2 (Demogorgon): +0.7 s of disable time per scent he has collected (capped at K2_KICK_MAX = 10 scents) - a scent buff like his speed and vision, lost together with them when he sends someone
   const g = GH.g[i]; if (!g || g.st === 2) return;
-  g.prog *= CFG.GEN_KICK_KEEP; g.dis = now + CFG.GEN_DISABLE_MS + (k2Player() ? (K2.n | 0) * 250 : 0); g.kcd = now + CFG.GEN_KICK_CD_MS; genRelease(g);
+  g.prog *= CFG.GEN_KICK_KEEP; g.dis = now + CFG.GEN_DISABLE_MS + (k2Player() ? Math.min(K2.n | 0, K2_KICK_MAX) * 700 : 0); g.kcd = now + CFG.GEN_KICK_CD_MS; genRelease(g);
   k5Ring(2, i, MAP.gens[i][0], MAP.gens[i][1], now);   // killer_5: a circle of thorns around the kicked generator
 }
-function k2SendKick(p, now) {   // killer_2: every send (a survivor hung = sent to the Upside Down) kicks the open, working generator with the MOST progress (the normal kick: -20% progress, disabled 8 s + 0.25 s per scent, 20 s kick cooldown). The kick cooldown does not stop it.
+function k2SendKick(p, now) {   // killer_2: every send (a survivor hung = sent to the Upside Down) kicks the open, working generator with the MOST progress (the normal kick: -20% progress, disabled 8 s + 0.7 s per scent, max 10 scents, 20 s kick cooldown). The kick cooldown does not stop it.
   let bi = -1, bp = 0; GH.g.forEach((g, i) => { if (g.st === 1 && g.prog > bp && !(g.dis > now)) { bp = g.prog; bi = i; } });
   if (bi < 0) return; genKick(bi, now); msgTo(p, 'Generator kicked');
 }
@@ -2153,6 +2153,7 @@ let DR = { list: [], next: 0, nid: 1 }, TRP = [], SLK = [], FLR = [], FBG = [], 
    ================================================================================================ */
 const isK2 = id => kIdx(id) === 2;
 const K2_SC_MS = 1500, K2_SC_LIFE = 40000, K2_SC_MAX = 40, K2_SC_R = 34, K2_GLOW_MS = 5000;   // SCENT: the prey drops one every 1.5 s / it lasts / max at once / pick-up radius / each scent flares once per this long (killer only)
+const K2_KICK_MAX = 10;   // gen-kick disable bonus stops growing after this many scents (10 x 0.7 s = +7 s)
 const K2_BASE = .9, K2_SPD_PER = 1.04, K2_SPD_MAX = 1.35, K2_VIS_PER = 1.04, K2_VIS_MAX = 1.5;   // he starts (and restarts after every SEND) at 90% speed and vision; each scent he collects: +4% speed and +4% vision (compounding, permanent until the next SEND; capped)
 const K2_SWAP_WIND = 1500, K2_SWAP_CD = 30000, K2_BLEED = 1.3;   // SWAP: windup / cooldown;  his hits make survivors bleed 30% longer
 // Sending a survivor no longer grants a temporary free hunt; Demogorgon remains prey-locked.
@@ -2176,7 +2177,7 @@ function k2Step(now) {
     const c = [...HP.values()].filter(q => k2Ok(q) && q.id !== K2.tid), nt = c.length ? c[Math.random() * c.length | 0] : null, nid = nt ? nt.id : -1;
     if (nid !== K2.tid) { K2.tid = nid; K2.at = 0; K2.scAt = 0; if (nt) { msgTo(B, 'New prey: ' + (nt.name || 'a survivor')); msgTo(nt, 'You are the Demogorgon\'s prey - he will hunt you!'); } }
   }
-  { const n0 = K2.sc.length; K2.sc = K2.sc.filter(q => now - q.t0 < K2_SC_LIFE); if (K2.sc.length !== n0) K2.at = 0;   // SCENT: the prey leaves one every 1 s (a glowing red ball only the killer sees) ...
+  { const n0 = K2.sc.length; K2.sc = K2.sc.filter(q => now - q.t0 < K2_SC_LIFE); if (K2.sc.length !== n0) K2.at = 0;   // SCENT: the prey leaves one every 1.5 s (K2_SC_MS) (a glowing red ball only the killer sees) ...
     const pv = K2.tid >= 0 ? HP.get(K2.tid) : null;
     if (pv && k2Ok(pv) && pv.st !== 'carried' && now >= K2.scAt) { K2.scAt = now + K2_SC_MS; K2.sc.push({ id: K2.scN++, x: Math.round(pv.x), y: Math.round(pv.y), t0: now }); if (K2.sc.length > K2_SC_MAX) K2.sc.shift(); K2.at = 0; }
     for (let i = K2.sc.length - 1; i >= 0; i--) if (Math.hypot(K2.sc[i].x - B.x, K2.sc[i].y - B.y) <= K2_SC_R) { K2.sc.splice(i, 1); K2.n++; K2.at = 0; } }   // ... and every one he walks over is a permanent, compounding speed + vision buff
@@ -3509,7 +3510,7 @@ function k6Ev(m, now) {
      FULL BAR: the survivor gets a hit sound + screen shake ('k5f' event), the killer gets a ping on them for K5_PING_MS (K5.ping -> drawK5Pings), and the bar drops back to K5_COND. It also counts as a hit from the killer (K5_FULL_HIT = true: injured, then downed); set it to false for feedback + ping only.
    - CHARGE: burning K5_CHARGE (15) torment within ONE toggle makes him glow red (visible through the darkness). He stays charged until he fires (toggling off does not lose it).
      While charged his ATTACK button (it reads THORNS) throws a red shockwave of thorns instead of a swing: it flies straight along the way he faces (S.face) at K5_SHOCK_SPD until a wall
-     or K5_SHOCK_RANGE, leaving thorns that wither after 3 s. HITTING A SURFACE it bounces: 3 shockwaves fan out from the impact (mirrored direction +- K5_SPLIT_FAN, each flies until a wall or K5_SPLIT_RANGE, no further splitting). Firing also burns K5_FIRE_COST (20) of the torment bar. It then needs another K5_CHARGE burned (counted from 0 again) and the normal miss cooldown applies. A survivor it touches gains K5_SHOCK_FILL (50) % condemn bar (the three bounced shockwaves share the hit of their throw). While charged, the killer sees a preview of the main flight only (k5Aim).
+     or K5_SHOCK_RANGE, leaving thorns that wither after 3 s. HITTING A SURFACE it bounces: 3 shockwaves fan out from the impact (mirrored direction +- K5_SPLIT_FAN, each flies until a wall or K5_SPLIT_RANGE, no further splitting). Firing also burns K5_FIRE_COST (20) of the torment bar. It then needs another K5_CHARGE burned (counted from 0 again) and the normal miss cooldown applies. A survivor it touches gains K5_SHOCK_FILL (40) % condemn bar (the three bounced shockwaves share the hit of their throw). While charged, the killer sees a preview of the main flight only (k5Aim).
    - The host keeps the real lists (K5.pts = thorn patches, K5.rings = circles) so the later survivor effects can read them.
 
    WHERE EVERYTHING IS (search for the names)
@@ -3535,7 +3536,7 @@ const K5_CW = K5_W * .7;   // a condemned survivor's trail is 30% narrower than 
 const K5_EXIT_FILL = .3;   // the thorns a survivor lays behind them after stepping out of thorns (exit trail, 'sm' patches) fill the condemn bar at only 30% of K5_FILL (70% less); circles, his trail and shockwave trails are unchanged
 const K5_FIRE_COST = 20;   // firing the thorns shockwave burns this much of the torment bar (% of the full 100 bar; whatever is left if there is less)
 const K5_LINGER = .6;   // a thorn patch ages 60% slower while at least one survivor stands on it
-const K5_COND = 40, K5_UNCOND = 35, K5_SPREAD_R = 140, K5_NEAR = 10, K5_NEAR_MAX = 2, K5_SHOCK_FILL = 50;   // bar % where 'Condemned' starts (halo + glow + its radius fills others) / it ends again below this / radius around a condemned survivor / fill per second from EACH condemned survivor that close (at most K5_NEAR_MAX count) / bar a shockwave hit adds
+const K5_COND = 40, K5_UNCOND = 35, K5_SPREAD_R = 140, K5_NEAR = 10, K5_NEAR_MAX = 2, K5_SHOCK_FILL = 40;   // bar % where 'Condemned' starts (halo + glow + its radius fills others) / it ends again below this / radius around a condemned survivor / fill per second from EACH condemned survivor that close (at most K5_NEAR_MAX count) / bar a shockwave hit adds
 const K5_EXIT_S = 4, K5_CTRAIL_MS = 4000, K5_PING_MS = 3000, K5_FULL_HIT = true;   // seconds a survivor keeps laying thorns after walking OUT of thorns / lifetime of one of those patches / how long a full bar pings the survivor to the killer / true = a full bar is also a hit from the killer (healthy -> injured -> downed), false = feedback + ping only
 const K5_GEN_RING_MS = 15000, K5_HOOK_RING_MS = 15000;   // a kicked generator's / a hooked survivor's thorn circle lasts 15 s at most (it still ends early if the generator is finished / the hook is free again)
 
@@ -4708,7 +4709,7 @@ const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite
   [5, [
     ['Passive', 'Thorns', 'Thorns burst out for 15 s around every hook with a survivor on it and around every generator he kicks. Survivors on thorns are slowed and repair and unhook slower. Thorns, shockwave hits and staying near condemned survivors all fill the condemn bar. At 40% a survivor is condemned: they glow, and their circle fills the bar of anyone close. A survivor who walks out of thorns leaves a thorn trail for 4 s that fills their own bar. Stay away from thorns and condemned survivors to get clean. A full bar pings them to him.'],
     ['Ability', 'Trail', 'Switch a thorn trail on or off behind him. It drains his torment while he moves and slows him at first, then torment refills while it is off.'],
-    ['Ability', 'Thorns shockwave', 'After burning enough torment he glows red and his attack becomes a shockwave of thorns, with a path preview of its main flight while it is charged. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as his own the whole way. Survivors it touches get 50% condemn bar.']]],
+    ['Ability', 'Thorns shockwave', 'After burning enough torment he glows red and his attack becomes a shockwave of thorns, with a path preview of its main flight while it is charged. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as his own the whole way. Survivors it touches get 40% condemn bar.']]],
   [6, [
     ['Ability', 'Transform', 'Copies a random survivor, name and look. He leaves behind a pile of white cloth, the only clue. While disguised he moves like a survivor, shows no killer signs and can stay like that as long as he wants.'],
     ['Ability', 'Scream', 'Attacking while disguised makes him scream, stunning nearby survivors briefly as he changes back.'],

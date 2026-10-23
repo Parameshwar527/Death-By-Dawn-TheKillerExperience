@@ -544,7 +544,7 @@ const CFG = {
   KILLER_TURN_DPS: 540,                // max flashlight turn speed, degrees / second
   // ---- darkness / visibility ----
   DARKNESS: 0.96,                      // opacity of the dark overlay
-  UD_MS: 60000, UD_STEP_MS: 20000, UD_MIN_MS: 20000, UD_NEED: 20,   /* Demogorgon sends: 60 s, 40 s, 20 s, and it stays at 20 s (UD_STEP_MS = how much each further send takes off, UD_MIN_MS = the floor) */ UD_SPAWN_MS: 667, UD_SPAWN_FIRST: 3, UD_DARKNESS: 0.96,     // sent duration and realm darkness (pure black, same as the main map: DARKNESS)
+  UD_MS: 50000, UD_SEQ_MS: [50000, 35000, 20000], UD_NEED: 20,   /* Demogorgon sends: 50 s, 35 s, 20 s, and it stays at 20 s (UD_SEQ_MS = duration of the 1st, 2nd, 3rd+ send; the last entry repeats). UD_MS = the first / wish send (50 s) */ UD_SPAWN_MS: 1191, UD_SPAWN_FIRST: 3, UD_DARKNESS: 0.96,     // sent duration and realm darkness (pure black, same as the main map: DARKNESS)
   SURV_VIEW_R: 312,                    // survivor light radius
   FLASH_RANGE: 312, FLASH_ANGLE: 54,   // killer flashlight length (units) and full cone angle (degrees)
   HOOK_SEE_R: 62,                       // the killer always sees the hooks and anyone standing right next to one (small circle)
@@ -720,7 +720,7 @@ const UD=(function(){   // THE UPSIDE DOWN: a seeded braid maze with no dead end
   for(let r=0;r<rows-1;r++)for(let c=0;c<cols;c++)if(!openD[c+r*cols]){const y=ay+(r+1)*ph;walls.push([Math.round(ax+c*pw-h),Math.round(y-h),Math.round(pw+T),T]);}
   const cx=c=>Math.round(ax+(c+.5)*pw),cy=r=>Math.round(ay+(r+.5)*ph),COL=['#ff3b3b','#3bff5a','#4aa8ff','#ffd23b','#ff8a2a','#c35bff'],bulbs=[];
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if((c+r)%2===0)bulbs.push({x:cx(c),y:cy(r),c,r,col:COL[bulbs.length%6]});   // dead-centre of every other cell (checkerboard): 28 bulbs on the smaller map (UD_NEED is 20), evenly spread, never touching a wall
-  {const ix=bulbs.map((_,i)=>i);for(let i=ix.length-1;i>0;i--){const j=rnd()*(i+1)|0;[ix[i],ix[j]]=[ix[j],ix[i]];}ix.forEach((bi,rank)=>{bulbs[bi].at=Math.max(0,rank-3)*CFG.UD_SPAWN_MS;});}   // bulbs appear one by one (3 right away, then 1.5 per second) in a fixed seeded order
+  {const ix=bulbs.map((_,i)=>i);for(let i=ix.length-1;i>0;i--){const j=rnd()*(i+1)|0;[ix[i],ix[j]]=[ix[j],ix[i]];}ix.forEach((bi,rank)=>{bulbs[bi].at=Math.max(0,rank-3)*CFG.UD_SPAWN_MS;});}   // bulbs appear one by one (3 right away, then ~0.84 per second) in a fixed seeded order
   const spawns=[[0,1],[7,0],[0,5],[7,6],[3,2],[4,5]].map(([c,r])=>[cx(c),cy(r)]);   // cells where (c+r) is odd: never on a bulb
   return {x:x0,y:0,w:W,h:H,walls,spawns,cols,rows,ax,ay,pw,ph,openR,openD,bulbs};
 })();
@@ -2021,7 +2021,7 @@ function hostAct(p, a, down, n) {   // validates range, state and cooldowns; cli
     if (isK2(p.id) && EG.solo) { p.carry = null; v.carriedBy = null; v.x = h[0]; v.y = h[1]; v.ix = v.iy = 0; killSurvivor(v); msgTo(v, 'Lost in the Upside Down'); msgTo(p, 'Sent for good'); return; }   // LAST STAND (one survivor left): the Demogorgon's send is final - the survivor dies on the spot instead of entering the Upside Down, and since nobody is left the match ends
     if (!isK2(p.id) && v.hookCount >= CFG.HOOKS_TO_DIE + (v.hookExtra || 0)) { v.x = h[0]; v.y = h[1]; killSurvivor(v); return; }   // 3rd hook: dies on the spot (the hook stays free)
     p.carry=null;v.carriedBy=null;
-    if(isK2(p.id)){const ums=Math.max(CFG.UD_MIN_MS,CFG.UD_MS-CFG.UD_STEP_MS*((v.hookCount||1)-1));v.udMs=ums;v.sentHook=bi;v.sentEnd=now+ums;v.hookIdx=-1;v.prog=0;v.rpOn=false;
+    if(isK2(p.id)){const ums=CFG.UD_SEQ_MS[Math.min(CFG.UD_SEQ_MS.length-1,Math.max(0,(v.hookCount||1)-1))];v.udMs=ums;v.sentHook=bi;v.sentEnd=now+ums;v.hookIdx=-1;v.prog=0;v.rpOn=false;
       const others=[...HP.values()].filter(q=>q!==v&&q.role==='survivor'&&q.st==='sent');
       const spawn=UD.spawns.slice().sort((a,b)=>Math.min(...others.map(q=>Math.hypot(q.x-a[0],q.y-a[1])),Infinity)-Math.min(...others.map(q=>Math.hypot(q.x-b[0],q.y-b[1])),Infinity)).pop()||UD.spawns[0];
       v.x=spawn[0];v.y=spawn[1];v.ix=v.iy=0;setSt(v,'sent',{hk:bi,ms:ums,tot:ums});msgTo(p,'Sent!');checkWin();
@@ -3810,7 +3810,7 @@ function drawK5Over(me, k, W, H, now) {   // above the darkness: the red glow of
    - 0 find love       one random healthy/injured survivor: both of them see each other's position (pins + minimap) and that survivor's sight drops to half;
                        every survivor's items are sealed. Lasts K3_LOVE_MS or until that survivor goes down / is hooked / escapes.
    - 1 win the game    two OTHER killers (random, never herself) appear next to her and chase the survivors for K3_MIN_MS = 20 s (test-room Normal bot AI), then vanish. See k3mSummon.
-   - 2 you would die   second screen: list of survivors, she picks one; they are sent into the Upside Down like a Demogorgon send (k3Send2UD): CFG.UD_NEED bulbs within CFG.UD_MS (20 in 60 s) while Vecna hunts them there; they come back out injured, or are lost.
+   - 2 you would die   second screen: list of survivors, she picks one; they are sent into the Upside Down like a Demogorgon send (k3Send2UD): CFG.UD_NEED bulbs within CFG.UD_MS (20 in 50 s) while Vecna hunts them there; they come back out injured, or are lost.
    - 3 network bad     every survivor's client gets input lag + choppy frames for K3_LAG_MS (sx event 'k3lag').
    - 4 be there        second screen: a map, she taps a spot; after K3_TP_WIND_MS of windup (rooted) she teleports there, gets K3_TP_SPEED for K3_TP_BOOST_MS, and is INVISIBLE to survivors
                        (body + flashlight beam hidden) until she lands a hit or K3_INV_MS passes. She sees herself faded.
@@ -3907,7 +3907,7 @@ function k3Grant(K, w, arg, now) {   // checks first (a failed wish costs nothin
     const e = k3Elig(), v = e[Math.floor(Math.random() * e.length)]; K3.love = { id: v.id, end: now + K3_LOVE_MS }; woSend('k3x');
     msgTo(v, 'She has found you'); for (const q of HP.values()) if (q.role === 'survivor' && q !== v) msgTo(q, 'Your items fall silent'); }
   else if (w === 1) k3mSummon(K, now);   // win the game: two other killers (random, not her own) chase the survivors for K3_MIN_MS = 20 s, then vanish (k3mStep)
-  else if (w === 2) k3Send2UD(K, arg, now);   // die: she wishes them into the Upside Down (the Demogorgon's send): 20 bulbs in 60 s while Vecna hunts them, else they are lost
+  else if (w === 2) k3Send2UD(K, arg, now);   // die: she wishes them into the Upside Down (the Demogorgon's send): 20 bulbs in 50 s while Vecna hunts them, else they are lost
   else if (w === 3) { for (const q of HP.values()) if (q.role === 'survivor' && q.on && !q.bot && q.st !== 'dead') sxSend(q.id, 'k3lag', K3_LAG_MS); }   // bad network: input lag + choppy frames, played on each survivor's own client
   else if (w === 4) { K3.tp = { x: arg.x, y: arg.y, at: now + K3_TP_WIND_MS }; addMod(K, 'root', 0, K3_TP_WIND_MS, now); evSend({ k: 'k3tpw', x: K.x, y: K.y, ms: K3_TP_WIND_MS }); }   // be there for you: windup, then the jump + speed boost (k3Step)
   else if (w === 5) {   // stay here forever: every generator vanishes for 15 s (repair is impossible, progress is kept)
@@ -8138,7 +8138,7 @@ function udBulbPal(c){if(UD_BULB_PAL[c])return UD_BULB_PAL[c];const n=parseInt(c
    He is a copy of the test-room killer bot at a level HALFWAY BETWEEN NORMAL AND HARD (UML = the average of BOT_LEVELS[1] and [2]): same view range, reaction delay, memory, chance to swing, steering error and hesitation, and the SAME ATTACK as every killer (CFG.ATTACK_WINDUP_MS wind-up, inSector with ATTACK_REACH / ATTACK_ARC, ATTACK_HIT/MISS_CD_MS cooldowns, ATTACK_SLOW_MULT slow after every swing, KILLER_TURN_DPS turning, the standard slash). He walks the maze with a BFS over its cells.
    Only the damage differs: a single hit kills outright (killSurvivor, UM_HITS = 1) - out of the round, not just out of the realm.
    state sync: WO_KINDS 'um' (woList case 'um', applyWo, woEmpty, itemsInit resets UM); position = snapshot extra id UM_ID; client drawing: drawUDMonster (+ red eyes in drawUDGlow), sprite vecnaBmp. */
-const UM_ID = 9001, UM_WAKE_MS = 3500, UM_HITS = 1, UM_SWING_DELAY_MS = 500;   // UM_SWING_DELAY_MS: Vecna stands still for this long (0.5 s) once he decides to swing, THEN the normal wind-up + swing starts
+const UM_ID = 9001, UM_WAKE_MS = 3500, UM_HITS = 1, UM_SWING_DELAY_MS = 100;   // UM_SWING_DELAY_MS: Vecna stands still for this long (0.1 s) once he decides to swing, THEN the normal wind-up + swing starts
 const UML = (() => { const a = BOT_LEVELS[1], b = BOT_LEVELS[2], o = {}; for (const k in a) if (typeof a[k] === 'number') o[k] = (a[k] + b[k]) / 2; return o; })();   // Normal <-> Hard midpoint: ksight 310, kreact 160 ms, kmem 3250 ms, atkOk .75, err .21, pause .09
 function umEmpty() { return { act: false, x: 0, y: 0, ix: 0, iy: 0, face: 0, faceT: 0, dir: 1, slowUntil: 0, spawnAt: 0, wind: 0, pre: 0, swAt: 0, cd: 0, tid: -1, hadT: false, acq: 0, last: null, goal: null, gEnd: 0, nextT: 0, hn: 0, hnT: 0, hnAt: 0, stillUntil: 0, nudge: 0, nx: 0, ny: 0, sx: 0, sy: 0, sT: 0, imm: {}, hits: {} }; }
 let UM = umEmpty();

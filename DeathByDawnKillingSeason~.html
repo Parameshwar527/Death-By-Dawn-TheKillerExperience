@@ -1615,7 +1615,7 @@ function addMod(p, id, mult, ms, now, ramp) { p.mods = p.mods.filter(m => m.id !
 function dropMod(p, id) { p.mods = p.mods.filter(m => m.id !== id); }
 function speedOf(p, now) {   // world units / second for this player's role + state
   let base;
-  if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= CFG.SOLO_SPEED_MULT; if (p.carry != null && (EG.final || EG.solo)) base *= CFG.CARRY_BOOST_MULT; if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +5%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
+  if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= CFG.SOLO_SPEED_MULT; if (p.carry != null && (EG.final || EG.solo)) base *= CFG.CARRY_BOOST_MULT; if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +12%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
   else switch (p.st) { case 'downed': base = CFG.CRAWL_SPEED; break; case 'carried': case 'hooked': case 'dead': return 0; default: base = CFG.SURVIVOR_SPEED; }
   p.mods = p.mods.filter(m => m.until > now); let mult = p.role === 'killer' && isK2(p.id) ? k2Spd() : 1; for (const m of p.mods) mult *= m.ramp ? m.from + (1 - m.from) * Math.max(0, Math.min(1, (now - m.t0) / m.ms)) : m.mult;
   return base * mult;
@@ -1847,12 +1847,12 @@ function genFix(i) {
   if (GH.fixed === 1) { try { genBonusDrops(performance.now(), i); } catch (e) { console.warn('[drops]', e); } }   // the 1st generator: two free items next to it
   if (GH.done) egStart();   // 2nd generator: the endgame begins
 }
-function genKick(i, now) {   // killer_2 (Demogorgon): +0.5 s of disable time per scent he has collected - a scent buff like his speed and vision, lost together with them when he sends someone
+function genKick(i, now) {   // killer_2 (Demogorgon): +0.25 s of disable time per scent he has collected - a scent buff like his speed and vision, lost together with them when he sends someone
   const g = GH.g[i]; if (!g || g.st === 2) return;
-  g.prog *= CFG.GEN_KICK_KEEP; g.dis = now + CFG.GEN_DISABLE_MS + (k2Player() ? (K2.n | 0) * 500 : 0); g.kcd = now + CFG.GEN_KICK_CD_MS; genRelease(g);
+  g.prog *= CFG.GEN_KICK_KEEP; g.dis = now + CFG.GEN_DISABLE_MS + (k2Player() ? (K2.n | 0) * 250 : 0); g.kcd = now + CFG.GEN_KICK_CD_MS; genRelease(g);
   k5Ring(2, i, MAP.gens[i][0], MAP.gens[i][1], now);   // killer_5: a circle of thorns around the kicked generator
 }
-function k2SendKick(p, now) {   // killer_2: every send (a survivor hung = sent to the Upside Down) kicks the open, working generator with the MOST progress (the normal kick: -20% progress, disabled 8 s + 0.5 s per scent, 20 s kick cooldown). The kick cooldown does not stop it.
+function k2SendKick(p, now) {   // killer_2: every send (a survivor hung = sent to the Upside Down) kicks the open, working generator with the MOST progress (the normal kick: -20% progress, disabled 8 s + 0.25 s per scent, 20 s kick cooldown). The kick cooldown does not stop it.
   let bi = -1, bp = 0; GH.g.forEach((g, i) => { if (g.st === 1 && g.prog > bp && !(g.dis > now)) { bp = g.prog; bi = i; } });
   if (bi < 0) return; genKick(bi, now); msgTo(p, 'Generator kicked');
 }
@@ -3500,7 +3500,7 @@ function k6Ev(m, now) {
    - Independent of the toggle: when a survivor is HOOKED a circle of thorns erupts around that hook (it stays until the hook is free again, at most K5_HOOK_RING_MS = 15 s), and
      when a generator is KICKED a circle erupts around it (it lasts K5_GEN_RING_MS = 15 s). Radius = K5_RING_R.
    - SPEED: the moment TRAIL is switched on he walks K5_SLOW (70%) of his speed; the slow fades linearly back to normal over K5_SLOW_DECAY_MS (3 s) while the trail stays on (speedOf, K5.actAt).
-     With TRAIL OFF, standing in his own trail gives him K5_TRAIL_BOOST (+5%) (K5.onTrail, set in k5Step).
+     With TRAIL OFF, standing in his own trail gives him K5_TRAIL_BOOST (+12%) (K5.onTrail, set in k5Step).
    - SURVIVORS ON THORNS (circle, his trail, a shockwave's trail or ANOTHER survivor's exit trail): slowed K5_TSLOW (20%), and generator repair + unhook run at K5_WORK (70%) speed (k5Slow, read by genStep / the unhook loops).
    - CONDEMN BAR (0..100, k5Cond). It FILLS from: a shockwave hit (+K5_SHOCK_FILL, once per throw), standing on thorns (K5_FILL per s; on a survivor's exit trail, own included, only K5_EXIT_FILL = 30% of that) and staying within K5_SPREAD_R of condemned survivors (K5_NEAR per s each, up to K5_NEAR_MAX of them).
      With nothing filling it, it drains K5_DECAY per s (3 / 1.3: 30% slower than the old 3): the way to get clean is to stay away from thorns and from other condemned survivors.
@@ -3509,7 +3509,7 @@ function k6Ev(m, now) {
      FULL BAR: the survivor gets a hit sound + screen shake ('k5f' event), the killer gets a ping on them for K5_PING_MS (K5.ping -> drawK5Pings), and the bar drops back to K5_COND. It also counts as a hit from the killer (K5_FULL_HIT = true: injured, then downed); set it to false for feedback + ping only.
    - CHARGE: burning K5_CHARGE (15) torment within ONE toggle makes him glow red (visible through the darkness). He stays charged until he fires (toggling off does not lose it).
      While charged his ATTACK button (it reads THORNS) throws a red shockwave of thorns instead of a swing: it flies straight along the way he faces (S.face) at K5_SHOCK_SPD until a wall
-     or K5_SHOCK_RANGE, leaving thorns that wither after 3 s. HITTING A SURFACE it bounces: 3 shockwaves fan out from the impact (mirrored direction +- K5_SPLIT_FAN, each flies until a wall or K5_SPLIT_RANGE, no further splitting). Firing also burns K5_FIRE_COST (20) of the torment bar. It then needs another K5_CHARGE burned (counted from 0 again) and the normal miss cooldown applies. A survivor it touches gains K5_SHOCK_FILL (20) % condemn bar (the three bounced shockwaves share the hit of their throw). While charged, the killer sees a preview of the main flight only (k5Aim).
+     or K5_SHOCK_RANGE, leaving thorns that wither after 3 s. HITTING A SURFACE it bounces: 3 shockwaves fan out from the impact (mirrored direction +- K5_SPLIT_FAN, each flies until a wall or K5_SPLIT_RANGE, no further splitting). Firing also burns K5_FIRE_COST (20) of the torment bar. It then needs another K5_CHARGE burned (counted from 0 again) and the normal miss cooldown applies. A survivor it touches gains K5_SHOCK_FILL (50) % condemn bar (the three bounced shockwaves share the hit of their throw). While charged, the killer sees a preview of the main flight only (k5Aim).
    - The host keeps the real lists (K5.pts = thorn patches, K5.rings = circles) so the later survivor effects can read them.
 
    WHERE EVERYTHING IS (search for the names)
@@ -3527,7 +3527,7 @@ const K5_CD = 2000, K5_MIN = 20, K5_DRAIN = 6, K5_REGEN = 3;   // toggle cooldow
 const K5_TRAIL_MS = 20000, K5_STEP = 26, K5_W = 110, K5_SEND_MS = 150;   // lifetime of a thorn patch / distance between patches / trail width / patches are sent in batches this often
 const K5_BASE = .9;   // killer_5's base speed (10% slower than the other killers)
 const K5_SLOW = .7, K5_CHARGE = 15;   // speed multiplier at the instant TRAIL is switched on (30% slower; it decays back to 1 over K5_SLOW_DECAY_MS) / torment burned in ONE toggle to charge the shockwave
-const K5_SLOW_DECAY_MS = 3000, K5_TRAIL_BOOST = 1.05;   // the TRAIL slow fades out linearly over this long / speed multiplier while TRAIL is OFF and he stands in his own trail
+const K5_SLOW_DECAY_MS = 3000, K5_TRAIL_BOOST = 1.12;   // the TRAIL slow fades out linearly over this long / speed multiplier while TRAIL is OFF and he stands in his own trail
 const K5_TSLOW = .8, K5_WORK = .7, K5_FILL = 10, K5_DECAY = 3 / 1.3;   // survivors on thorns: speed (20% slower) / generator repair + unhook speed (30% slower) / condemn bar fill per second on thorns (full in 10 s) / bar drain per second when nothing fills it
 const K5_SHOCK_SPD = 560, K5_SHOCK_RANGE = 760, K5_SHOCK_R = 13, K5_SHOCK_W = 75;   // shockwave: speed / max distance / wall check radius / width of the thorn front (all world units, speed per second)
 const K5_SPLIT_RANGE = 420, K5_SPLIT_FAN = .5;   // when the shockwave hits a surface it bounces into 3 shockwaves: how far each flies at most / angle between them (rad)
@@ -3535,7 +3535,7 @@ const K5_CW = K5_W * .7;   // a condemned survivor's trail is 30% narrower than 
 const K5_EXIT_FILL = .3;   // the thorns a survivor lays behind them after stepping out of thorns (exit trail, 'sm' patches) fill the condemn bar at only 30% of K5_FILL (70% less); circles, his trail and shockwave trails are unchanged
 const K5_FIRE_COST = 20;   // firing the thorns shockwave burns this much of the torment bar (% of the full 100 bar; whatever is left if there is less)
 const K5_LINGER = .6;   // a thorn patch ages 60% slower while at least one survivor stands on it
-const K5_COND = 40, K5_UNCOND = 35, K5_SPREAD_R = 140, K5_NEAR = 10, K5_NEAR_MAX = 2, K5_SHOCK_FILL = 20;   // bar % where 'Condemned' starts (halo + glow + its radius fills others) / it ends again below this / radius around a condemned survivor / fill per second from EACH condemned survivor that close (at most K5_NEAR_MAX count) / bar a shockwave hit adds
+const K5_COND = 40, K5_UNCOND = 35, K5_SPREAD_R = 140, K5_NEAR = 10, K5_NEAR_MAX = 2, K5_SHOCK_FILL = 50;   // bar % where 'Condemned' starts (halo + glow + its radius fills others) / it ends again below this / radius around a condemned survivor / fill per second from EACH condemned survivor that close (at most K5_NEAR_MAX count) / bar a shockwave hit adds
 const K5_EXIT_S = 4, K5_CTRAIL_MS = 4000, K5_PING_MS = 3000, K5_FULL_HIT = true;   // seconds a survivor keeps laying thorns after walking OUT of thorns / lifetime of one of those patches / how long a full bar pings the survivor to the killer / true = a full bar is also a hit from the killer (healthy -> injured -> downed), false = feedback + ping only
 const K5_GEN_RING_MS = 15000, K5_HOOK_RING_MS = 15000;   // a kicked generator's / a hooked survivor's thorn circle lasts 15 s at most (it still ends early if the generator is finished / the hook is free again)
 
@@ -4708,7 +4708,7 @@ const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite
   [5, [
     ['Passive', 'Thorns', 'Thorns burst out for 15 s around every hook with a survivor on it and around every generator he kicks. Survivors on thorns are slowed and repair and unhook slower. Thorns, shockwave hits and staying near condemned survivors all fill the condemn bar. At 40% a survivor is condemned: they glow, and their circle fills the bar of anyone close. A survivor who walks out of thorns leaves a thorn trail for 4 s that fills their own bar. Stay away from thorns and condemned survivors to get clean. A full bar pings them to him.'],
     ['Ability', 'Trail', 'Switch a thorn trail on or off behind him. It drains his torment while he moves and slows him at first, then torment refills while it is off.'],
-    ['Ability', 'Thorns shockwave', 'After burning enough torment he glows red and his attack becomes a shockwave of thorns, with a path preview of its main flight while it is charged. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as his own the whole way. Survivors it touches get 20% condemn bar.']]],
+    ['Ability', 'Thorns shockwave', 'After burning enough torment he glows red and his attack becomes a shockwave of thorns, with a path preview of its main flight while it is charged. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as his own the whole way. Survivors it touches get 50% condemn bar.']]],
   [6, [
     ['Ability', 'Transform', 'Copies a random survivor, name and look. He leaves behind a pile of white cloth, the only clue. While disguised he moves like a survivor, shows no killer signs and can stay like that as long as he wants.'],
     ['Ability', 'Scream', 'Attacking while disguised makes him scream, stunning nearby survivors briefly as he changes back.'],

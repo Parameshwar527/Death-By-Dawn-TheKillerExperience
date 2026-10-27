@@ -662,7 +662,7 @@ const CFG = {
  
   FB_ARM_MS: 700, FB_R: 520, FB_MIN_MS: 1200, FB_MAX_MS: 3500, FB_KILLER_HALF: 100,   // flashbang: arm time / reach / blind time range / half-angle the killer must be facing it within (deg)
   DECOY_MS: 5250, DECOY_MIN_D: 50, DECOY_MAX_D: 140,   // clone lifetime (was 7000, before that 5000) / how far from the activator they appear (was 110..300)
-  SNAKE_MULT: 1.7, SNAKE_MS: 3900, ITEM_CHARGES: { snakeoil: 2, teleport: 3 }, FB_AB_MS: 7000, PH_BLIND_MS: 700, PH_AB_MS: 3000,   // Snake Oil (both sides): x1.7 speed decaying linearly to x1.0 over SNAKE_MS
+  SNAKE_MULT: 1.15, SNAKE_MS: 3900, ITEM_CHARGES: { snakeoil: 2, teleport: 3 }, FB_AB_MS: 7000, PH_BLIND_MS: 700, PH_AB_MS: 3000,   // Snake Oil (both sides): x1.15 (+15%) speed decaying linearly to x1.0 over SNAKE_MS
   SNAKE_REPAIR_MULT: 2, SNAKE_UNHOOK_MULT: 2,   // Snake Oil (survivor): while it lasts the user's generator repair contribution and unhook (rescue) speed are x2
   HAT_MS: 8000, HAT_WORK_MULT: 2,   // Magician's Hat (survivors): invisible to the killer and see-through to teammates for HAT_MS; the time drains HAT_WORK_MULT x faster while the wearer repairs a generator or unhooks someone
   SNAKE_K_VIS: 1.8,   // Snake Oil (killer): + 'heightened senses' for SNAKE_MS (flashlight + ambient vision x1.8, easing out over the last second)
@@ -2995,7 +2995,7 @@ function abilityPress() { if (isK0(S.me) && S.wo.k0) { if (S.wo.k0.held) k0PickO
        WAIL (default)      +K1_WAIL_FEAR (40) fear to every survivor within K1_WAIL_R, and 2 CLONES of her appear next to her for K1_CLONE_MS.
                            ONLY SHE wails (the clones make no sound / ring / pulse). Clones only fill the meter passively at 30% while they live, and
                            they also give survivors the killer's red eyes and the terror heartbeat/vignette. Clones HUNT the nearest survivor (healthy/injured), look like her
-                           (no flashlight beam is the only tell). SHE sees them only for the first K1_CLONE_SEE (2 s), then they are hidden from her. Cooldown K1_WAIL_CD (25 s).
+                           (no flashlight beam is the only tell). SHE sees them only for the first K1_CLONE_SEE (2 s), then they are hidden from her. Cooldown K1_WAIL_CD (now 5 s, counted from when she leaves invisibility).
        ILLUSION         when she stands within K1_HOOK_R of a FREE hook (nobody hanging, no illusion there already). A fake hooked
                            survivor appears on that hook. Survivors get the normal RESCUE button on it. When their unhook progress
                            reaches 40% (K1_ILL_POP) of a real unhook, OR after K1_ILL_MS, it vanishes and gives K1_POP_FEAR (40) fear to
@@ -3030,8 +3030,9 @@ function abilityPress() { if (isK0(S.me) && S.wo.k0) { if (S.wo.k0.held) k0PickO
    ################################################################################################ */
 const K1_FEAR_R0 = 600, K1_FEAR_R = K1_FEAR_R0 * 1.2, K1_FEAR_RATE = 10,   // K1_FEAR_R0 = the old radius: the falloff per unit of distance is still computed from it, so fear is exactly as strong at every distance as before and just keeps going (down to 28%) out to the new, 20% longer radius
     K1_FEAR_FAR = .4, K1_CLONE_EFF = .3, K1_DRAIN_DELAY = 2000, K1_DRAIN_RATE = 5;   // passive: radius / fear per second at point blank (10/s; falls linearly to 40% = 4/s at the edge) / strength at the edge of the radius (x) / clone strength / time away before draining (ms, 2 s) / drain per second
-const K1_WAIL_R = 210, K1_WAIL_FEAR = 5, K1_WAIL_CD = 25000, K1_CLONE_MS = 9000, K1_CLONE_SPD = CFG.KILLER_SPEED * .75, K1_CLONES = 1;   // Wail: radius / fear / cooldown / clone lifetime / clone walking speed / how many clones
-const K1_INV_MS = 18000, K1_REVEAL_CD = 1500;   // War Cry: how long she stays invisible at most (ms; she is revealed by her ATTACK, or silently when this runs out) / attack cooldown after the reveal (ms)
+const K1_WAIL_R = 210, K1_WAIL_FEAR = 5, K1_WAIL_CD = 5000, K1_CLONE_MS = 9000, K1_CLONE_SPD = CFG.KILLER_SPEED * .75, K1_CLONES = 1;   // Wail: radius / fear / cooldown / clone lifetime / clone walking speed / how many clones
+const K1_INV_MS = 15000, K1_REVEAL_CD = 2000, K1_REVEAL_SPD = 1.2;   // WAR CRY rework: invisible up to 15 s (ATTACK = cry + clone and ends it; or it just runs out). Right after she leaves invisibility: no attacking for 2 s (K1_REVEAL_CD) but +20% speed (K1_REVEAL_SPD) for that time, and the ability button has a K1_WAIL_CD (5 s) cooldown, counted from the moment she leaves invisibility.
+//   // War Cry: how long she stays invisible at most (ms; she is revealed by her ATTACK, or silently when this runs out) / attack cooldown after the reveal (ms)
 const K1_CLONE_SEE = 2000;   // she can only see her own clones for this long after they appear (ms); after that they are hidden from her
 const K1_HOOK_R = 130, K1_ILL_MS = 22000, K1_ILL_CD = 50000, K1_ILL_MAX = 2, K1_ILL_POP = .4, K1_POP_FEAR = 40, K1_POP_R = 210;   // Illusion: reach to a hook / life / cooldown / max at once / fraction of a real unhook that pops it / fear when it vanishes / radius of that fear
 const K1_HALLU_FREQ = 1.5;   // fear hallucinations (fake red eyes, fake heartbeat, fake killer sprite) happen this much more often at every level: every gap between them is divided by this (1.5 = 50% more frequent)
@@ -3055,12 +3056,12 @@ function k1CloneHead(c, B, now) {   // new wander heading; clones that strayed f
 }
 function k1Invis(B) { return !!B && K1.inv > performance.now(); }
 function k1Unveil(B, silent) {   // invisibility ends (the reveal attack, a pickup, or the timer)
-  if (!K1.inv) return; K1.inv = 0; if (B) sxSend(B.id, 'k1inv', 0);
+  if (!K1.inv) return; K1.inv = 0; K1.wailAt = performance.now() + K1_WAIL_CD; if (B) sxSend(B.id, 'k1inv', 0); woSend('k1');
 }
 function k1Wail(B, now) {   // WAR CRY (ability button): she turns invisible. Her next ATTACK is the reveal (k1Reveal)
   if (K1.inv > now) { msgTo(B, 'Invisible: press ATTACK to reveal'); return; }
   if (now < K1.wailAt) { msgTo(B, 'War Cry ready in ' + Math.ceil((K1.wailAt - now) / 1000) + 's'); return; }
-  K1.wailAt = now + K1_WAIL_CD; K1.inv = now + K1_INV_MS; sxSend(B.id, 'k1inv', K1_INV_MS); evSend({ k: 'puff', x: Math.round(B.x), y: Math.round(B.y), ti: 2 }); woSend('k1');
+  K1.inv = now + K1_INV_MS; K1.wailAt = K1.inv + K1_WAIL_CD; sxSend(B.id, 'k1inv', K1_INV_MS); evSend({ k: 'puff', x: Math.round(B.x), y: Math.round(B.y), ti: 2, c: '#2fe0c8' }); woSend('k1');   // teal puff; the real 5 s cooldown starts when she leaves invisibility (k1Unveil)
 }
 function k1Reveal(B, now) {   // the ATTACK while invisible: NOT a swing, hits nobody. Plays the war cry, frightens everyone nearby, sends a clone after the nearest survivor
   if (B.carry != null || B.wind || now < B.cd) return;
@@ -3074,7 +3075,7 @@ function k1Reveal(B, now) {   // the ATTACK while invisible: NOT a swing, hits n
     if (near) { const a = Math.atan2(near.y - c.y, near.x - c.x); c.vx = Math.cos(a) * K1_CLONE_SPD; c.vy = Math.sin(a) * K1_CLONE_SPD; }
     K1.clones.push(c);
   }
-  B.cd = now + K1_REVEAL_CD; notifyCd(B, K1_REVEAL_CD);   // no attack for 1.5 s after the reveal
+  B.cd = now + K1_REVEAL_CD; notifyCd(B, K1_REVEAL_CD); addMod(B, 'k1r', K1_REVEAL_SPD, K1_REVEAL_CD, now);   // no attack for 2 s after the reveal, but +20% speed for those 2 s
   evSend({ k: 'k1w', x: Math.round(B.x), y: Math.round(B.y), r: K1_WAIL_R });   // the war cry animation + ring + sound (only SHE cries: the clone makes no sound)
   woSend('k1');
 }
@@ -4510,7 +4511,7 @@ function useItem(p, now) {
     if (!mk.length) { ok = false; msgTo(p, 'No room for phantoms'); }
     else { DCY.push(...mk); woSend('dc'); evSend({ k: 'puff', x: p.x, y: p.y, ti: 2 }); }
   }
-  else if (id === 'snakeoil') {   // both sides: x1.7 speed decaying to normal over 6 s. Survivor: repair + unhook x2 for the duration. Killer: heightened senses (big vision boost, client-side, see snakeVis)
+  else if (id === 'snakeoil') {   // both sides: +15% speed (SNAKE_MULT) decaying to normal over SNAKE_MS. Survivor: repair + unhook x2 for the duration. Killer: heightened senses (big vision boost, client-side, see snakeVis)
     addMod(p, 'adr', CFG.SNAKE_MULT, CFG.SNAKE_MS, now, true); p.snakeEnd = now + CFG.SNAKE_MS; sxSend(p.id, 'snake', CFG.SNAKE_MS);
     evSend({ k: 'plus', x: p.x, y: p.y, ti: ITEMS.findIndex(x => x.id === id), n: 6 });
   }
@@ -5650,7 +5651,18 @@ function sfxReveal(role) {
   else { sfxNoise(2.7, .28, 'bandpass', 500, 900, 0, 1.5); sfxTrem(1480, 2.8, .07, 5, .1); sfxTrem(2093, 2.8, .05, 7, .3);
     [1.2, 2.1].forEach(d => { sfxTone(60, 40, .28, .55, 'sine', d); sfxTone(55, 38, .26, .4, 'sine', d + .15); }); }   // wind, a trembling tritone, a heartbeat
 }
+const WARM = { q: [], t: 0, key: -1 };
+function warmKiller() {   // build the killer's sprites a few at a time BEFORE the hunt: they are generated on first use, and doing that mid-chase freezes the screen the moment he walks into view
+  const kid = killerIdRaw(); if (kid < 0) return; const ki = kIdx(kid); if (WARM.key === ki) return; WARM.key = ki; WARM.q = [];
+  for (const mon of [false, true]) for (const hv of ki === 4 ? [0, 1, 2] : [0]) {
+    for (const lau of [false, true]) { for (let f = 0; f < 2; f++) WARM.q.push(['idle', f, lau, ki, mon, hv]); for (let f = 0; f < 4; f++) WARM.q.push(['run', f, lau, ki, mon, hv]); }
+    for (let f = 0; f < 2; f++) WARM.q.push(['swing', f, false, ki, mon, hv]); }
+  if (ki === 1) for (const t of ['cry', 'hook']) for (let f = 0; f < 4; f++) WARM.q.push([t, f, false, 1, false, 0]);
+  if (ki === 5) { for (let v = 0; v < 3; v++) WARM.q.push(['k5p', v]); for (let v = 0; v < 6; v++) WARM.q.push(['k5t', v]); }   // the Harbinger's thorn trail sprites
+  clearTimeout(WARM.t); const run = () => { const a = WARM.q.shift(); if (!a) return; try { if (a[0] === 'k5p') k5Pool(a[1]); else if (a[0] === 'k5t') k5Thorn(a[1]); else killerBmp(...a); } catch (e) {} WARM.t = setTimeout(run, 40); }; run();
+}
 function phaseSound(ph) {
+  if (ph === 'headstart') { try { warmKiller(); } catch (e) {} }
   if (ph === 'hunt') { metalHit(.9, 78, 3.5); sfxTone(60, 38, 1.4, .8, 'sine'); sfxNoise(.4, .5, 'lowpass', 600, 120); }   // the hunt begins: a deep gong
   else if (ph === 'result') { metalHit(.8, 65, 3.2); sfxTone(110, 55, 1.8, .4, 'triangle', .25); }
 }
@@ -7617,7 +7629,7 @@ function drawDead() {}   // dead players are not drawn in the world
 const DRAW_BY_STATE = { healthy: drawHealthy, injured: drawInjured, downed: drawDowned, carried: drawCarried, hooked: drawHooked, dead: drawDead };
 function drawPlayer(e, state) {
   if (S.wo.k6 && k6Draw(e, state)) return;   // killer_6: disguise + CHAOS
-  if (e.p.role === 'killer') { if (k3Invis(e.p.id)) { if (pickView().id !== e.p.id) return; ctx.save(); ctx.globalAlpha = .4; drawKiller(e); ctx.restore(); return; } return drawKiller(e); }   // invisible to everyone but herself (she sees a faded ghost)
+  if (e.p.role === 'killer') { if (k3Invis(e.p.id)) { if (pickView().id !== e.p.id) return; let ga = .4; const fx = S.fx2[e.p.id], lf = fx && fx.k1inv > performance.now() ? fx.k1inv - performance.now() : 1e9; if (lf < 3000) ga = Math.floor(lf / (lf > 1500 ? 250 : 125)) % 2 ? .1 : .8; ctx.save(); ctx.globalAlpha = ga; drawKiller(e); ctx.restore(); return; } /* War Cry: in the last 3 s her own ghost blinks (slow, then faster for the last 1.5 s) so she knows it is about to end */ return drawKiller(e); }   // invisible to everyone but herself (she sees a faded ghost)
   (DRAW_BY_STATE[state] || drawHealthy)(e);
 }
 function entityOf(p, q, vId, now) {   // builds the draw entity from roster + snapshot + status record
@@ -8409,7 +8421,7 @@ function onEv(m) {
     case 'k4t': { const kid4 = killerIdRaw(); if (kid4 >= 0) { LAUGH[kid4] = { t0: now, nb: 1 }; } } break;   // killer_4: NO cloud / teleport cue, no sound and no GROWL bubble (nb = no bubble); he just does the laugh sprite animation in the body he lands in
     case 'tp': ifx({ type: 'tp', x0: m.x0, y0: m.y0, x1: m.x1, y1: m.y1, t0: now, end: now + 600 }); sfxTp(evVol(m.x0, m.y0, 800)); break;
     case 'nm': ifx({ type: 'puff', x: m.x, y: m.y, col: '#9b3dff', t0: now, end: now + 700 }); if (m.r !== myR) { try { sfxNightmare(role ? .9 : .5); } catch (e) {} vibrate([40, 40, 80]); } break;
-    case 'puff': ifx({ type: 'puff', x: m.x, y: m.y, col, t0: now, end: now + 500 }); break;
+    case 'puff': ifx({ type: 'puff', x: m.x, y: m.y, col: m.c || col, t0: now, end: now + 500 }); break;
     case 'dsw': { const kq = interp(m.id) || [0, 0]; fxAdd({ type: 'slash', k: m.id, dir: nextDir(m.id), ang: +m.a || 0, hit: false, pending: false, t0: now, end: now + CFG.SLASH_MS }); sfxWhoosh(evVol(kq[0], kq[1])); break; }
   }
 }

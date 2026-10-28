@@ -618,7 +618,7 @@ const CFG = {
   BLOOD_PRODUCE_MS: 8400,   // injured: a drop every N units walked, max drops kept, drop lifetime
   INJURED_VIGNETTE_MULT: 1.2,          // injured survivors' terror vignette is this much stronger
   AURA_R: 46, AURA_ALPHA: 0.32,        // hooked-teammate marker radius (world units) and peak opacity
-  EG_SEE_ON_MS: 3000, EG_SEE_OFF_MS: 2000, SOLO_SEE_ON_MS: 1000, SOLO_SEE_OFF_MS: 7000, SOLO_SEE_ON_END_MS: 4500, SOLO_SEE_OFF_END_MS: 1500,   // the killer sees the survivors in pulses, counted from the moment the form starts: hidden for OFF ms, shown for ON ms, repeating. Full MONSTER FORM: 2 s hidden / 3 s shown; LAST STAND (nerfed form): starts at 7 s hidden / 1 s shown and ramps smoothly (same ramp length as the speed ramp) to SOLO_SEE_OFF_END_MS hidden / SOLO_SEE_ON_END_MS shown
+  EG_SEE_ON_MS: 3000, EG_SEE_OFF_MS: 2000, SOLO_SEE_ON_MS: 1000, SOLO_SEE_OFF_MS: 7000, SOLO_SEE_ON_END_MS: 3500, SOLO_SEE_OFF_END_MS: 1500,   /* LAST STAND sight pulses RAMP: they start at SOLO_SEE_ON/OFF_MS (1 s shown / 7 s hidden) and glide linearly to SOLO_SEE_ON/OFF_END_MS (3.5 s shown / 1.5 s hidden) over SOLO_RAMP_MS x SOLO_RAMP_STEPS (60 s) */   // the killer sees the survivors in pulses, counted from the moment the form starts: hidden for OFF ms, shown for ON ms, repeating. Full MONSTER FORM: 2 s hidden / 3 s shown; LAST STAND (nerfed form): 7 s hidden / 1 s shown
   PIN_MARGIN: 34,                      // off-screen arrow distance from the screen edge (CSS px)
   // ---- tasks (survivors) ----
   TASKS_SHOWN_EXTRA: 2, TASKS_SHOWN_MAX: 10,   // each task set shows min(survivors + EXTRA, MAX) stations and needs one fewer than that
@@ -632,7 +632,7 @@ const CFG = {
   GATE_HOLD_MS: 2000, GATE_R: 110,      // endgame: stand in the glow (GATE_R deep, as long as the gate) in front of an open gate this long to escape
   MONSTER_DELAY_MS: 10000, MONSTER_SPEED_MULT: 1.3, MONSTER_SLOW_MULT: 0.5,   // MONSTER FORM (killer status): starts MONSTER_DELAY_MS after the gates open. While active: killer speed x MONSTER_SPEED_MULT (+30%), the post-swing slow multiplier is MONSTER_SLOW_MULT (0.5 = 50% slow, instead of ATTACK_SLOW_MULT = 90% slow), any hit downs a survivor in one go, and the killer sees everyone in pulses (EG_SEE_*)
   CARRY_BOOST_MULT: 1.3,   // LAST STAND + full MONSTER FORM: extra speed multiplier (+30%) while the killer carries a survivor
-  SOLO_MS: 70000, SOLO_WARN_MS: 3000, SOLO_SPEED_MULT: 1.2, SOLO_CARRY_MULT: 1.2, SOLO_SLOW_MULT: 0.5, SOLO_RAMP_MS: 10000, SOLO_RAMP_STEPS: 6, SOLO_REROLL_MS: 10000, SOLO_GIVE_MS: 12000,   // LAST SURVIVOR sequence: one survivor left (gates still shut) => they must survive SOLO_MS; the killer gets a NERFED monster form that RAMPS UP: it starts with NO buffs and every SOLO_RAMP_MS (10 s) it moves 1/SOLO_RAMP_STEPS of the way to its full LAST STAND values (SOLO_SPEED_MULT = +20% speed, SOLO_CARRY_MULT = +20% carry speed, SOLO_SLOW_MULT = 0.5 swing slow multiplier), so it is at full strength from SOLO_RAMP_MS x SOLO_RAMP_STEPS (60 s) on; no sight pulses, no one-hit down until the gates open (then the full monster form takes over); the sequence is called LAST STAND: a player holding an item has it re-rolled to a different random one every SOLO_REROLL_MS, an empty-handed player gets a random one after SOLO_GIVE_MS
+  SOLO_MS: 70000, SOLO_WARN_MS: 3000, SOLO_SPEED_MULT: 1.2, SOLO_CARRY_BOOST_MULT: 1.2, SOLO_SLOW_MULT: 0.5, SOLO_RAMP_MS: 10000, SOLO_RAMP_STEPS: 6, SOLO_REROLL_MS: 10000, SOLO_GIVE_MS: 12000,   // LAST SURVIVOR sequence: one survivor left (gates still shut) => they must survive SOLO_MS; the killer gets a NERFED monster form that RAMPS UP: it starts with NO buffs and every SOLO_RAMP_MS (10 s) it moves 1/SOLO_RAMP_STEPS of the way to its full LAST STAND values (SOLO_SPEED_MULT = +30% speed, CARRY_BOOST_MULT carry speed, SOLO_SLOW_MULT = 0.5 swing slow multiplier), so it is at full strength from SOLO_RAMP_MS x SOLO_RAMP_STEPS (60 s) on; no sight pulses, no one-hit down until the gates open (then the full monster form takes over); the sequence is called LAST STAND: a player holding an item has it re-rolled to a different random one every SOLO_REROLL_MS, an empty-handed player gets a random one after SOLO_GIVE_MS
   GEN_NEEDED: 2,                       // generators that must be fixed (the rest lock and reset)
   GEN_R: 90,                           // reach for REPAIR / KICK (the host allows +ACT_SLACK on top)
   GEN_BEACON_R: 700, GEN_BEACON_FADE: 150,   // yellow beacon on OPEN generators (survivors): only within this distance of the viewed player, fading in over the last GEN_BEACON_FADE units
@@ -1655,7 +1655,7 @@ function soloFrac(now) {   // LAST STAND ramp: 0 when the sequence starts, +1/SO
 function soloSlowMult(now) { return CFG.ATTACK_SLOW_MULT + (CFG.SOLO_SLOW_MULT - CFG.ATTACK_SLOW_MULT) * soloFrac(now); }   // swing slow multiplier: the normal one at the start, SOLO_SLOW_MULT at full strength
 function speedOf(p, now) {   // world units / second for this player's role + state
   let base;
-  if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now); if (p.carry != null && (EG.final || EG.solo)) base *= EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_MULT - 1) * soloFrac(now); if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +40%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
+  if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now); if (p.carry != null && (EG.final || EG.solo)) base *= EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_BOOST_MULT - 1) * soloFrac(now); if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +40%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
   else switch (p.st) { case 'downed': base = CFG.CRAWL_SPEED; break; case 'carried': case 'hooked': case 'dead': return 0; default: base = CFG.SURVIVOR_SPEED; }
   p.mods = p.mods.filter(m => m.until > now); let mult = p.role === 'killer' && isK2(p.id) ? k2Spd() : 1; for (const m of p.mods) mult *= m.ramp ? m.from + (1 - m.from) * Math.max(0, Math.min(1, (now - m.t0) / m.ms)) : m.mult;
   return base * mult;
@@ -2168,12 +2168,7 @@ function hostMsg(cid, m) {
   if (m.t === 'in') { if (m.n !== undefined) { if (m.n < (p.inN || 0)) return; p.inN = m.n; }   // stale (late) movement packet: ignore
     let x = +m.x, y = +m.y; if (!isFinite(x) || !isFinite(y)) x = y = 0;
     const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } p.ix = x; p.iy = y; }
-  else if (m.t === 'act') {
-    if (m.q !== undefined) {   // the same press arrives twice (fast + reliable channel): run it once; an older press of the same button that shows up after a newer one is dropped (a late "down" must never land after its \"up\")
-      const R = p.actRx || (p.actRx = { s: new Set(), last: {} }), a = String(m.a);
-      if (R.s.has(m.q) || (R.last[a] || 0) >= m.q) return;
-      R.s.add(m.q); if (R.s.size > 96) R.s.delete(R.s.values().next().value); R.last[a] = m.q; }
-    hostAct(p, String(m.a), !!m.down, m.n); }
+  else if (m.t === 'act') hostAct(p, String(m.a), !!m.down, m.n);
   else if (m.t === 'tstart') tsStart(p, m.id);
   else if (m.t === 'tdone') tsDone(p, m.id);
   else if (m.t === 'tquit') tsQuit(p, m.id);
@@ -4199,7 +4194,7 @@ function k3mStep(now) {   // host, every tick of the hunt
     const B = m.B; if (now >= B.next) { B.next = now + 110 + rnd(0, 40); try { k3mThink(m, B, now); } catch (e) { console.warn('[k3m]', e); } }
     botMove(m, B, now);
     if (now < m.stillUntil) m.ix = m.iy = 0; else if ((m.ix || m.iy) && Math.random() < m.lv.pause * dt) { m.stillUntil = now + rnd(250, 550); m.ix = m.iy = 0; }   // humans hesitate
-    if (m.ix || m.iy) { const sp = (m.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED) * (EG.final ? CFG.MONSTER_SPEED_MULT : EG.solo ? 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now) : 1) * (m.carry != null && (EG.final || EG.solo) ? (EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_MULT - 1) * soloFrac(now)) : 1) * (now < m.slowUntil ? CFG.ATTACK_SLOW_MULT : 1); moveCircle(m, m.ix * sp * dt, m.iy * sp * dt); m.faceT = Math.atan2(m.iy, m.ix); }
+    if (m.ix || m.iy) { const sp = (m.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED) * (EG.final ? CFG.MONSTER_SPEED_MULT : EG.solo ? 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now) : 1) * (m.carry != null && (EG.final || EG.solo) ? (EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_BOOST_MULT - 1) * soloFrac(now)) : 1) * (now < m.slowUntil ? CFG.ATTACK_SLOW_MULT : 1); moveCircle(m, m.ix * sp * dt, m.iy * sp * dt); m.faceT = Math.atan2(m.iy, m.ix); }
     const stp = CFG.KILLER_TURN_DPS * Math.PI / 180 * dt; m.face += Math.max(-stp, Math.min(stp, angDiff(m.faceT, m.face)));
     if (m.carry != null) { const cv = HP.get(m.carry); if (cv && cv.st === 'carried') { cv.x = m.x - Math.cos(m.face) * CFG.CARRY_OFFSET; cv.y = m.y - Math.sin(m.face) * CFG.CARRY_OFFSET; } }   // the carried survivor is glued behind the summoned killer
   }
@@ -5110,7 +5105,6 @@ function resetJoy() {
   joy.active = false; joy.id = null; joy.x = joy.y = 0; base.style.opacity = '0'; knob.style.transform = ''; hint.classList.remove('off');
 }
 function resetInput() { for (const k in keys) keys[k] = false; resetJoy(); ctxRelease(); cur = [0, 0]; }
-let actSeq = Date.now();   // every button press (act) carries a rising number q: it goes out on the fast channel AND the reliable one, the host runs it once (see hostMsg)
 let inSeq = Date.now();   // movement packets carry a rising number so an old one that arrives late can never overwrite a newer one
 function pushInput(sure) {   // sure = also send on the reliable channel (the 4 Hz safety net), so a lost "stop" packet can never leave you running
   sent = cur.slice(); const c = cur.slice(), d = k3LagDelay(performance.now()); predRec(c);   // "bad network": a survivor's steering arrives late
@@ -5130,8 +5124,7 @@ function sendAct(a, down, n) {
   if (a === 'block') a = 'barricade'; if (a === 'rbt') a = 'rbtoff';
   if (a === 'attack' && k6Me()) a = 'k6scr';   // killer_6: disguised, the attack button is SCREAM
   if (a === 'attack' && down && !k3GunOn() && !k5ShockOn() && !k4XtOpen() && !(isK1(S.me) && k1InvisFx(S.me))) startPendingSwing();   // (Deyja's follow-up dash window: the tap is a dash, not a slash)   // instant local slash for the killer; the host's 'atk' message settles hit/miss (a gun shot has no slash)
-  const go = () => { if (S.role === 'host') { const p = HP.get(S.me); if (p) hostAct(p, a, down, n); } else if (S.inRoom && !S.reconnecting) { const m = { t: 'act', a, down, n, q: ++actSeq }; T.sendFast(m); T.send(m); } }, d = k3LagDelay(performance.now());   // fast copy = no head-of-line blocking (arrives first); reliable copy = safety net if the fast one is lost
-     // "bad network": a survivor's actions arrive late
+  const go = () => { if (S.role === 'host') { const p = HP.get(S.me); if (p) hostAct(p, a, down, n); } else if (S.inRoom && !S.reconnecting) T.send({ t: 'act', a, down, n }); }, d = k3LagDelay(performance.now());   // "bad network": a survivor's actions arrive late
   if (d) setTimeout(go, d); else go();
 }
 function ctxRelease() { keyRescue = false; if (ctxHeld) { ctxHeld = false; try { $('ctx').classList.remove('hold'); } catch (e) {} sendAct(ctxHeldKind, false); } }
@@ -5368,9 +5361,8 @@ function pushSnap(d, f) { snaps.push({ t: performance.now(), d, f }); if (snaps.
    host's truth: the host's position is replayed forward by my own inputs of the last round trip (RTT measured from the input acks).
    Turn it off for comparison with ?nopredict=1 in the URL. Falls back to the old delayed view whenever the host holds me still (hooked, carried,
    trapped, repairing, stunned...) or sends me far away (teleports). The HOST's own player never uses this. */
-const PR_WAIT = .5;   // fraction of the snapshot interval taken off each round-trip sample (0 = old behaviour; raise it if your own dot still runs ahead of the host, lower it if it lags behind after a stop)
 const PREDICT_ON = !/[?&]nopredict=1(&|$)/.test(location.search);
-const PR = { use: false, ok: false, o: { x: 0, y: 0, role: 'survivor' }, hist: [], sent: new Map(), lastAck: -1, rtt: 120, lag: 120, spd: 0, spdSt: '', ls: null, lp: null, mvOn: false, mvSince: 0, vObs: 0, blocked: false };
+const PR = { use: false, ok: false, o: { x: 0, y: 0, role: 'survivor' }, hist: [], sent: new Map(), lastAck: -1, rtt: 120, spd: 0, spdSt: '', ls: null, lp: null, mvOn: false, mvSince: 0, vObs: 0, blocked: false };
 function predRec(c) { const t = performance.now(), l = PR.hist[PR.hist.length - 1]; if (l && l.x === c[0] && l.y === c[1]) return; PR.hist.push({ t, x: c[0], y: c[1] }); while (PR.hist.length > 2 && t - PR.hist[1].t > 3000) PR.hist.shift(); }
 function predSent(n) { PR.sent.set(n % 65536, performance.now()); if (PR.sent.size > 200) PR.sent.delete(PR.sent.keys().next().value); }
 function predAck(a, sv) {
@@ -5380,9 +5372,7 @@ function predAck(a, sv) {
   for (let i = 0; i < a.length; i += 2) if (a[i] === S.me) {
     const n = a[i + 1]; if (n === PR.lastAck) return; PR.lastAck = n;
     const t = PR.sent.get(n); if (t === undefined) return;
-    const raw = Math.max(15, Math.min(1000, performance.now() - t)); PR.rtt += (raw - PR.rtt) * (PR.n ? .2 : 1);   // rtt = what the corner readout shows (includes the wait for the next snapshot)
-    const r = Math.max(15, raw - PR_WAIT * NET.ema); PR.lag += (r - PR.lag) * (PR.n ? (r < PR.lag ? .3 : .08) : 1); PR.n = (PR.n || 0) + 1; return; }   // lag = how far back the host's snapshot position is replayed: the ack arrives in the NEXT snapshot after the host got the input, so on average half a snapshot interval of the sample is just waiting, not travel. Jitter spikes pull it up only slowly, so it follows the fast samples
-
+    const r = Math.max(15, Math.min(1000, performance.now() - t)); PR.rtt += (r - PR.rtt) * (PR.n ? .2 : 1); PR.n = (PR.n || 0) + 1; return; }
 }
 function predDir(t) { let x = 0, y = 0; for (let i = PR.hist.length - 1; i >= 0; i--) if (PR.hist[i].t <= t) { x = PR.hist[i].x; y = PR.hist[i].y; break; } return [x, y]; }
 function predBase(st) { return st === 'downed' ? CFG.CRAWL_SPEED : (myRole() === 'killer' ? CFG.KILLER_SPEED : CFG.SURVIVOR_SPEED); }
@@ -5405,7 +5395,7 @@ function predFrame(now, dt, vId) {
       if (!hsFresh && v < 800 && v > 25 && mag > .9) PR.spd += (v / mag - PR.spd) * .2; }
     if (hsFresh) PR.blocked = PR.hd === 1 || (PR.hs === 0 && PR.vObs > 25);   // the host is sliding me, or moving me although my own steering has no effect: follow the host
     else { PR.blocked = mag > .3 && PR.vObs < 15 && now - PR.mvSince > PR.rtt + 250; if (PR.vObs >= 25) PR.blocked = false; }   // old host: I steer but it keeps me still
-    const q = { x: sp[0], y: sp[1], role: myRole() }, t0 = last.t - PR.lag; let t = t0, e = 0;
+    const q = { x: sp[0], y: sp[1], role: myRole() }, t0 = last.t - PR.rtt; let t = t0, e = 0;
     while (t < now) { const h = Math.min(33, now - t), d = predDir(t); if (d[0] || d[1]) moveCircle(q, d[0] * PR.spd * h / 1000, d[1] * PR.spd * h / 1000); t += h; }
     PR.ex = PR.ey = 0;   // pending correction, eased in over the next frames (never applied in one jump)
     if (!PR.ok || PR.blocked) { PR.o.x = q.x; PR.o.y = q.y; PR.ok = true; }
@@ -8385,10 +8375,11 @@ function drawK0Pings(me, k, W, H, now, vRole) {   // killer_0: IR-scanner / Scar
   for (const q of J.pg) { if (now >= q.end) continue; const pl = S.players.find(x => x.id === q.id); if (((S.st[q.id] || {}).s || 'healthy') === 'dead') continue; pinAt(me, b, posOf(q.id) || [q.x, q.y], pl ? pl.color : '#ff4f57', 44, now); }
   ctx.restore();
 }
-function soloSeeShown(el) {   // LAST STAND sight pulses: el = ms since the sequence started. Each cycle is hidden for OFF ms, then shown for ON ms; OFF shrinks and ON grows smoothly from SOLO_SEE_* to SOLO_SEE_*_END over the ramp (SOLO_RAMP_MS x SOLO_RAMP_STEPS)
-  const R = CFG.SOLO_RAMP_MS * CFG.SOLO_RAMP_STEPS; let t = 0;
-  for (let i = 0; i < 200; i++) {
-    const f = Math.max(0, Math.min(1, t / R)), off = CFG.SOLO_SEE_OFF_MS + (CFG.SOLO_SEE_OFF_END_MS - CFG.SOLO_SEE_OFF_MS) * f, on = CFG.SOLO_SEE_ON_MS + (CFG.SOLO_SEE_ON_END_MS - CFG.SOLO_SEE_ON_MS) * f;
+function soloSightShown(now) {   // LAST STAND: walk the pulse cycles from the start; each cycle's hidden/shown length is set by the ramp at the moment the cycle begins
+  const el = Math.max(0, S.sightAt > 0 ? now - S.sightAt : CFG.SOLO_MS - (S.eg.soloAt - now)), full = CFG.SOLO_RAMP_MS * CFG.SOLO_RAMP_STEPS;
+  let t = 0;
+  for (let i = 0; i < 400; i++) {
+    const f = Math.min(1, t / full), off = CFG.SOLO_SEE_OFF_MS + (CFG.SOLO_SEE_OFF_END_MS - CFG.SOLO_SEE_OFF_MS) * f, on = CFG.SOLO_SEE_ON_MS + (CFG.SOLO_SEE_ON_END_MS - CFG.SOLO_SEE_ON_MS) * f;
     if (el < t + off) return false; if (el < t + off + on) return true; t += off + on;
   }
   return false;
@@ -8397,7 +8388,7 @@ function drawKillerSight(me, k, W, H, now, vRole) {
   drawK0Pings(me, k, W, H, now, vRole); drawK5Pings(me, k, W, H, now, vRole); drawK3Love(me, k, W, H, now, vRole);
   if (vRole !== 'killer' || !(S.eg.final || S.eg.solo) || S.phase !== 'hunt') return;   // monster form (full or LAST STAND)
   if (S.eg.final) { const on = CFG.EG_SEE_ON_MS, off = CFG.EG_SEE_OFF_MS; if (((S.sightAt > 0 ? now - S.sightAt : now) % (on + off)) < off) return; }   // hidden phase first, then shown
-  else if (!soloSeeShown(Math.max(0, CFG.SOLO_MS - (S.eg.soloAt - now)))) return;   // LAST STAND: pulses grow longer and come faster as the sequence goes on
+  else if (!soloSightShown(now)) return;   // LAST STAND: pulses get longer and more frequent as the ramp progresses
   const b = pinBox(me, k, W, H); ctx.save();
   for (const p of S.players) { if (p.role !== 'survivor') continue; if (((S.st[p.id] || {}).s || 'healthy') === 'dead') continue; const q = posOf(p.id); if (q) pinAt(me, b, q, p.color, 44, now); }
   ctx.restore();

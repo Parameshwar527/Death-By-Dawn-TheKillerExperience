@@ -2168,7 +2168,12 @@ function hostMsg(cid, m) {
   if (m.t === 'in') { if (m.n !== undefined) { if (m.n < (p.inN || 0)) return; p.inN = m.n; }   // stale (late) movement packet: ignore
     let x = +m.x, y = +m.y; if (!isFinite(x) || !isFinite(y)) x = y = 0;
     const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } p.ix = x; p.iy = y; }
-  else if (m.t === 'act') hostAct(p, String(m.a), !!m.down, m.n);
+  else if (m.t === 'act') {
+    if (m.q !== undefined) {   // the same press arrives twice (fast + reliable channel): run it once; an older press of the same button that shows up after a newer one is dropped (a late "down" must never land after its \"up\")
+      const R = p.actRx || (p.actRx = { s: new Set(), last: {} }), a = String(m.a);
+      if (R.s.has(m.q) || (R.last[a] || 0) >= m.q) return;
+      R.s.add(m.q); if (R.s.size > 96) R.s.delete(R.s.values().next().value); R.last[a] = m.q; }
+    hostAct(p, String(m.a), !!m.down, m.n); }
   else if (m.t === 'tstart') tsStart(p, m.id);
   else if (m.t === 'tdone') tsDone(p, m.id);
   else if (m.t === 'tquit') tsQuit(p, m.id);
@@ -5105,6 +5110,7 @@ function resetJoy() {
   joy.active = false; joy.id = null; joy.x = joy.y = 0; base.style.opacity = '0'; knob.style.transform = ''; hint.classList.remove('off');
 }
 function resetInput() { for (const k in keys) keys[k] = false; resetJoy(); ctxRelease(); cur = [0, 0]; }
+let actSeq = Date.now();   // every button press (act) carries a rising number q: it goes out on the fast channel AND the reliable one, the host runs it once (see hostMsg)
 let inSeq = Date.now();   // movement packets carry a rising number so an old one that arrives late can never overwrite a newer one
 function pushInput(sure) {   // sure = also send on the reliable channel (the 4 Hz safety net), so a lost "stop" packet can never leave you running
   sent = cur.slice(); const c = cur.slice(), d = k3LagDelay(performance.now()); predRec(c);   // "bad network": a survivor's steering arrives late
@@ -5124,7 +5130,8 @@ function sendAct(a, down, n) {
   if (a === 'block') a = 'barricade'; if (a === 'rbt') a = 'rbtoff';
   if (a === 'attack' && k6Me()) a = 'k6scr';   // killer_6: disguised, the attack button is SCREAM
   if (a === 'attack' && down && !k3GunOn() && !k5ShockOn() && !k4XtOpen() && !(isK1(S.me) && k1InvisFx(S.me))) startPendingSwing();   // (Deyja's follow-up dash window: the tap is a dash, not a slash)   // instant local slash for the killer; the host's 'atk' message settles hit/miss (a gun shot has no slash)
-  const go = () => { if (S.role === 'host') { const p = HP.get(S.me); if (p) hostAct(p, a, down, n); } else if (S.inRoom && !S.reconnecting) T.send({ t: 'act', a, down, n }); }, d = k3LagDelay(performance.now());   // "bad network": a survivor's actions arrive late
+  const go = () => { if (S.role === 'host') { const p = HP.get(S.me); if (p) hostAct(p, a, down, n); } else if (S.inRoom && !S.reconnecting) { const m = { t: 'act', a, down, n, q: ++actSeq }; T.sendFast(m); T.send(m); } }, d = k3LagDelay(performance.now());   // fast copy = no head-of-line blocking (arrives first); reliable copy = safety net if the fast one is lost
+     // "bad network": a survivor's actions arrive late
   if (d) setTimeout(go, d); else go();
 }
 function ctxRelease() { keyRescue = false; if (ctxHeld) { ctxHeld = false; try { $('ctx').classList.remove('hold'); } catch (e) {} sendAct(ctxHeldKind, false); } }
@@ -5361,8 +5368,9 @@ function pushSnap(d, f) { snaps.push({ t: performance.now(), d, f }); if (snaps.
    host's truth: the host's position is replayed forward by my own inputs of the last round trip (RTT measured from the input acks).
    Turn it off for comparison with ?nopredict=1 in the URL. Falls back to the old delayed view whenever the host holds me still (hooked, carried,
    trapped, repairing, stunned...) or sends me far away (teleports). The HOST's own player never uses this. */
+const PR_WAIT = .5;   // fraction of the snapshot interval taken off each round-trip sample (0 = old behaviour; raise it if your own dot still runs ahead of the host, lower it if it lags behind after a stop)
 const PREDICT_ON = !/[?&]nopredict=1(&|$)/.test(location.search);
-const PR = { use: false, ok: false, o: { x: 0, y: 0, role: 'survivor' }, hist: [], sent: new Map(), lastAck: -1, rtt: 120, spd: 0, spdSt: '', ls: null, lp: null, mvOn: false, mvSince: 0, vObs: 0, blocked: false };
+const PR = { use: false, ok: false, o: { x: 0, y: 0, role: 'survivor' }, hist: [], sent: new Map(), lastAck: -1, rtt: 120, lag: 120, spd: 0, spdSt: '', ls: null, lp: null, mvOn: false, mvSince: 0, vObs: 0, blocked: false };
 function predRec(c) { const t = performance.now(), l = PR.hist[PR.hist.length - 1]; if (l && l.x === c[0] && l.y === c[1]) return; PR.hist.push({ t, x: c[0], y: c[1] }); while (PR.hist.length > 2 && t - PR.hist[1].t > 3000) PR.hist.shift(); }
 function predSent(n) { PR.sent.set(n % 65536, performance.now()); if (PR.sent.size > 200) PR.sent.delete(PR.sent.keys().next().value); }
 function predAck(a, sv) {
@@ -5372,7 +5380,9 @@ function predAck(a, sv) {
   for (let i = 0; i < a.length; i += 2) if (a[i] === S.me) {
     const n = a[i + 1]; if (n === PR.lastAck) return; PR.lastAck = n;
     const t = PR.sent.get(n); if (t === undefined) return;
-    const r = Math.max(15, Math.min(1000, performance.now() - t)); PR.rtt += (r - PR.rtt) * (PR.n ? .2 : 1); PR.n = (PR.n || 0) + 1; return; }
+    const raw = Math.max(15, Math.min(1000, performance.now() - t)); PR.rtt += (raw - PR.rtt) * (PR.n ? .2 : 1);   // rtt = what the corner readout shows (includes the wait for the next snapshot)
+    const r = Math.max(15, raw - PR_WAIT * NET.ema); PR.lag += (r - PR.lag) * (PR.n ? (r < PR.lag ? .3 : .08) : 1); PR.n = (PR.n || 0) + 1; return; }   // lag = how far back the host's snapshot position is replayed: the ack arrives in the NEXT snapshot after the host got the input, so on average half a snapshot interval of the sample is just waiting, not travel. Jitter spikes pull it up only slowly, so it follows the fast samples
+
 }
 function predDir(t) { let x = 0, y = 0; for (let i = PR.hist.length - 1; i >= 0; i--) if (PR.hist[i].t <= t) { x = PR.hist[i].x; y = PR.hist[i].y; break; } return [x, y]; }
 function predBase(st) { return st === 'downed' ? CFG.CRAWL_SPEED : (myRole() === 'killer' ? CFG.KILLER_SPEED : CFG.SURVIVOR_SPEED); }
@@ -5395,7 +5405,7 @@ function predFrame(now, dt, vId) {
       if (!hsFresh && v < 800 && v > 25 && mag > .9) PR.spd += (v / mag - PR.spd) * .2; }
     if (hsFresh) PR.blocked = PR.hd === 1 || (PR.hs === 0 && PR.vObs > 25);   // the host is sliding me, or moving me although my own steering has no effect: follow the host
     else { PR.blocked = mag > .3 && PR.vObs < 15 && now - PR.mvSince > PR.rtt + 250; if (PR.vObs >= 25) PR.blocked = false; }   // old host: I steer but it keeps me still
-    const q = { x: sp[0], y: sp[1], role: myRole() }, t0 = last.t - PR.rtt; let t = t0, e = 0;
+    const q = { x: sp[0], y: sp[1], role: myRole() }, t0 = last.t - PR.lag; let t = t0, e = 0;
     while (t < now) { const h = Math.min(33, now - t), d = predDir(t); if (d[0] || d[1]) moveCircle(q, d[0] * PR.spd * h / 1000, d[1] * PR.spd * h / 1000); t += h; }
     PR.ex = PR.ey = 0;   // pending correction, eased in over the next frames (never applied in one jump)
     if (!PR.ok || PR.blocked) { PR.o.x = q.x; PR.o.y = q.y; PR.ok = true; }

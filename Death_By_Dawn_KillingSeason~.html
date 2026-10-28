@@ -618,7 +618,7 @@ const CFG = {
   BLOOD_PRODUCE_MS: 8400,   // injured: a drop every N units walked, max drops kept, drop lifetime
   INJURED_VIGNETTE_MULT: 1.2,          // injured survivors' terror vignette is this much stronger
   AURA_R: 46, AURA_ALPHA: 0.32,        // hooked-teammate marker radius (world units) and peak opacity
-  EG_SEE_ON_MS: 3000, EG_SEE_OFF_MS: 2000, SOLO_SEE_ON_MS: 1000, SOLO_SEE_OFF_MS: 7000,   // the killer sees the survivors in pulses, counted from the moment the form starts: hidden for OFF ms, shown for ON ms, repeating. Full MONSTER FORM: 2 s hidden / 3 s shown; LAST STAND (nerfed form): 7 s hidden / 1 s shown
+  EG_SEE_ON_MS: 3000, EG_SEE_OFF_MS: 2000, SOLO_SEE_ON_MS: 1000, SOLO_SEE_OFF_MS: 7000, SOLO_SEE_ON_END_MS: 4500, SOLO_SEE_OFF_END_MS: 1500,   // the killer sees the survivors in pulses, counted from the moment the form starts: hidden for OFF ms, shown for ON ms, repeating. Full MONSTER FORM: 2 s hidden / 3 s shown; LAST STAND (nerfed form): starts at 7 s hidden / 1 s shown and ramps smoothly (same ramp length as the speed ramp) to SOLO_SEE_OFF_END_MS hidden / SOLO_SEE_ON_END_MS shown
   PIN_MARGIN: 34,                      // off-screen arrow distance from the screen edge (CSS px)
   // ---- tasks (survivors) ----
   TASKS_SHOWN_EXTRA: 2, TASKS_SHOWN_MAX: 10,   // each task set shows min(survivors + EXTRA, MAX) stations and needs one fewer than that
@@ -632,7 +632,7 @@ const CFG = {
   GATE_HOLD_MS: 2000, GATE_R: 110,      // endgame: stand in the glow (GATE_R deep, as long as the gate) in front of an open gate this long to escape
   MONSTER_DELAY_MS: 10000, MONSTER_SPEED_MULT: 1.3, MONSTER_SLOW_MULT: 0.5,   // MONSTER FORM (killer status): starts MONSTER_DELAY_MS after the gates open. While active: killer speed x MONSTER_SPEED_MULT (+30%), the post-swing slow multiplier is MONSTER_SLOW_MULT (0.5 = 50% slow, instead of ATTACK_SLOW_MULT = 90% slow), any hit downs a survivor in one go, and the killer sees everyone in pulses (EG_SEE_*)
   CARRY_BOOST_MULT: 1.3,   // LAST STAND + full MONSTER FORM: extra speed multiplier (+30%) while the killer carries a survivor
-  SOLO_MS: 70000, SOLO_WARN_MS: 3000, SOLO_SPEED_MULT: 1.3, SOLO_SLOW_MULT: 0.5, SOLO_RAMP_MS: 10000, SOLO_RAMP_STEPS: 6, SOLO_REROLL_MS: 10000, SOLO_GIVE_MS: 12000,   // LAST SURVIVOR sequence: one survivor left (gates still shut) => they must survive SOLO_MS; the killer gets a NERFED monster form that RAMPS UP: it starts with NO buffs and every SOLO_RAMP_MS (10 s) it moves 1/SOLO_RAMP_STEPS of the way to its full LAST STAND values (SOLO_SPEED_MULT = +30% speed, CARRY_BOOST_MULT carry speed, SOLO_SLOW_MULT = 0.5 swing slow multiplier), so it is at full strength from SOLO_RAMP_MS x SOLO_RAMP_STEPS (60 s) on; no sight pulses, no one-hit down until the gates open (then the full monster form takes over); the sequence is called LAST STAND: a player holding an item has it re-rolled to a different random one every SOLO_REROLL_MS, an empty-handed player gets a random one after SOLO_GIVE_MS
+  SOLO_MS: 70000, SOLO_WARN_MS: 3000, SOLO_SPEED_MULT: 1.2, SOLO_CARRY_MULT: 1.2, SOLO_SLOW_MULT: 0.5, SOLO_RAMP_MS: 10000, SOLO_RAMP_STEPS: 6, SOLO_REROLL_MS: 10000, SOLO_GIVE_MS: 12000,   // LAST SURVIVOR sequence: one survivor left (gates still shut) => they must survive SOLO_MS; the killer gets a NERFED monster form that RAMPS UP: it starts with NO buffs and every SOLO_RAMP_MS (10 s) it moves 1/SOLO_RAMP_STEPS of the way to its full LAST STAND values (SOLO_SPEED_MULT = +20% speed, SOLO_CARRY_MULT = +20% carry speed, SOLO_SLOW_MULT = 0.5 swing slow multiplier), so it is at full strength from SOLO_RAMP_MS x SOLO_RAMP_STEPS (60 s) on; no sight pulses, no one-hit down until the gates open (then the full monster form takes over); the sequence is called LAST STAND: a player holding an item has it re-rolled to a different random one every SOLO_REROLL_MS, an empty-handed player gets a random one after SOLO_GIVE_MS
   GEN_NEEDED: 2,                       // generators that must be fixed (the rest lock and reset)
   GEN_R: 90,                           // reach for REPAIR / KICK (the host allows +ACT_SLACK on top)
   GEN_BEACON_R: 700, GEN_BEACON_FADE: 150,   // yellow beacon on OPEN generators (survivors): only within this distance of the viewed player, fading in over the last GEN_BEACON_FADE units
@@ -1655,7 +1655,7 @@ function soloFrac(now) {   // LAST STAND ramp: 0 when the sequence starts, +1/SO
 function soloSlowMult(now) { return CFG.ATTACK_SLOW_MULT + (CFG.SOLO_SLOW_MULT - CFG.ATTACK_SLOW_MULT) * soloFrac(now); }   // swing slow multiplier: the normal one at the start, SOLO_SLOW_MULT at full strength
 function speedOf(p, now) {   // world units / second for this player's role + state
   let base;
-  if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now); if (p.carry != null && (EG.final || EG.solo)) base *= EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.CARRY_BOOST_MULT - 1) * soloFrac(now); if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +40%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
+  if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now); if (p.carry != null && (EG.final || EG.solo)) base *= EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_MULT - 1) * soloFrac(now); if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +40%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
   else switch (p.st) { case 'downed': base = CFG.CRAWL_SPEED; break; case 'carried': case 'hooked': case 'dead': return 0; default: base = CFG.SURVIVOR_SPEED; }
   p.mods = p.mods.filter(m => m.until > now); let mult = p.role === 'killer' && isK2(p.id) ? k2Spd() : 1; for (const m of p.mods) mult *= m.ramp ? m.from + (1 - m.from) * Math.max(0, Math.min(1, (now - m.t0) / m.ms)) : m.mult;
   return base * mult;
@@ -4194,7 +4194,7 @@ function k3mStep(now) {   // host, every tick of the hunt
     const B = m.B; if (now >= B.next) { B.next = now + 110 + rnd(0, 40); try { k3mThink(m, B, now); } catch (e) { console.warn('[k3m]', e); } }
     botMove(m, B, now);
     if (now < m.stillUntil) m.ix = m.iy = 0; else if ((m.ix || m.iy) && Math.random() < m.lv.pause * dt) { m.stillUntil = now + rnd(250, 550); m.ix = m.iy = 0; }   // humans hesitate
-    if (m.ix || m.iy) { const sp = (m.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED) * (EG.final ? CFG.MONSTER_SPEED_MULT : EG.solo ? 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now) : 1) * (m.carry != null && (EG.final || EG.solo) ? (EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.CARRY_BOOST_MULT - 1) * soloFrac(now)) : 1) * (now < m.slowUntil ? CFG.ATTACK_SLOW_MULT : 1); moveCircle(m, m.ix * sp * dt, m.iy * sp * dt); m.faceT = Math.atan2(m.iy, m.ix); }
+    if (m.ix || m.iy) { const sp = (m.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED) * (EG.final ? CFG.MONSTER_SPEED_MULT : EG.solo ? 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now) : 1) * (m.carry != null && (EG.final || EG.solo) ? (EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_MULT - 1) * soloFrac(now)) : 1) * (now < m.slowUntil ? CFG.ATTACK_SLOW_MULT : 1); moveCircle(m, m.ix * sp * dt, m.iy * sp * dt); m.faceT = Math.atan2(m.iy, m.ix); }
     const stp = CFG.KILLER_TURN_DPS * Math.PI / 180 * dt; m.face += Math.max(-stp, Math.min(stp, angDiff(m.faceT, m.face)));
     if (m.carry != null) { const cv = HP.get(m.carry); if (cv && cv.st === 'carried') { cv.x = m.x - Math.cos(m.face) * CFG.CARRY_OFFSET; cv.y = m.y - Math.sin(m.face) * CFG.CARRY_OFFSET; } }   // the carried survivor is glued behind the summoned killer
   }
@@ -8375,11 +8375,19 @@ function drawK0Pings(me, k, W, H, now, vRole) {   // killer_0: IR-scanner / Scar
   for (const q of J.pg) { if (now >= q.end) continue; const pl = S.players.find(x => x.id === q.id); if (((S.st[q.id] || {}).s || 'healthy') === 'dead') continue; pinAt(me, b, posOf(q.id) || [q.x, q.y], pl ? pl.color : '#ff4f57', 44, now); }
   ctx.restore();
 }
+function soloSeeShown(el) {   // LAST STAND sight pulses: el = ms since the sequence started. Each cycle is hidden for OFF ms, then shown for ON ms; OFF shrinks and ON grows smoothly from SOLO_SEE_* to SOLO_SEE_*_END over the ramp (SOLO_RAMP_MS x SOLO_RAMP_STEPS)
+  const R = CFG.SOLO_RAMP_MS * CFG.SOLO_RAMP_STEPS; let t = 0;
+  for (let i = 0; i < 200; i++) {
+    const f = Math.max(0, Math.min(1, t / R)), off = CFG.SOLO_SEE_OFF_MS + (CFG.SOLO_SEE_OFF_END_MS - CFG.SOLO_SEE_OFF_MS) * f, on = CFG.SOLO_SEE_ON_MS + (CFG.SOLO_SEE_ON_END_MS - CFG.SOLO_SEE_ON_MS) * f;
+    if (el < t + off) return false; if (el < t + off + on) return true; t += off + on;
+  }
+  return false;
+}
 function drawKillerSight(me, k, W, H, now, vRole) {
   drawK0Pings(me, k, W, H, now, vRole); drawK5Pings(me, k, W, H, now, vRole); drawK3Love(me, k, W, H, now, vRole);
   if (vRole !== 'killer' || !(S.eg.final || S.eg.solo) || S.phase !== 'hunt') return;   // monster form (full or LAST STAND)
-  const on = S.eg.final ? CFG.EG_SEE_ON_MS : CFG.SOLO_SEE_ON_MS, off = S.eg.final ? CFG.EG_SEE_OFF_MS : CFG.SOLO_SEE_OFF_MS;
-  if (((S.sightAt > 0 ? now - S.sightAt : now) % (on + off)) < off) return;   // hidden phase first, then shown
+  if (S.eg.final) { const on = CFG.EG_SEE_ON_MS, off = CFG.EG_SEE_OFF_MS; if (((S.sightAt > 0 ? now - S.sightAt : now) % (on + off)) < off) return; }   // hidden phase first, then shown
+  else if (!soloSeeShown(Math.max(0, CFG.SOLO_MS - (S.eg.soloAt - now)))) return;   // LAST STAND: pulses grow longer and come faster as the sequence goes on
   const b = pinBox(me, k, W, H); ctx.save();
   for (const p of S.players) { if (p.role !== 'survivor') continue; if (((S.st[p.id] || {}).s || 'healthy') === 'dead') continue; const q = posOf(p.id); if (q) pinAt(me, b, q, p.color, 44, now); }
   ctx.restore();

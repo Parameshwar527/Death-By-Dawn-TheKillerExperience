@@ -5718,29 +5718,9 @@ const sfxRecover = v => { sfxNoise(.32, v * .4, 'bandpass', 900, 1800, 0, .12); 
 const sfxDeath = v => { sfxTone(90, 28, 1.6, v, 'sine'); sfxNoise(.6, v * .5, 'lowpass', 1200, 100); metalHit(v * .55, 55, 3); sfxTone(330, 110, 1.8, v * .12, 'sawtooth'); sfxTone(349, 116, 1.8, v * .12, 'sawtooth'); };   // sacrificed: sub boom, deep gong, dissonant fall
 const sfxWarn = v => { sfxTone(150, 55, .2, v * .8, 'sine'); sfxTone(150, 55, .2, v * .8, 'sine', .24); };   // two ominous knocks: the hook timer passed halfway
 const sfxEyes = v => { sfxNoise(.8, v * .35, 'bandpass', 2500, 1500, 0, .35); sfxTrem(1480, .8, v * .16, 9); sfxTrem(2093, .8, v * .12, 11); };   // whisper + a trembling tritone
-function sfxLaughTrack(v) {   // B.I.N.G.E.: a sitcom laugh track, a studio audience of ~16 people: each voice is a sawtooth pushed through two vowel (\"ah\") formant filters + a breath of noise, chopped into sharp 'ha-ha-ha' pulses (a falling sawtooth LFO = hard attack, quick decay) with a slow pitch drift and vibrato. Voices come in over ~0.2 s and drop out one by one, so it swells, holds, then trails off (~2.5 s)
-  if (!sfxOn(v)) return;
-  try {
-    const t0 = AC.currentTime + .02, D = 2.5, master = AC.createGain(), nb = noiseBuf();
-    master.gain.value = CFG.SFX_VOLUME * v * .55; master.connect(outNode());
-    for (let i = 0; i < 16; i++) {
-      const st = t0 + Math.random() * .22, en = t0 + D - .15 - Math.random() * .5, dur = en - st, f0 = 140 + Math.random() * 320, rate = 4.5 + Math.random() * 2.5;
-      const vg = AC.createGain(), am = AC.createGain(), lfo = AC.createOscillator(), lg = AC.createGain(), o = AC.createOscillator(), vib = AC.createOscillator(), vibG = AC.createGain();
-      let out = vg; if (AC.createStereoPanner) { const pn = AC.createStereoPanner(); pn.pan.value = Math.random() * 1.6 - .8; vg.connect(pn); pn.connect(master); out = null; } if (out) vg.connect(master);
-      vg.gain.setValueAtTime(.0001, st); vg.gain.linearRampToValueAtTime(.5 * (.6 + Math.random() * .4), st + .08); vg.gain.setValueAtTime(.5, st + Math.max(.1, dur * .45)); vg.gain.exponentialRampToValueAtTime(.001, en);
-      am.gain.value = .5; lfo.type = 'sawtooth'; lfo.frequency.value = rate; lg.gain.value = -.5; lfo.connect(lg); lg.connect(am.gain);   // the 'ha' pulse shape
-      o.type = 'sawtooth'; o.frequency.setValueAtTime(f0 * 1.25, st); o.frequency.linearRampToValueAtTime(f0 * .85, en);
-      vib.frequency.value = 5.5; vibG.gain.value = f0 * .02; vib.connect(vibG); vibG.connect(o.frequency);
-      [[650 + Math.random() * 250, 5], [1100 + Math.random() * 600, 5]].forEach(fq => { const b = AC.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = fq[0]; b.Q.value = fq[1]; o.connect(b); b.connect(am); });
-      const n = AC.createBufferSource(), nf = AC.createBiquadFilter(), ng = AC.createGain(); n.buffer = nb; n.loop = true; nf.type = 'bandpass'; nf.frequency.value = 2200; nf.Q.value = 1; ng.gain.value = .25; n.connect(nf); nf.connect(ng); ng.connect(am);   // the breath
-      am.connect(vg);
-      [o, vib, lfo, n].forEach(x => { x.start(st); x.stop(en + .05); });
-    }
-  } catch (e) {}
-}
 function sfxLaugh(v, ki) {
   if (ki === 6) { for (let i = 0; i < 2; i++) { const d = .28 + i * .5; sfxTone(520 - i * 70, 300 - i * 40, .42, v * .2, 'sawtooth', d); sfxTone(547 - i * 70, 310 - i * 40, .42, v * .16, 'sawtooth', d + .01); sfxNoise(.4, v * .2, 'bandpass', 2400, 900, d, .05); sfxTone(96, 52, .5, v * .22, 'sine', d); } return; }   // the Skinwalker: two thin, detuned, borrowed-sounding wails over a low rumble   // 'ha ha ha': three gruff voiced bursts, each a falling sawtooth through a noise rasp (B.I.N.G.E.: two low guttural growls instead)
-  if (ki === 2) { sfxLaughTrack(v); return; }   // B.I.N.G.E.: a sitcom studio-audience laugh track (see sfxLaughTrack)
+  if (ki === 2) { for (let i = 0; i < 3; i++) { const d = .02 + i * .19; sfxTone(880 - i * 140, 220, .12, v * .22, 'square', d); sfxTone(1320 - i * 200, 330, .1, v * .12, 'square', d + .02); sfxNoise(.14, v * .25, 'highpass', 3000, 1200, d, .04); } sfxTone(110, 60, .5, v * .3, 'sawtooth', .2); return; }   // B.I.N.G.E.: a stuttering digital laugh track
   if (ki === 4) { for (let i = 0; i < 2; i++) { const d = .3 + i * .42; sfxTone(88 - i * 10, 46, .5, v * .5, 'sawtooth', d); sfxTone(132 - i * 14, 70, .42, v * .22, 'square', d + .02); sfxNoise(.5, v * .3, 'lowpass', 900, 160, d, .06); } return; }
   if (ki === 1 || ki === 3) { const hi = ki === 1 ? 1.1 : 1; for (let i = 0; i < 3; i++) { const d = .3 + i * .22, b = (580 - i * 34) * hi; sfxTone(b, b * .72, .15, v * .24, 'triangle', d); sfxTone(b * 2, b * 1.45, .13, v * .1, 'sine', d); sfxTone(b * 1.01, b * .73, .13, v * .06, 'sawtooth', d); sfxNoise(.13, v * .15, 'bandpass', 3400, 2500, d, .015); } return; }   // Nikki and the Banshee: the same three bursts, but an octave-plus higher, soft and clear (triangle + sine instead of a buzzy saw) with a bright breath on top, like a light giggle
   for (let i = 0; i < 3; i++) { const d = .3 + i * .24; sfxTone(190 - i * 12, 120 - i * 8, .17, v * .4, 'sawtooth', d); sfxNoise(.15, v * .22, 'bandpass', 1100, 700, d, .02); }

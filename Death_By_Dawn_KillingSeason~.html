@@ -472,6 +472,10 @@ small{color:#8e99dd}
 #info .it{border-radius:0;border:1px solid #1a2152;border-left:3px solid var(--c,#888);box-shadow:2px 2px 0 #000}
 #confirm #cfS{font-size:15px;letter-spacing:.06em;line-height:1.4}
 #confirm .brow button{letter-spacing:.08em;border-radius:4px}
+/* ---------- layout hardening: HUD rows vs minimap / debug stats on narrow screens ---------- */
+@media (max-width:600px){#under{padding-right:var(--mmr,0px)}}   /* the minimap sits top-right: narrow screens reserve its width so the objective / generator chips wrap beside it instead of under it */
+@media (max-width:600px) and (orientation:portrait){#under{top:calc(var(--sat) + var(--bar) + 30px)}}   /* ...and drop below the corner fps / ping lines */
+#toast{overflow-wrap:anywhere}
 </style></head><body>
 <div id="bgw"><canvas id="bg"></canvas></div>
 <button id="musBtn" class="sec" aria-label="Toggle music">🎵</button><button id="setBtn" aria-label="Settings"></button>
@@ -1622,7 +1626,7 @@ function selFinish() {   // final characters -> roster (BEFORE the phase message
 function setPhase(ph, ms, quiet) {   // host: change phase, and tell everyone (clients count down locally from endsInMs)
   if (ph !== 'hunt') { tsReleaseAll(); genReleaseAll(); }   // any open task is interrupted, and nobody keeps repairing / kicking, when the phase changes
   S.phase = ph; S.phaseEnd = ms > 0 ? performance.now() + ms : 0;
-  if (!quiet) { T.broadcast({ t: 'phase', phase: ph, endsInMs: ms }); phaseSound(ph); }
+  if (!quiet) { T.broadcast({ t: 'phase', r: S.rid, phase: ph, endsInMs: ms }); phaseSound(ph); }
   syncRoleUI();
 }
 function fireEyes() { S.eyesStart = performance.now(); S.eyesMs = CFG.EYES_DURATION_MS; T.broadcast({ t: 'eyes', ms: S.eyesMs }); eyesSound(); }
@@ -2126,24 +2130,25 @@ function startGame() {
   audioInit();   // user tap => allowed to start audio
   if (S.role !== 'host' || S.started) return;
   const all = [...HP.values()]; if (all.length < CFG.MIN_PLAYERS) return;
+  S.rid = (S.rid | 0) + 1;   // ROUND LIFECYCLE step 1: a new round id invalidates every message / callback of the previous round
   const want = S.test ? S.testRole : (DEBUG ? DBG_ROLE : '');   // test room: the host picks killer / survivor
   let pool = all; if (want === 'survivor') pool = all.filter(p => !p.host);
   const killer = (want === 'killer' && all.find(p => p.host)) || pool[Math.random() * pool.length | 0];
   for (const p of all) { p.role = p === killer ? 'killer' : 'survivor'; p.ix = p.iy = 0; resetCombat(p); }
   HU = MAP.hooks.map(() => -1); HIST = []; clearRoundState(); tsInit(all.length - 1);
   assignSpawns(killer, all.filter(p => p !== killer));
-  S.started = true; S.map = MAP; S.players = roster(); lastT = performance.now(); snapAcc = 0; S.eyesStart = 0; snaps = [];
+  S.started = true; S.map = MAP; S.players = roster(); syncChars(); lastT = performance.now(); snapAcc = 0; S.eyesStart = 0; snaps = [];
   S.face = S.faceTarget = Math.atan2(MAP.h / 2 - killer.y, MAP.w / 2 - killer.x);   // killer starts looking toward the map centre
   setPhase('reveal', CFG.REVEAL_MS, true);
-  T.broadcast({ t: 'start', map: MAP, players: S.players, phase: S.phase, endsInMs: CFG.REVEAL_MS, sts: stList(performance.now()), ts: tsPack(), gs: gsPack(), ds: dsPack(), wo: woPack() }); enterGame(); sfxReveal(myRole());
+  T.broadcast({ t: 'start', r: S.rid, map: MAP, players: S.players, phase: S.phase, endsInMs: CFG.REVEAL_MS, sts: stList(performance.now()), ts: tsPack(), gs: gsPack(), ds: dsPack(), wo: woPack() }); enterGame(); sfxReveal(myRole());
 }
 // Back to the lobby with roles cleared; connections stay. Players who are 'away' are dropped (they can re-join with the code).
 function endRound(msg) {
   if (S.role !== 'host' || !S.started) return;
-  S.started = false; S.phase = 'lobby'; S.phaseEnd = 0; S.eyesStart = 0; snaps = [];
+  S.rid = (S.rid | 0) + 1; S.started = false; S.phase = 'lobby'; S.phaseEnd = 0; S.eyesStart = 0; snaps = [];
   for (const p of [...HP.values()]) { p.role = null; p.ix = p.iy = 0; resetCombat(p); if (!p.on && !p.bot && !p.host) HP.delete(p.id); }
   HU = []; clearRoundState(); tsInit(0);
-  S.players = roster(); T.broadcast({ t: 'lobby', players: S.players, msg: msg || '' });
+  S.players = roster(); syncChars(); T.broadcast({ t: 'lobby', r: S.rid, players: S.players, msg: msg || '' });
   enterLobby(); if (msg) toast(msg);
 }
 function onHello(cid, m) {
@@ -2155,7 +2160,7 @@ function onHello(cid, m) {
   else if (S.started) return rej('That game has already started.');
   else if (HP.size >= CFG.MAX_PLAYERS) return rej('Room is full.');
   else p = addPlayer(clean(m.name), cid, tok, false);
-  const st = { pk: pkPack(), phase: S.phase, endsInMs: phaseLeft(), eyesLeft: eyesLeft(), sts: stList(performance.now()), ts: tsPack(), gs: gsPack(), ds: dsPack(), eg: egPack(), wo: woPack() };   // lets a re-joining player keep role (in roster) + correct phase/timers
+  const st = { r: S.rid, pk: pkPack(), phase: S.phase, endsInMs: phaseLeft(), eyesLeft: eyesLeft(), sts: stList(performance.now()), ts: tsPack(), gs: gsPack(), ds: dsPack(), eg: egPack(), wo: woPack() };   // lets a re-joining player keep role (in roster) + correct phase/timers
   T.sendTo(cid, { t: 'welcome', you: p.id, code: S.code, players: roster(), ...st });
   if (S.started) T.sendTo(cid, { t: 'start', map: MAP, players: roster(), ...st });
   if (p.item) sendItem(p);
@@ -2197,6 +2202,23 @@ let DR = { list: [], next: 0, nid: 1 }, TRP = [], SLK = [], FLR = [], FBG = [], 
    'pickup' / botKillerThink, state sync WO_KINDS 'k2' (woList case 'k2', applyWo, woEmpty), client ring: drawK2World.
    ================================================================================================ */
 const isK2 = id => kIdx(id) === 2;
+/* ================= ROUND-LIFECYCLE GUARDS (killer-exclusive state must belong to the CURRENT match's killer) =================
+   Root cause of the "B.I.N.G.E.'s TVs show up in another killer's match" bug: S.chars (the finalised character of every player) was only
+   refreshed by refreshUI(), but startGame() packs the world objects (woPack) BEFORE that. A new killer whose id was still mapped to an old
+   roster character (p.ch = dfltCh(id) between rounds) was therefore read as that character, his state was shipped in the 'start' message, and
+   the clients kept it for the whole match (drawHookAt / k2Blind only tested that S.wo.k2 EXISTED).
+   Fixes: syncChars() right after the roster is rebuilt; woList() refuses killer-exclusive channels unless the owner is the real, finalised killer;
+   woSanitize() (client AND host) drops any killer-exclusive channel whose owner is not the active killer; k2On() = "the TVs / blind rules are live". */
+const WO_OWNER = { k0: 0, k1: 1, k2: 2, k3: 3, k3x: 3, k3m: 3, k4: 4, k5: 5, k6: 6 };   // world-object channel -> the KILLERS index that owns it
+function syncChars() { S.chars = {}; for (const p of S.players) S.chars[p.id] = p.ch; }   // final characters straight from the CURRENT roster
+const charsFinal = () => S.started && S.phase !== 'reveal' && S.phase !== 'select' && S.phase !== 'lobby';   // before the select phase ends nobody's killer character is final
+function woSanitize() {
+  if (!S.wo) return; const live = charsFinal(), ki = live ? kIdx(killerIdRaw()) : -1;
+  for (const k in WO_OWNER) if (S.wo[k] && (!live || WO_OWNER[k] !== ki)) { S.wo[k] = k === 'k3m' ? [] : null; DIAG.wo++; }
+}
+const DIAG = { wo: 0, stale: 0, err: [] };   // developer diagnostics (shown only with ?debug=1): sanitised channels / dropped stale messages / recent sync errors
+const diagErr = (w, e) => { try { DIAG.err.push(w + ': ' + (e && e.message || e)); if (DIAG.err.length > 4) DIAG.err.shift(); } catch (x) {} };
+const k2On = () => !!(S.wo && S.wo.k2) && charsFinal() && isK2(killerIdRaw());   // B.I.N.G.E.'s rules / visuals (TV hooks, only-the-prey-sees-him) are live ONLY while he is the active killer
 const K2_SC_MS = 1500, K2_SC_LIFE = 40000, K2_SC_MAX = 40, K2_SC_R = 34, K2_GLOW_MS = 5000;   // SCENT: the prey drops one every 1.5 s / it lasts / max at once / pick-up radius / each scent flares once per this long (killer only)
 const K2_KICK_MAX = 10;   // gen-kick disable bonus stops growing after this many scents (10 x 0.7 s = +7 s)
 const K2_BASE = .9, K2_SPD_PER = 1.04, K2_SPD_MAX = 1.35, K2_VIS_PER = 1.04, K2_VIS_MAX = 1.5;   // he starts (and restarts after every SEND) at 90% speed and vision; each scent he collects: +4% speed and +4% vision (compounding, permanent until the next SEND; capped)
@@ -2343,7 +2365,7 @@ function k4SkillResult(p, r, now) {   // the survivor's skill check came back: p
   if (p.role !== 'survivor' || (p.st !== 'healthy' && p.st !== 'injured') || !k4Player() || bi === K4.cur || K4.dis[bi] > now || K4.imm[bi] > now) return;
   const B = k4Player();
   if (r === 1) { K4.dis[bi] = now + K4_DIS_MS; K4.imm[bi] = now + K4_DIS_MS + K4_IMM_MS; K4.at = 0; woSend('k4'); msgTo(p, 'Body disabled'); if (B) msgTo(B, K4_NAME[bi] + ' was disabled'); }
-  else { K4.imm[bi] = now + K4_IMM_MS; woSend('k4'); msgTo(p, 'Missed - the body is immune for 7s'); }
+  else { K4.imm[bi] = now + K4_IMM_MS; woSend('k4'); msgTo(p, 'Missed - the body is immune for ' + (K4_IMM_MS / 1000) + 's'); }
 }
 function k4Ability(p, now) {   // TRANSFER: control moves to the next body (blue -> pink -> green -> blue); the old body stays where it is
   const B = k4Player(); if (!B || p !== B) return;
@@ -2364,6 +2386,7 @@ const WO_KINDS = ['ud', 'dr', 'tr', 'sl', 'fl', 'fb', 'sm', 'dc', 'ne', 'k0', 'k
 function itemsInit() { DR = { list: [], next: 0, nid: 1 }; TRP = []; SLK = []; FLR = []; FBG = []; SMK = []; DCY = []; ITN = 1; DCN = 0; DRN = []; NE = { k: 0, s: {} }; K0 = k0Empty(); K1 = k1Empty(); K3 = k3Empty(); K6 = k6Empty(); K5 = k5Empty(); K2 = k2Empty(); K4 = k4Empty(); UM = umEmpty(); for (const q of HP.values()) { q.rm = false; q.rmSC = 0; q.rmBlk = false; } }
 function woList(k, now) {
   const left = t => Math.max(0, Math.round(t - now));
+  { const ow = WO_OWNER[k]; if (ow !== undefined && (!charsFinal() || kIdx(killerIdRaw()) !== ow)) return []; }   // killer-exclusive channel: only the real, finalised owner may ship it
   switch (k) {
     case 'dr': return DR.list.map(d => [d.id, Math.round(d.x), Math.round(d.y), d.ti, left(d.end)]);
     case 'tr': return TRP.map(t => [t.id, Math.round(t.x), Math.round(t.y), t.role === 'killer' ? 1 : 0, Math.round(now - t.born), left(t.end)]);
@@ -2387,7 +2410,7 @@ function woList(k, now) {
   return [];
 }
 function woPack() { const now = performance.now(), o = {}; WO_KINDS.forEach(k => { o[k] = woList(k, now); }); return o; }
-function woSend(k) { const a = woList(k, performance.now()); T.broadcast({ t: 'wo', k, a }); applyWo(k, a, false); }
+function woSend(k) { const a = woList(k, performance.now()); T.broadcast({ t: 'wo', r: S.rid, k, a }); applyWo(k, a, false); }
 function evSend(m) { m.t = 'ev'; T.broadcast(m); try { onEv(m); } catch (e) {} }
 function sxSend(id, k, ms) { const m = { t: 'sx', id, k, ms }; T.broadcast(m); try { applySx(m); } catch (e) {} }
 function msgTo(p, text) { if (p.bot) return; if (p.host) toast(text); else if (p.connId) T.sendTo(p.connId, { t: 'msg', m: text }); }
@@ -4651,22 +4674,26 @@ function onHb() {
 function clientMsg(m) {
   if (!m || typeof m !== 'object') return;   // ignore malformed packets
   S.lastRx = Date.now();
+  if ((m.t === 'phase' || m.t === 'wo') && m.r !== undefined && S.rid !== undefined && m.r !== S.rid) { DIAG.stale++; return; }   // a late message of ANOTHER round must never touch this one
+  try { clientMsg2(m); } catch (e) { diagErr(m.t, e); console.warn('[net]', m.t, e); }   // one bad packet must not break the receive loop
+}
+function clientMsg2(m) {
   switch (m.t) {
     case 's': if (m.q > S.seq) { S.seq = m.q; netSample(); pushSnap(m.d, m.f); predAck(m.a, m.sv); } break;
-    case 'welcome': clearTimeout(S.hsT); S.me = m.you; S.players = m.players; S.code = m.code; S.seq = 0; snaps = [];
+    case 'welcome': clearTimeout(S.hsT); S.me = m.you; S.players = m.players; syncChars(); S.rid = m.r; S.code = m.code; S.seq = 0; snaps = [];
       S.inRoom = true; S.reconnecting = false; banner(''); busy(false); joining(false);
       applyState(m); Timers.start(() => {}, onHb);
       if (m.phase === 'lobby') { S.started = false; enterLobby(); } else if (!inGame) enterLobby(); else refreshUI(); break;
     case 'roster': S.players = m.players; refreshUI(); break;
-    case 'start': S.map = m.map; S.players = m.players; S.started = true; applyState(m); enterGame(); syncRoleUI(); if (m.phase === 'reveal') sfxReveal(myRole()); break;
-    case 'phase': S.phase = m.phase; S.phaseEnd = m.endsInMs > 0 ? performance.now() + m.endsInMs : 0; syncRoleUI(); phaseSound(m.phase); if (m.phase !== 'hunt') closeTask(''); break;
+    case 'start': S.rid = m.r; clearRoundState(); S.map = m.map; S.players = m.players; syncChars(); S.started = true; applyState(m); enterGame(); syncRoleUI(); if (m.phase === 'reveal') sfxReveal(myRole()); break;
+    case 'phase': S.phase = m.phase; S.phaseEnd = m.endsInMs > 0 ? performance.now() + m.endsInMs : 0; woSanitize(); syncRoleUI(); phaseSound(m.phase); if (m.phase !== 'hunt') closeTask(''); break;
     case 'ch': applyCh(m); break;                        // character select pick {id, c, locked}
     case 'eyes': S.eyesStart = performance.now(); S.eyesMs = +m.ms || CFG.EYES_DURATION_MS; eyesSound(); break;
     case 'st': applyStatus(m); break;                    // {t:'st', id, s, hit?, hk?, ms?, prot?, by?}
     case 'rp': applyRp(m); break;                        // rescue progress of a hooked survivor {id, p, on}
     case 'atk': onAtk(m); break;                         // killer swing result {k, a, h:[[victimId,newState]]}
     case 'cd': setCd(+m.ms || 0); break;                 // my attack cooldown (killer only)
-    case 'lobby': S.players = m.players; S.started = false; applyState({ phase: 'lobby' }); snaps = []; clearRoundState(); enterLobby(); if (m.msg) toast(m.msg); break;
+    case 'lobby': S.rid = m.r; S.players = m.players; syncChars(); S.started = false; applyState({ phase: 'lobby' }); snaps = []; clearRoundState(); enterLobby(); if (m.msg) toast(m.msg); break;
     case 'ts': applyTs(m); break;                        // task-set state {set, st[12], by[12], done, need, permits}
     case 'ds': applyDs(m, false); break;                 // door barricades {d:[status per door], a:[arming ms left], br?: index of a door that was just broken}
     case 'gs': applyGs(m, false); break;                 // generator state {fixed, g:[[status, progress, repairers, disabled ms left, kick cooldown ms left] x3]}
@@ -4676,7 +4703,7 @@ function clientMsg(m) {
     case 'gping': onGping(m); break;                     // killer only: someone started repairing generator i {i}
     case 'tgo': openTask(m); break;                      // my task request was accepted {id, type, size}
     case 'tno': closeTask(m.why || ''); break;           // my task was interrupted / released by the host
-    case 'wo': applyWo(m.k, m.a, false); break;
+    case 'wo': applyWo(m.k, m.a, false); woSanitize(); break;
     case 'itr': S.itemRrAt = performance.now() + (+m.ms || 0); break;
     case 'it': S.itemRrAt = 0; S.item = ITEMS[m.i] ? ITEMS[m.i].id : null; S.itemC = m.c | 0; if (S.item && !m.q) toast('Got ' + ITEMS[m.i].name + ' - tap the item button'); break;
     case 'sx': applySx(m); break;
@@ -4695,6 +4722,7 @@ function applyState(m) {   // phase + timers + player states from welcome/start 
   if (m.ds) applyDs(m.ds, true);
   if (m.eg) applyEg(m.eg, true);
   if (m.wo) for (const k in m.wo) applyWo(k, m.wo[k], true);
+  woSanitize();
   if (m.sts) { S.st = {}; bulkApply = true; try { m.sts.forEach(e => applyStatus(e)); } finally { bulkApply = false; } }
 }
 // Client-side status record per player id: { s, hk, hookEnd, protEnd, flashAt, rp, rpAt, rpOn } (all times = local performance.now()).
@@ -4757,7 +4785,10 @@ function applyEg(m, quiet) {   // endgame state from the host: gates open + dawn
 function hookRemain(st, now) { return st.hookEnd - (st.rpOn && st.holdAt ? st.holdAt : now); }   // ms left on the hook timer; frozen while a rescue is in progress
 function applyRp(m) { const o = S.st[m.id]; if (!o) return; const nw = performance.now(); if (m.on && !o.rpOn) o.holdAt = nw; else if (!m.on && o.rpOn && o.holdAt) { o.hookEnd += nw - o.holdAt; o.holdAt = 0; } o.rp = +m.p || 0; o.rpAt = performance.now(); o.rpOn = !!m.on; o.rr = +m.r || 1; }
 function setCd(ms) { S.cdEnd = performance.now() + ms; S.cdTot = ms; }
-function clearRoundState() { S.pick = {}; S.ts = tsEmpty(); S.gs = gcEmpty(); S.ds = dcEmpty(); S.gping = {}; S.powAt = 0; S.monAt = 0; S.pannAt = 0; S.lsAt = 0; S.sightAt = 0; S.itemRrAt = 0; S.eg = { on: false, final: false, endAt: 0, solo: false, soloAt: 0 }; S.res = null; S.gateT0 = 0; EG = egEmpty(); genHumStopAll(); closeTask(''); S.st = {}; S.spec = -1; S.sacAt = 0; S.cdEnd = S.cdTot = 0; TRAIL.clear(); TERROR.clear(); FX.length = 0; for (const k in AN) delete AN[k]; for (const k in LAUGH) delete LAUGH[k]; S.item = null; S.wo = woEmpty(); S.smokeW = []; S.smSig = ''; S.fx2 = {}; S.blindEnd = 0; IFX.length = 0; ALERTS.length = 0; ctxRelease(); try { k1Reset(); } catch (e) {} try { K3FX.length = 0; K3UI.open = false; k3UiClose(); } catch (e) {} try { k6Reset(); } catch (e) {} try { k5Reset(); } catch (e) {} }
+function clearRoundState() { S.pick = {}; S.ts = tsEmpty(); S.gs = gcEmpty(); S.ds = dcEmpty(); S.gping = {}; S.powAt = 0; S.monAt = 0; S.pannAt = 0; S.lsAt = 0; S.sightAt = 0; S.itemRrAt = 0; S.eg = { on: false, final: false, endAt: 0, solo: false, soloAt: 0 }; S.res = null; S.gateT0 = 0; EG = egEmpty(); genHumStopAll(); closeTask(''); S.st = {}; S.spec = -1; S.sacAt = 0; S.cdEnd = S.cdTot = 0; TRAIL.clear(); TERROR.clear(); FX.length = 0; for (const k in AN) delete AN[k]; for (const k in LAUGH) delete LAUGH[k]; S.item = null; S.wo = woEmpty(); S.smokeW = []; S.smSig = ''; S.fx2 = {}; S.blindEnd = 0; IFX.length = 0; ALERTS.length = 0; ctxRelease(); try { k1Reset(); } catch (e) {} try { K3FX.length = 0; K3UI.open = false; k3UiClose(); } catch (e) {} try { k6Reset(); } catch (e) {} try { k5Reset(); } catch (e) {}
+  try { shopClose(); k0PickClose(); scClose(); K0PH = 0; K0PW = 0; K5AIM = { t: 0, x: 0, y: 0, f: 9, P: null }; K3MF = {}; } catch (e) { diagErr('cleanup', e); }   // killer overlays / aim state of the previous round
+  try { toastClear(); for (const id of ['hitBanner', 'noteBy', 'noteVic']) { const e = $(id); if (e) { e.style.transition = 'none'; e.style.opacity = '0'; } } } catch (e) {}   // stale notifications never reach the next round
+}
 function startReconnect() {
   if (S.reconnecting || S.leaving) return;
   S.reconnecting = true; S.reconnectUntil = Date.now() + CFG.RECONNECT_WINDOW; banner('Reconnecting to host…'); rejoinLoop();
@@ -4966,11 +4997,44 @@ const TOAST_RULES = [   // [kind, test], first match wins; plain text, so it als
 ];
 const toastKind = t => { for (const [k, re] of TOAST_RULES) if (re.test(t)) return k; return 'info'; };
 const TOAST_MS = { danger: 3800, lore: 4200, warn: 2300, gain: 3000, info: 3000 };   // how long each kind stays up
-function toast(t, kind) {   // styled like the in-game announcements; the look (font + colour) follows how relevant / how dangerous the message is
-  const e = $('toast'), k = kind || toastKind(String(t)), ms = TOAST_MS[k] || 3000;
-  e.textContent = t; e.dataset.k = k; e.classList.remove('hidden', 'out'); e.style.animation = 'none'; void e.offsetWidth; e.style.animation = '';
-  clearTimeout(toast.h); clearTimeout(toast.h2); toast.h2 = setTimeout(() => e.classList.add('out'), ms - 450); toast.h = setTimeout(() => e.classList.add('hidden'), ms);
+/* Notifications: ONE toast element, placed under the live HUD rows (and clear of the minimap) every time it is shown / the layout changes.
+   Priority: danger (3) > lore, warn (2) > gain (1) > info (0). A critical message is protected for TOAST_PROT_MS; weaker messages that arrive meanwhile WAIT
+   (queued, de-duplicated, max TOAST_QMAX) instead of replacing it or being lost. The same text arriving again (repeated network updates) only extends the current toast. */
+const TOAST_PRI = { danger: 3, lore: 2, warn: 2, gain: 1, info: 0 }, TOAST_PROT_MS = 1800, TOAST_QMAX = 3, TC = { k: '', t: '', at: 0, until: 0, q: [] };
+function toastPlace() {   // keep the toast off the HUD rows and the minimap (it never goes off-screen: it only moves DOWN, to the first free band)
+  const e = $('toast'); if (!inGame) { e.style.top = ''; return; }
+  let y = (INS.t || 0) + 96; const u = $('under');
+  if (u) for (const c of u.children) { if (c.classList.contains('hidden')) continue; const r = c.getBoundingClientRect(); if (r.height > 1 && r.width > 1) y = Math.max(y, r.bottom + 6); }
+  e.style.top = y + 'px';
+  for (let i = 0; i < 3; i++) {   // centre-screen announcements (generators powered / last stand / hit banner) are never covered: the toast steps below them
+    const th = e.getBoundingClientRect().height; let moved = false;
+    for (const id of ['lsann', 'pann', 'gann', 'hitBanner']) { const a = $(id); if (!a || a.classList.contains('hidden')) continue; const cs = getComputedStyle(a); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) continue; const r = a.getBoundingClientRect(); if (r.height > 1 && r.bottom > y - 2 && r.top < y + th + 2) { y = r.bottom + 6; moved = true; } }
+    if (!moved) break; e.style.top = y + 'px';
+  }
+  const m = $('mm'); if (m && !m.classList.contains('hidden')) { const r = m.getBoundingClientRect(), t = e.getBoundingClientRect(); if (t.right > r.left - 4 && t.left < r.right + 4 && t.bottom > r.top - 4 && t.top < r.bottom + 4) e.style.top = Math.max(y, r.bottom + 6) + 'px'; }
 }
+function toastShow(t, k) {
+  const e = $('toast'), ms = TOAST_MS[k] || 3000, now = performance.now();
+  TC.k = k; TC.t = t; TC.at = now; TC.until = now + ms;
+  e.textContent = t; e.dataset.k = k; e.classList.remove('hidden', 'out'); e.style.animation = 'none'; void e.offsetWidth; e.style.animation = ''; toastPlace();
+  clearTimeout(toast.h); clearTimeout(toast.h2); toast.h2 = setTimeout(() => e.classList.add('out'), ms - 450); toast.h = setTimeout(toastDone, ms);
+}
+function toastDone() { $('toast').classList.add('hidden'); TC.until = 0; toastNext(); }
+function toastNext() { clearTimeout(toast.hq); const n = TC.q.shift(); if (n) toastShow(n[0], n[1]); }
+function toastClear() { clearTimeout(toast.h); clearTimeout(toast.h2); clearTimeout(toast.hq); TC.q.length = 0; TC.until = 0; TC.t = ''; $('toast').classList.add('hidden'); }   // new round / back to the lobby: no stale message survives
+function toast(t, kind) {   // styled like the in-game announcements; the look (font + colour) follows how relevant / how dangerous the message is
+  t = String(t); const k = kind || toastKind(t), now = performance.now(), live = now < TC.until && !$('toast').classList.contains('hidden');
+  if (live && TC.t === t) {   // the same message again: keep it, just let it stay a little longer (no flicker, no stacking)
+    const ms = TOAST_MS[k] || 3000; TC.until = now + ms; $('toast').classList.remove('out');
+    clearTimeout(toast.h); clearTimeout(toast.h2); toast.h2 = setTimeout(() => $('toast').classList.add('out'), ms - 450); toast.h = setTimeout(toastDone, ms); return;
+  }
+  if (live && (TOAST_PRI[TC.k] | 0) >= 2 && (TOAST_PRI[k] | 0) < (TOAST_PRI[TC.k] | 0) && now - TC.at < TOAST_PROT_MS) {   // do not bump a critical message before it can be read: wait
+    if (!TC.q.some(q => q[0] === t)) { TC.q.push([t, k]); if (TC.q.length > TOAST_QMAX) TC.q.shift(); }
+    clearTimeout(toast.hq); toast.hq = setTimeout(toastNext, Math.max(0, TOAST_PROT_MS - (now - TC.at))); return;
+  }
+  TC.q = TC.q.filter(q => q[0] !== t); toastShow(t, k);
+}
+setInterval(() => { try { if (!$('toast').classList.contains('hidden')) toastPlace(); } catch (e) {} }, 250);   // the HUD above may have grown / wrapped since the toast appeared
 const myRole = () => { const p = S.players.find(q => q.id === S.me); return p && p.role || null; };
 const killerIdRaw = () => { const p = S.players.find(q => q.role === 'killer'); return p ? p.id : -1; };
 const killerId = () => { const id = killerIdRaw(); return id >= 0 && k6Veil() ? -1 : id; };   // killer_6: while he is disguised survivors get no beam / eyes / heartbeat / laugh from him
@@ -4981,8 +5045,7 @@ function syncRoleUI() {   // small role chip in the top bar (headstart + hunt)
 }
 function enterGame() { if (inGame) return refreshUI(); inGame = true; show('game'); resetInput(); resize(); refreshUI(); lock(); pushGameHistory(); }
 function refreshUI() {
-  if (S.wo.k2 && S.phase === 'hunt' && !isK2(killerIdRaw())) S.wo.k2 = null;   // safety net: B.I.N.G.E. state must not outlive B.I.N.G.E. being the killer
-  S.chars = {}; for (const p of S.players) S.chars[p.id] = p.ch;   // final characters (roster ch)
+  syncChars(); woSanitize();   // final characters (roster ch), then drop any killer-exclusive state whose owner is not the active killer (safety net, every phase)
   $('code').textContent = S.code; $('count').textContent = `Players ${S.players.length}/${CFG.MAX_PLAYERS}`;
   $('start').classList.toggle('hidden', S.role !== 'host'); $('wait').classList.toggle('hidden', S.role === 'host');
   $('start').disabled = S.players.length < CFG.MIN_PLAYERS; $('mEnd').classList.toggle('hidden', S.role !== 'host'); syncRoleUI();
@@ -5010,7 +5073,7 @@ function refreshStatus() {   // survivors and the killer: one small chip per sur
 }
 function resetToMenu(msg) {
   clearTimeout(S.hsT); Timers.stop(); T.close(); HP.clear(); HU = []; snaps = []; botN = 0; TRAIL.clear(); TERROR.clear(); FX.length = 0;
-  Object.assign(S, { pick: {}, chars: {}, ts: tsEmpty(), test: false, testRole: 'survivor', role: null, me: -1, players: [], started: false, map: null, seq: 0, inRoom: false, reconnecting: false, lobbyOn: false, leaving: false, phase: 'lobby', phaseEnd: 0, eyesStart: 0, eyesMs: 0, st: {}, spec: -1, sacAt: 0, cdEnd: 0, cdTot: 0, item: null, wo: woEmpty(), smokeW: [], fx2: {}, blindEnd: 0 });
+  Object.assign(S, { rid: undefined, pick: {}, chars: {}, ts: tsEmpty(), test: false, testRole: 'survivor', role: null, me: -1, players: [], started: false, map: null, seq: 0, inRoom: false, reconnecting: false, lobbyOn: false, leaving: false, phase: 'lobby', phaseEnd: 0, eyesStart: 0, eyesMs: 0, st: {}, spec: -1, sacAt: 0, cdEnd: 0, cdTot: 0, item: null, wo: woEmpty(), smokeW: [], fx2: {}, blindEnd: 0 });
   leaveGameUI(); banner(''); joining(false); show('menu'); $('mStatus').textContent = msg || ''; busy(false); T.warm();
   try { if (wl) wl.release(); } catch (e) {}
 }
@@ -5325,7 +5388,7 @@ const MG = { wires: mgWires, fuses: mgFuses, simon: mgSimon, charge: mgCharge };
 /* ================= WAKE LOCK ================= */
 let wl = null;
 async function lock() { try { if (inGame && navigator.wakeLock && !wl) { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => wl = null); } } catch (e) { wl = null; } }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && inGame) lock(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && inGame) lock(); if (document.hidden && inGame) { try { resetInput(); atkUp(); } catch (e) {} } });   // a hidden tab never keeps a button / stick held
 
 /* ================= RENDERING ================= */
 const QL = { lvl: 0, dpr: 2, t: 0, up: 0, base: { rc: CFG.RAYS_CIRCLE, rk: CFG.RAYS_CONE, ms: CFG.MASK_SCALE } };
@@ -5343,7 +5406,7 @@ function resize() {
   const w = Math.max(1, Math.round(cv.clientWidth * dpr)), h = Math.max(1, Math.round(cv.clientHeight * dpr));
   if (cv.width !== w) cv.width = w; if (cv.height !== h) cv.height = h; readInsets();   // camera is derived from the player's position every frame, so nothing is lost on resize
 }
-function onResize() { resize(); }
+function onResize() { resize(); try { toastPlace(); } catch (e) {} }
 try { new ResizeObserver(onResize).observe(cv); } catch (e) {} addEventListener('resize', onResize);
 addEventListener('orientationchange', () => { resetInput(); setTimeout(onResize, 120); setTimeout(onResize, 450); });   // iOS reports stale sizes right after rotating
 try { if (window.visualViewport) visualViewport.addEventListener('resize', onResize); } catch (e) {}
@@ -5513,13 +5576,13 @@ function interpFace() {   // killer facing (radians) 100 ms in the past, shortes
 /* canSee(viewerRole, viewerId, entityId): THE single "who can see what" decision. Uses this frame's lit polygons (VIS) and
    interpolated positions. Pure drawing logic for now; later it can move to the host and decide what gets sent. */
 function hookNear(x, y) { const h = S.map && S.map.hooks; if (!h) return false; const r = CFG.HOOK_SEE_R; for (let i = 0; i < h.length; i++) if (Math.hypot(h[i][0] - x, h[i][1] - y) <= r) return true; return false; }
-function k2Blind(role, vId) { return role === 'survivor' && !!S.wo.k2 && S.wo.k2.tid !== -2 && S.wo.k2.tid !== vId; }   // killer_2 is in this match and I am a survivor who is NOT his target: I cannot see him at all
+function k2Blind(role, vId) { return role === 'survivor' && k2On() && S.wo.k2.tid !== -2 && S.wo.k2.tid !== vId; }   // killer_2 is in this match and I am a survivor who is NOT his target: I cannot see him at all
 function canSee(viewerRole, viewerId, entityId) {
   if (entityId === viewerId) return true;          // everyone always sees themselves
   if (viewerRole === 'killer' && hatOn(entityId)) return false;   // Magician's Hat: the killer cannot see the wearer at all (no light, flare or hook reveals them)
   if (viewerRole === 'killer' && isK3Min(entityId) && isK3(viewerId)) return true;   // killer_3: she always sees the killers her wish summoned
   if (!viewerRole) return true;                    // no role => no darkness
-  if (S.wo.k2 && S.wo.k2.tid !== undefined && S.wo.k2.tid !== -2) {      // killer_2: he sees ONLY his target, and ONLY his target sees him (not even a flare reveals the others)
+  if (k2On() && S.wo.k2.tid !== undefined && S.wo.k2.tid !== -2) {      // killer_2: he sees ONLY his target, and ONLY his target sees him (not even a flare reveals the others)
     const e = S.players.find(x => x.id === entityId);
     if (e && viewerRole === 'killer' && e.role === 'survivor' && e.id !== S.wo.k2.tid) return false;
     if (e && viewerRole === 'survivor' && e.role === 'killer' && viewerId !== S.wo.k2.tid) return false; }
@@ -7569,7 +7632,7 @@ function drawCarried(e) {   // limp over the killer's shoulder (position comes f
   blit(downBmp(charIdx(e.p.id), 4, 1), e.x, e.y + 8, face, PS * .92 * (CHARS[charIdx(e.p.id)].sc || 1), e.flash);
 }
 function drawHooked(e) {   // hanging from the hook: struggles at first, goes limp once the timer passes the halfway mark (killer_2: held half-sunk in the Archive portal)
-  const PT = !!(S.wo && S.wo.k2);
+  const PT = k2On();
   const ci = charIdx(e.p.id), limp = e.hookLeft <= CFG.HOOK_WARN_FRAC, f = limp ? 4 + ((((e.now / 520) | 0)) & 1) : (((e.now + e.p.id * 70) / 130) | 0) & 3;
   const b = hangBmp(ci, f, 1), sc = 2.2 * (CHARS[ci].sc || 1), hf = HFX[sfNm(ci)] || [1, 1], nmH = sfNm(ci); let sway = Math.sin(e.now / (limp ? 650 : 210 / hf[0]) + e.p.id) * (limp ? .06 : .16 * hf[1]); if (nmH === 'Michael Afton' && !limp) sway = Math.round(sway * 10) / 10; const spin = nmH === 'Crewmate'; if (spin) sway = e.now / (limp ? 7000 : 3500) * TAU;   // each survivor struggles at their own pace; the Crewmate just floats and tumbles head over toes, like in space
   const jit = limp || spin ? 0 : (f & 1 ? 1 : -1), oy = spin ? b.height * sc / 2 : 0;   // oy: the Crewmate pivots about its middle, not the hook
@@ -7739,7 +7802,7 @@ function stepTrails(now) {
     if (effSt(p.id) !== 'injured') { TRAIL.delete(p.id); continue; }
     const q = posOf(p.id); if (!q) continue; let t = TRAIL.get(p.id); if (!t) { TRAIL.set(p.id, t = []); t.since = now; }
     while (t.length && now - t[0].t > CFG.BLOOD_LIFE_MS) t.shift();
-    if (now - t.since > CFG.BLOOD_PRODUCE_MS * (S.wo.k2 ? K2_BLEED : 1)) continue;   // after BLOOD_PRODUCE_MS of being injured no new drops appear (old ones just fade)
+    if (now - t.since > CFG.BLOOD_PRODUCE_MS * (k2On() ? K2_BLEED : 1)) continue;   // after BLOOD_PRODUCE_MS of being injured no new drops appear (old ones just fade)
     const l = t[t.length - 1];
     if (!l || Math.hypot(q[0] - l.x, q[1] - l.y) >= CFG.BLOOD_STEP) {   // a splat: random size, a few satellite droplets, remembers which way it was travelling (for the smear)
       const ang = l ? Math.atan2(q[1] - l.y, q[0] - l.x) : rnd(0, TAU), r = rnd(6, 10), sat = []; for (let j = 0, n = 2 + (Math.random() * 3 | 0); j < n; j++) { const a = rnd(0, TAU), d = rnd(r * .9, r * 2.4); sat.push([Math.cos(a) * d, Math.sin(a) * d, rnd(1.5, 3.4)]); }
@@ -7907,7 +7970,7 @@ function drawCrates(x, y, ww, hh) {   // cover (blocks): stacked wooden crates: 
   ctx.strokeStyle = '#150b05'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, ww - 2, hh - 2); }
 function hookPath(c = ctx) { c.beginPath(); c.moveTo(0, 0); c.lineTo(0, 10); c.arc(-9, 10, 9, 0, Math.PI * 1.12); c.lineTo(-18.6, 3); }
 function drawHookAt(ctx, h, t) {   // one hook (also used by the lobby info panel)
-  if (S.wo && S.wo.k2) { drawPortalAt(ctx, h, t); return; }   // killer_2 (B.I.N.G.E.): the hooks are big CRT TVs
+  if (k2On()) { drawPortalAt(ctx, h, t); return; }   // killer_2 (B.I.N.G.E.): the hooks are big CRT TVs
   {
     const x = h[0], y = h[1], pg0 = ctx.createRadialGradient(x, y, 4, x, y, 58);
     pg0.addColorStop(0, 'rgba(110,6,12,.8)'); pg0.addColorStop(.7, 'rgba(80,4,10,.45)'); pg0.addColorStop(1, 'rgba(60,0,8,0)'); ctx.fillStyle = pg0; ctx.beginPath(); ctx.arc(x, y, 58, 0, 7); ctx.fill();   // blood pool
@@ -8216,11 +8279,12 @@ function drawGens(vx, vy, vw, vh, now, role, me) {   // sprites + effects in the
 const MM = { top: -1, on: store.get('dotsMinimap') !== '0', st: null, side: 0, last: 0, vis: null };
 function mmFrame(now, V, me) { if(inUD(me[0],me[1])){$('mm').classList.add('hidden');return;} $('mm').classList.remove('hidden'); if(inUD(me[0],me[1])){$('mm').classList.add('hidden');return;} $('mm').classList.remove('hidden');
   const el = $('mm'), show = MM.on && inGame && !!myRole() && myState() !== 'dead' && (S.phase === 'hunt' || (S.phase === 'headstart' && myRole() === 'survivor'));   // survivors AND the killer (the killer's headstart is a black screen)
-  if (show !== MM.vis) { MM.vis = show; el.classList.toggle('hidden', !show); }
+  if (show !== MM.vis) { MM.vis = show; el.classList.toggle('hidden', !show); $('game').style.setProperty('--mmr', show && MM.gut ? (MM.gut + 8) + 'px' : '0px'); }
   if (!show || now - MM.last < 100) return; MM.last = now;
   if (MM.top !== 1) { MM.top = 1; el.style.top = 'calc(var(--sat) + var(--bar) + 6px)'; el.style.right = 'calc(var(--sar) + 6px)'; }   // top-right, directly under the menu button (same right edge as the button)
   const side = Math.round(Math.min(innerWidth, innerHeight) * .2), px = Math.max(1, Math.round(side * dpr));
   const hpx = Math.max(1, Math.round(px * S.map.h / S.map.w));   // the map is wider than tall: same width, proportional height
+  if (side !== MM.gut) { MM.gut = side; $('game').style.setProperty('--mmr', (side + 8) + 'px'); }   // the HUD rows beside the minimap (narrow screens) reserve its width, so the two never overlap
   if (side !== MM.side || el.width !== px || el.height !== hpx) { MM.side = side; el.style.width = side + 'px'; el.style.height = Math.round(side * S.map.h / S.map.w) + 'px'; el.width = px; el.height = hpx; MM.st = null; }
   const k = px / S.map.w;
   if (!MM.st) { const c = document.createElement('canvas'); c.width = px; c.height = hpx; const g0 = c.getContext('2d'); const sc = S.map.structCount | 0; /* room walls bright grey, cover dim warm brown-grey */ S.map.walls.forEach((w, i) => { g0.fillStyle = i < sc ? 'rgba(212,217,230,.95)' : 'rgba(150,126,106,.7)'; g0.fillRect(w[0] * k, w[1] * k, Math.max(1, w[2] * k), Math.max(1, w[3] * k)); }); MM.st = c; }
@@ -8894,7 +8958,7 @@ function updateControls(now) {
     if (kc) { const on = !!ce, v = ce ? ce[1] : 0, st = ce ? (ce[2] ? 'CONDEMNED ' : 'CONDEMN ') + v : '', k5 = on ? st : ''; kc.style.display = on ? '' : 'none'; if (k5 !== UIC.k5s) { UIC.k5s = k5; kc.firstElementChild.style.width = v + '%'; kc.lastElementChild.textContent = st; kc.classList.toggle('on', !!(ce && ce[2])); } } }
   { let n = 0; if (itI >= 0 && S.eg.solo && S.itemRrAt) { const left = S.itemRrAt - now; if (left > 0 && left <= CFG.SOLO_WARN_MS) n = Math.ceil(left / 1000); }   // LAST STAND: 3-2-1 above the item button
     if (n !== UIC.rr) { UIC.rr = n; const t = $('itmT'); t.classList.toggle('hidden', !n); if (n) { t.textContent = n; t.style.setProperty('--ic', ITEMS[itI].col); t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop'); } } }
-  { const lb = ctxKind === 'hook' && S.wo.k2 ? 'SEND' : CTX_LABEL[ctxKind]; if (ctxKind && (ctxKind !== UIC.ctx || UIC.lb !== lb)) { $('ctx').textContent = lb; UIC.ctx = ctxKind; UIC.lb = lb; } }   // killer_2: HOOK becomes SEND
+  { const lb = ctxKind === 'hook' && k2On() ? 'SEND' : CTX_LABEL[ctxKind]; if (ctxKind && (ctxKind !== UIC.ctx || UIC.lb !== lb)) { $('ctx').textContent = lb; UIC.ctx = ctxKind; UIC.lb = lb; } }   // killer_2: HOOK becomes SEND
   if (showAtk) { const dg6 = k6Me(), j4 = isK4(S.me) ? S.wo.k4 : null, ch4 = j4 && K4H.t0 ? Math.max(0, Math.min(1, (now - K4H.t0 - K4_TAP_MS) / (K4_CH_FULL - K4_TAP_MS))) : -1, cl4 = j4 ? Math.max(0, j4.lcd - now) : 0;   // killer_4: label = LUNGE while charging, otherwise the lunge cooldown / a HOLD hint
     const at6 = dg6 ? 'SCREAM' : isK1(S.me) && k1InvisFx(S.me) ? 'REVEAL' : k5ShockOn() ? 'THORNS' : j4 ? (K4H.t0 && now - K4H.t0 >= K4_TAP_MS ? 'LUNGE' : j4.xt > now && !j4.lg ? 'DASH' : cl4 > 0 ? 'ATTACK\n' + Math.ceil(cl4 / 1000) + 's' : 'Attack or Hold') : 'ATTACK'; if (at6 !== UIC.atkT) { UIC.atkT = at6; $('atk').textContent = at6; $('atk').classList.toggle('hint', at6 === 'Attack or Hold'); }   // killer_6: disguised, the attack button is SCREAM (no cooldown ring)
     const left = dg6 ? 0 : Math.max(0, S.cdEnd - now), tot6 = dg6 ? 0 : S.cdTot, q = ch4 > 0 ? Math.round((1 - ch4) * 50) / 50 : Math.round((tot6 ? Math.min(1, left / tot6) : 0) * 50) / 50;   // while charging the dark overlay on the button drains as the charge fills
@@ -8937,7 +9001,7 @@ function updateAux(now, V) {
 }
 function debugLine(now) {
   if (!DEBUG || now - lastDbg < 250) return; lastDbg = now; const e = $('dbgG'); let nh = 0; for (const id in S.st) if (S.st[id].s === 'hooked') nh++;
-  if (e) e.textContent = `${S.phase} · ${myRole() || '-'} · ${myState()} · cd ${Math.max(0, Math.round(S.cdEnd - now))}ms · hooked ${nh} · ${fpsAvg.toFixed(0)} fps · q${QL.lvl} · ${rayCount} rays · ${T.fastState()} · interp ${NET.interp | 0}ms · set ${S.ts.set} ${S.ts.done}/${S.ts.need} permits ${S.ts.permits} · gens ${S.gs.g.map(g => 'LOF'[g.st] + Math.round(g.prog) + (g.rep ? '(' + g.rep + ')' : '') + (g.disEnd > now ? 'D' : '')).join(' ')} fixed ${S.gs.fixed}`;
+  if (e) e.textContent = `${S.phase} · ${myRole() || '-'} · ${myState()} · cd ${Math.max(0, Math.round(S.cdEnd - now))}ms · hooked ${nh} · ${fpsAvg.toFixed(0)} fps · q${QL.lvl} · ${rayCount} rays · ${T.fastState()} · interp ${NET.interp | 0}ms · rid ${S.rid} · ${S.role} killer#${killerIdRaw()} ch${kIdx(killerIdRaw())} k2On ${k2On() ? 1 : 0} · vp ${innerWidth}x${innerHeight} ${innerWidth >= innerHeight ? 'land' : 'port'} · mm ${(() => { const m = $('mm'); if (!m || m.classList.contains('hidden')) return '-'; const r = m.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom].map(Math.round).join(','); })()} · toastQ ${TC.q.length} · fix ${DIAG.wo} stale ${DIAG.stale} err ${DIAG.err.length ? DIAG.err[DIAG.err.length - 1] : '-'} · set ${S.ts.set} ${S.ts.done}/${S.ts.need} permits ${S.ts.permits} · gens ${S.gs.g.map(g => 'LOF'[g.st] + Math.round(g.prog) + (g.rep ? '(' + g.rep + ')' : '') + (g.disEnd > now ? 'D' : '')).join(' ')} fixed ${S.gs.fixed}`;
 }
 
 const UD_ITEMS=[   // B.I.N.G.E.'s Archive collectibles: director's-cut EVIDENCE, cycled by bulb index. 11x11 pixel maps. o outline, p paper, s paper shade, t typed text, r red redaction / tape, c accent (the bulb colour), k black, w white, g bag plastic

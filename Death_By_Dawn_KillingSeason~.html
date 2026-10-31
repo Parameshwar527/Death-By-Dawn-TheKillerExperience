@@ -527,7 +527,7 @@ small{color:#8e99dd}
 <script>
 'use strict';
 /* ================= CONFIG (all tunables here) ================= */
-const GAME_VERSION = 30;                 // bump when a change breaks compatibility
+const GAME_VERSION = 31;                 // bump when a change breaks compatibility
 const ROOM_PREFIX  = 'deathbydawn-';
 const CODE_CHARS   = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 // TURN relay (optional but recommended): when two devices cannot reach each other directly (client-isolation wifi, mobile data, school/office
@@ -732,11 +732,11 @@ let MAP = MAPS.spencer;
    Same walls, doors, spawns and killer spawn; only the hooks (5), tasks (12), generators (3) and exit gates (2) move. Every position keeps the original clearance rules:
    hooks >= 100 from walls / 150 from spawns, gens >= 110 from walls / 170 from spawns / 200 from hooks / 170 from tasks / 260 from the killer, tasks >= 100 from walls,
    two different task types per room (each type 3 times), gates 210 long and clear of cover walls.
-   0 = original (gates on the west wall) | 1 = gates on the east wall | 2 = both gates in the bottom wall (bottom-left and bottom-right rooms) */
+   0 = original (gates on the west wall) = reference | 1 = the WHOLE layout 0 map (walls, cover, doors, spawns, killer spawn, hooks, tasks, gens) flipped top-to-bottom across the top edge, gates moved to the east wall; drawWorld flips floors and rugs for it too | 2 = both gates in the bottom wall (middle-bottom room, left end, and bottom-right room) */
 const SPENCER_LAYOUTS = [
   null,
-  {hooks:[[610,400],[2220,580],[710,1220],[1660,1280],[2240,1980]], tasks:[[700,150,"fuses"],[580,930,"charge"],[1390,970,"wires"],[1050,480,"charge"],[2410,540,"wires"],[2300,970,"fuses"],[770,1600,"fuses"],[350,1800,"simon"],[1630,1430,"simon"],[1350,1760,"charge"],[2440,1970,"wires"],[2040,1280,"simon"]], gens:[[180,660],[600,1950],[2580,1400]], gates:[[2760,420,40,210],[2760,1750,40,210]]},
-  {hooks:[[160,730],[2380,380],[370,1800],[1070,1230],[2550,1410]], tasks:[[700,430,"fuses"],[140,350,"simon"],[1430,680,"wires"],[1130,960,"simon"],[2640,540,"fuses"],[2100,960,"charge"],[780,1330,"simon"],[600,1880,"charge"],[1300,1360,"wires"],[1560,2040,"fuses"],[2640,1750,"wires"],[2540,1220,"charge"]], gens:[[2530,940],[740,750],[1370,1730]], gates:[[670,2160,210,40],[1960,2160,210,40]]}
+  {walls:[[0,2160,2800,40],[0,0,2800,40],[0,0,40,2200],[2760,0,40,2200],[900,1950,40,210],[900,1420,40,390],[900,1120,40,160],[900,1080,40,40],[900,910,40,170],[900,400,40,370],[900,40,40,220],[1840,1950,40,210],[1840,1420,40,390],[1840,1120,40,160],[1840,1080,40,40],[1840,910,40,170],[1840,400,40,370],[1840,40,40,220],[40,1080,120,40],[300,1080,320,40],[760,1080,140,40],[940,1080,100,40],[1180,1080,420,40],[1740,1080,100,40],[1880,1080,120,40],[2140,1080,360,40],[2640,1080,120,40],[250,1920,300,40],[250,1790,40,170],[640,1620,200,40],[430,1330,40,170],[430,1460,160,40],[1300,1680,260,40],[1060,1960,100,40],[1060,1840,40,160],[1700,1300,40,160],[1620,1300,120,40],[2200,1830,40,170],[2200,1960,240,40],[2380,1500,280,40],[2380,1400,40,140],[2000,1320,40,160],[120,660,300,40],[380,530,40,170],[620,420,160,40],[740,320,40,140],[520,460,80,120],[1230,570,40,150],[1510,480,40,150],[1060,640,40,200],[1060,800,140,40],[1340,240,120,80],[2000,780,260,40],[2000,600,40,220],[2400,680,40,200],[2380,330,40,170],[2380,460,160,40],[150,798,210,162],[1640,510,110,40],[1690,260,40,150],[1610,1960,120,40],[1670,1710,40,150],[210,370,40,150],[170,220,120,40],[1150,1580,40,150],[1100,1430,130,40],[2010,1900,40,150],[1980,1760,120,40],[2170,390,90,90],[1040,180,90,90],[2550,1760,90,90],[2540,240,90,90],[2150,1420,90,90],[590,730,90,90],[1980,240,90,90],[2160,590,90,90],[140,1220,90,90]], spawns:[[160,2040],[1260,1860],[2000,1600],[500,940],[1280,960],[2000,480],[800,1880],[2640,2060],[380,180],[1260,160],[2640,960]], killerSpawn:[1390,1450], doors:[[900,1280,40,140],[900,770,40,140],[1840,1280,40,140],[1840,770,40,140],[620,1080,140,40],[1040,1080,140,40],[2500,1080,140,40],[900,1810,40,140],[900,260,40,140],[1840,1810,40,140],[1840,260,40,140],[160,1080,140,40],[1600,1080,140,40],[2000,1080,140,40]], hooks:[[600,1260],[2160,1260],[720,180],[1580,180],[1500,1980]], tasks:[[300,1400,"wires"],[700,1520,"fuses"],[1340,1980,"simon"],[1600,1440,"charge"],[2580,1980,"wires"],[2520,1320,"simon"],[500,240,"fuses"],[480,840,"charge"],[1580,340,"wires"],[1140,400,"charge"],[2240,220,"fuses"],[2540,720,"simon"]], gens:[[480,1740],[2400,1700],[1440,840]], gates:[[2760,1550,40,210],[2760,290,40,210]]},
+  {hooks:[[160,730],[2380,380],[370,1800],[1070,1230],[2550,1410]], tasks:[[700,430,"fuses"],[140,350,"simon"],[1430,680,"wires"],[1130,960,"simon"],[2640,540,"fuses"],[2100,960,"charge"],[780,1330,"simon"],[600,1880,"charge"],[1300,1360,"wires"],[1560,2040,"fuses"],[2640,1750,"wires"],[2540,1220,"charge"]], gens:[[2530,940],[740,750],[1370,1730]], gates:[[980,2160,210,40],[1960,2160,210,40]]}
 ];
 let SPENCER_FORCE = -1;   // debug: set to 0, 1 or 2 in the console (before Start) to force a layout; -1 = random
 function spencerLayout(i) { const base = MAPS.spencer, L = SPENCER_LAYOUTS[i]; return L ? Object.assign({}, base, L, { layout: i }) : Object.assign({}, base, { layout: 0 }); }
@@ -1282,7 +1282,7 @@ function copy(text) { try { navigator.clipboard.writeText(text).catch(() => fall
 
 /* ================= HOST SIMULATION ================= */
 // Combat/status fields on every sim player. st: healthy | injured | downed | carried | hooked | dead (killer stays 'healthy' forever).
-function resetCombat(p) { p.st = 'healthy'; p.mods = []; p.cd = p.wind = p.downEnd = p.pickupImmuneUntil = 0; p.carry = p.carriedBy = null; p.hold = false; p.hookIdx = -1; p.hookEnd = 0; p.sentHook = -1; p.sentEnd = 0; p.udC = null; p.udMs = 0; p.prog = 0; p.rpOn = false; p.task = -1; p.rep = p.kick = false; p.kickT = 0; p.kickGen = -1; p.esc = false; p.gateT = 0; p.hookCount = 0; p.hookExtra = 0; p.item = null; p.hatLeft = 0; p.hatRate = 1; p.hatWork = false; p.adrEnd = 0; p.snakeEnd = 0; p.rpMul = 1; p.slideUntil = 0; p.slickImm = 0; p.ldx = p.ldy = 0; p.ch = p.role === 'killer' ? 0 : dfltCh(p.id); }
+function resetCombat(p) { p.st = 'healthy'; p.mods = []; p.cd = p.wind = p.downEnd = p.pickupImmuneUntil = 0; p.carry = p.carriedBy = null; p.hold = false; p.hookIdx = -1; p.hookEnd = 0; p.sentHook = -1; p.sentEnd = 0; p.udC = null; p.udMs = 0; p.prog = 0; p.rpOn = false; p.task = -1; p.rep = p.kick = false; p.kickT = 0; p.kickGen = -1; p.esc = false; p.gateT = 0; p.hookCount = 0; p.hookExtra = 0; p.item = null; p.hatLeft = 0; p.hatRate = 1; p.hatWork = false; p.adrEnd = 0; p.snakeEnd = 0; p.rpMul = 1; p.slideUntil = 0; p.slickImm = 0; p.frogEnd = 0; p.frogMsgAt = 0; p.ldx = p.ldy = 0; p.ch = p.role === 'killer' ? 0 : dfltCh(p.id); }
 function addPlayer(name, connId, token, host) {
   let id = 0; while (HP.has(id)) id++;
   const used = new Set([...HP.values()].map(p => p.color));
@@ -1685,6 +1685,7 @@ function botK3Score(p, w, tgt) {
     case 4: return rep.length && rep.some(q => abDist(q, p) > 650) ? 3.3 : -1;
     case 5: return rep.length && openG >= 2 ? 2.8 : .3;
     case 6: return K3.gun > 0 ? -1 : tgt && d < 380 ? 3.7 : .5;
+    case 7: { if (!tgt || d > 520) return -1; const n = sv.filter(q => abDist(q, tgt) <= K3_FROG_R).length; return n >= 2 ? 3.5 : 1.8; }   // frog: best with a group close to the one she sees
   } return -1;
 }
 function botK3(p, B, now, tgt) {
@@ -1695,6 +1696,9 @@ function botK3(p, B, now, tgt) {
     if (K3.aw === 2) { const rp = sv.filter(q => q.rep), pool = rp.length ? rp : sv; const v = pool.length ? pool[Math.random() * pool.length | 0] : null; if (v) { hostAct(p, 'k3target', true, { id: v.id }); abLog('k3.wish2'); } else hostAct(p, 'k3cancel', true); }
     else if (K3.aw === 4) { const rp = sv.filter(q => q.rep && abDist(q, p) > 650).sort((a, b) => abDist(b, p) - abDist(a, p)); let done = false;
       if (rp.length) for (let n = 0; n < 12 && !done; n++) { const a = Math.random() * TAU, d = rnd(110, 190), x = rp[0].x + Math.cos(a) * d, y = rp[0].y + Math.sin(a) * d; if (!abOpen(x, y, 30) || !losClear(x, y, rp[0].x, rp[0].y)) continue; const w0 = K3.n; hostAct(p, 'k3target', true, { x: Math.round(x), y: Math.round(y) }); if (K3.n < w0) { done = true; abLog('k3.wish4'); } }
+      if (!done && ++B.k3fail >= 3) { hostAct(p, 'k3cancel', true); B.k3fail = 0; } }
+    else if (K3.aw === 7) { let best = null, bn = -1; for (const q of sv) { const n = sv.filter(o => abDist(o, q) <= K3_FROG_R).length; if (n > bn) { bn = n; best = q; } } let done = false;   // frog: centre the spell on the survivor with the most others around
+      if (best) for (let n = 0; n < 12 && !done; n++) { const a = Math.random() * TAU, d = n ? rnd(20, 70) : 0, x = best.x + Math.cos(a) * d, y = best.y + Math.sin(a) * d; if (!k0SpotOK(x, y)) continue; const w0 = K3.n; hostAct(p, 'k3target', true, { x: Math.round(x), y: Math.round(y) }); if (K3.n < w0) { done = true; abLog('k3.wish7'); } }
       if (!done && ++B.k3fail >= 3) { hostAct(p, 'k3cancel', true); B.k3fail = 0; } }
     return false;
   }
@@ -1802,7 +1806,7 @@ function botKSees(p, q, now) {   // what the killer's own ability tells him abou
 }
 
 /* ---------- survivor bots: play around the killer's abilities ---------- */
-function botSeesKiller(p, K, d, now) {   // can this survivor tell that K is the killer?  (a disguised Skinwalker, Skinwalker CHAOS and Nikki's teleport invisibility hide him)
+function botSeesKiller(p, K, d, now) { if (K && isK2(K.id) && K2.tv >= 0) return false;   // can this survivor tell that K is the killer?  (a disguised Skinwalker, Skinwalker CHAOS and Nikki's teleport invisibility hide him)
   if (!K || K !== botKiller()) return true; const A = BA(), thr = A.wise === 2 ? 230 : A.wise === 1 ? 120 : 70;
   if (isK6(K.id) && (K6.form === 1 || (K6.chEnd && now < K6.chEnd))) return d < thr;   // looks like a survivor: only noticed up close (Hard bots notice earlier)
   if (isK3(K.id) && K3.inv > now) return d < 80;
@@ -1922,7 +1926,7 @@ function selFinish() {   // final characters -> roster (BEFORE the phase message
 }
 
 function setPhase(ph, ms, quiet) {   // host: change phase, and tell everyone (clients count down locally from endsInMs)
-  if (ph !== 'hunt') { tsReleaseAll(); genReleaseAll(); }   // any open task is interrupted, and nobody keeps repairing / kicking, when the phase changes
+  if (ph !== 'hunt') { tsReleaseAll(); genReleaseAll(); if (K2.tv >= 0) { const B2 = k2Player(); if (B2) k2TvOut(B2, performance.now()); else { K2.tv = -1; K2.tx = 0; } } }   // the match is over / paused: nobody stays inside the TV network   // any open task is interrupted, and nobody keeps repairing / kicking, when the phase changes
   S.phase = ph; S.phaseEnd = ms > 0 ? performance.now() + ms : 0;
   if (!quiet) { T.broadcast({ t: 'phase', r: S.rid, phase: ph, endsInMs: ms }); phaseSound(ph); }
   syncRoleUI();
@@ -1956,9 +1960,10 @@ function soloFrac(now) {   // LAST STAND ramp: 0 when the sequence starts, +1/SO
 }
 function soloSlowMult(now) { return CFG.ATTACK_SLOW_MULT + (CFG.SOLO_SLOW_MULT - CFG.ATTACK_SLOW_MULT) * soloFrac(now); }   // swing slow multiplier: the normal one at the start, SOLO_SLOW_MULT at full strength
 function speedOf(p, now) {   // world units / second for this player's role + state
+  if (p.role === 'killer' && isK2(p.id) && K2.tv >= 0) return 0;   // inside a TV: he does not walk
   let base;
   if (p.role === 'killer') { base = p.carry != null ? CFG.CARRY_SPEED : CFG.KILLER_SPEED; if (EG.final) base *= CFG.MONSTER_SPEED_MULT; else if (EG.solo) base *= 1 + (CFG.SOLO_SPEED_MULT - 1) * soloFrac(now); if (p.carry != null && (EG.final || EG.solo)) base *= EG.final ? CFG.CARRY_BOOST_MULT : 1 + (CFG.SOLO_CARRY_BOOST_MULT - 1) * soloFrac(now); if (p.carry == null) base *= 1 + CFG.CHASE_MAX_BONUS * chaseMulOf(p) * (S.chase || 0); if (k6Disg(p)) base = CFG.SURVIVOR_SPEED; if (isK5(p.id)) { base *= K5_BASE; if (K5.act) base *= K5_SLOW + (1 - K5_SLOW) * Math.max(0, Math.min(1, (now - K5.actAt) / K5_SLOW_DECAY_MS)); else if (K5.onTrail) base *= K5_TRAIL_BOOST; } }   // killer_5: TRAIL slows him by 30% at the moment it is switched on, easing back to normal over K5_SLOW_DECAY_MS; TRAIL off while standing in his own trail = +40%   // dawn has broken: the killer speeds up; chase momentum (S.chase 0..1) adds up to CHASE_MAX_BONUS while he keeps a survivor in his beam
-  else switch (p.st) { case 'downed': base = CFG.CRAWL_SPEED; break; case 'carried': case 'hooked': case 'dead': return 0; default: base = CFG.SURVIVOR_SPEED; }
+  else switch (p.st) { case 'downed': base = CFG.CRAWL_SPEED; break; case 'carried': case 'hooked': case 'dead': return 0; default: base = CFG.SURVIVOR_SPEED * (k3FrogOn(p, now) ? K3_FROG_SPEED : 1); }
   p.mods = p.mods.filter(m => m.until > now); let mult = p.role === 'killer' && isK2(p.id) ? k2Spd() : 1; for (const m of p.mods) mult *= m.ramp ? m.from + (1 - m.from) * Math.max(0, Math.min(1, (now - m.t0) / m.ms)) : m.mult;
   return base * mult;
 }
@@ -2049,6 +2054,7 @@ function losClear(x1, y1, x2, y2) {   // no wall between the two points
   return true;
 }
 function setSt(p, s, ex) {   // THE way a state changes: store, broadcast {t:'st',id,s,...extras} (reliable), apply locally (host is a client too)
+  if (p.frogEnd && s !== 'healthy' && s !== 'injured') k3FrogEnd(p, true);   // wish 7: downed / carried / hooked / sent / dead ends the frog (quietly)
   p.rep = false;   // hit / downed / carried / hooked / killed ends any generator repair
   if (p.task >= 0) tsRelease(p, '');   // hit / downed / carried / hooked / killed ends any task in progress
   p.st = s; const m = Object.assign({ t: 'st', id: p.id, s }, ex); T.broadcast(m); applyStatus(m);
@@ -2090,7 +2096,7 @@ function tsFinishSet() {   // the set reached its needed count: +1 permit, lefto
 }
 function tsComplete(p, id) { TSH.st[id] = 3; TSH.by[id] = -1; if (p.task === id) p.task = -1; TSH.done++; if (TSH.done >= TSH.need) tsFinishSet(); else tsSync(); }
 function tsStart(p, id) {   // request: claim an open station near me
-  if (!S.started || S.phase !== 'hunt' || p.role !== 'survivor' || !p.on || (p.st !== 'healthy' && p.st !== 'injured') || p.task >= 0 || !Number.isInteger(id)) return;
+  if (!S.started || S.phase !== 'hunt' || p.role !== 'survivor' || !p.on || (p.st !== 'healthy' && p.st !== 'injured') || p.task >= 0 || k3FrogOn(p) || !Number.isInteger(id)) return;
   const s = MAP.tasks[id]; if (!s || TSH.st[id] !== 1) return;
   if (Math.hypot(p.x - s[0], p.y - s[1]) > CFG.TASK_R + 30) return;
   p.rep = false; TSH.st[id] = 2; TSH.by[id] = p.id; TSH.claimAt[id] = performance.now(); p.task = id; tsSync();
@@ -2192,7 +2198,7 @@ function egStep(now, dtMs) {
   if (!EG.on) return;
   if (!EG.final && now >= EG.dawnEnd) { EG.final = true; egSend(); }
   for (const p of HP.values()) {
-    if (p.role !== 'survivor' || !p.on || (p.st !== 'healthy' && p.st !== 'injured' && p.st !== 'downed')) { p.gateT = 0; continue; }   // downed survivors can crawl out too
+    if (p.role !== 'survivor' || !p.on || (p.st !== 'healthy' && p.st !== 'injured' && p.st !== 'downed') || k3FrogOn(p, now)) { p.gateT = 0; continue; }   // downed survivors can crawl out too
     let near = false; for (const g of MAP.gates) if (inZone(gateZone(g, MAP), p.x, p.y)) { near = true; break; }
     p.gateT = near ? p.gateT + dtMs : 0;
     if (p.gateT >= CFG.GATE_HOLD_MS) { p.gateT = 0; p.esc = true; freeHold(p); p.hold = false; setSt(p, 'dead', { esc: 1 }); checkWin(); }
@@ -2252,7 +2258,7 @@ function genStep(now, dtMs, killer) {   // every hunt tick: expire disabled time
     if (p.role !== 'survivor' || !p.on) continue;
     const ok = p.st === 'healthy' || p.st === 'injured'; let gi = -1;
     if (p.bot && AUTOGEN) { if (ok && p.task < 0) gi = botGen(p, dt, now); }
-    else if (p.rep && now >= (p.stunEnd || 0)) {   // killer_6: a stunned survivor does not repair
+    else if (p.rep && now >= (p.stunEnd || 0) && !k3FrogOn(p, now)) {   // killer_6: a stunned survivor does not repair
       if (!ok || p.task >= 0) { p.rep = false; continue; }
       let bd = R; for (let i = 0; i < G.length; i++) { if (G[i].st !== 1 || G[i].dis) continue; const d = Math.hypot(gens[i][0] - p.x, gens[i][1] - p.y); if (d <= bd) { bd = d; gi = i; } }   // nearest usable generator in reach
     }
@@ -2302,6 +2308,7 @@ function stList(now) {   // compact status of everyone, for welcome/start (recon
     return e; });
 }
 function hitSurvivor(v, now, minion) {   // minion = 1: hit by one of killer_3's summoned killers (the real killer's own hit hooks stay out of it)
+  if (k3FrogOn(v, now)) k3FrogEnd(v, false);   // wish 7: a frog that gets hit turns back at once; the hit below still deals its normal damage
   if (!minion) { k6ChaosEnd();   // killer_6: CHAOS ends with his first landed hit
     k3Reveal(); }   // (killer_3 only) a landed hit ends the post-teleport invisibility
   if (!K0.x && v.role === 'survivor' && K0.coins < 5 && k0Player()) { K0.coins = Math.min(5, K0.coins + 2); woSend('k0'); }   // killer_0: a landed hit pays 2 coins (max 5; a Heart Scale's own blast does not pay)
@@ -2350,14 +2357,16 @@ function resolveAttack(k, now) {
   const am = { t: 'atk', k: k.id, a: Math.round(useFace * 100) / 100, h: hits };   // swing result for everyone's effects (empty h = miss)
   T.broadcast(am); try { onAtk(am); } catch (e) {}   // the host is a player too; cosmetic code can never break the simulation
 }
-const ACTS = ['attack', 'pickup', 'hook', 'rescue', 'repair', 'kick', 'barricade', 'breakdoor', 'item', 'shopbuy', 'k0place', 'k0cancel', 'scdone', 'rbtoff', 'rbdone', 'rbfail', 'rbcancel', 'drop', 'k1ab', 'k3wish', 'k3target', 'k3cancel', 'k6ab', 'k6scr', 'k4scr', 'k5ab', 'k2ab', 'k4ab', 'k4dis', 'k4chg', 'k4rel', 'abx'];
+const ACTS = ['k2hop', 'attack', 'pickup', 'hook', 'rescue', 'repair', 'kick', 'barricade', 'breakdoor', 'item', 'shopbuy', 'k0place', 'k0cancel', 'scdone', 'rbtoff', 'rbdone', 'rbfail', 'rbcancel', 'drop', 'k1ab', 'k3wish', 'k3target', 'k3cancel', 'k6ab', 'k6scr', 'k4scr', 'k5ab', 'k2ab', 'k4ab', 'k4dis', 'k4chg', 'k4rel', 'abx'];
 const AB_ACTS = ['shopbuy', 'k0place', 'k1ab', 'k2ab', 'k4ab', 'k5ab', 'k6ab', 'k6scr', 'k3wish', 'k3target'];   // every killer ability press (the swing, kick, pickup and hook are NOT abilities)
 function abLockSet(p, ms, now) { if (!p || p.role !== 'killer') return; p.abLock = Math.max(p.abLock || 0, now + ms); sxSend(p.id, 'ablock', ms); }   // the killer's ability button is disabled for ms (the client greys the button out)
 function hostAct(p, a, down, n) {   // validates range, state and cooldowns; clients only ever REQUEST
   if (!S.started || S.phase !== 'hunt' || ACTS.indexOf(a) < 0 || p.st==='sent' || inUD(p.x,p.y)) return;
   if (down && p.stunEnd && performance.now() < p.stunEnd && a !== 'rescue' && a !== 'repair') return;   // killer_6: a stunned survivor cannot act
+  if (down && p.role === 'survivor' && K3_FROG_BLOCK.indexOf(a) >= 0 && k3FrogOn(p)) { const t = performance.now(); if (!(p.frogMsgAt > t)) { p.frogMsgAt = t + 1500; msgTo(p, "Frogs can't do that"); } return; }   // wish 7: a frog can't START an interaction (letting go of a held button still goes through)
+  if (down && p.role === 'killer' && isK2(p.id) && K2.tv >= 0 && a !== 'k2ab' && a !== 'k2hop' && a !== 'abx') return;   // inside a TV he can do NOTHING else (no attack, pickup, hook, kick, barricade)
   if (a === 'abx') { if (down && p.role === 'killer') abLockSet(p, Math.max(0, Math.min(CFG.FB_AB_MS, n | 0)), performance.now()); return; }   // the killer's client reports it was blinded by a Holy Light / phantom flash: ability disabled
-  if (down && p.role === 'killer' && (p.abLock || 0) > performance.now() && AB_ACTS.indexOf(a) >= 0) { msgTo(p, 'Ability disabled'); return; }
+  if (down && p.role === 'killer' && (p.abLock || 0) > performance.now() && AB_ACTS.indexOf(a) >= 0 && !(isK2(p.id) && K2.tv >= 0)) { msgTo(p, 'Ability disabled'); return; }
   if (a === 'rescue') { p.hold = !!down && (p.role === 'survivor' || k6Disg(p)); return; }   // held flag; progress is stepped in stepCombat
   if (a === 'repair') { p.rep = !!down && (p.role === 'survivor' || k6Disg(p)); return; }     // held flag; the survivor is counted as a repairer in genStep (range / state checked there)
   if (a === 'kick') { p.kick = !!down && p.role === 'killer' && !K6.form; p.kickT = 0; p.kickGen = -1; return; }
@@ -2367,7 +2376,8 @@ function hostAct(p, a, down, n) {   // validates range, state and cooldowns; cli
   if (a === 'k3target') { if (down) k3Target(p, n); return; }   // ...picked a survivor / a map point
   if (a === 'k3cancel') { if (down) k3Cancel(p); return; }
   if (a === 'k1ab') { if (down) k1Ability(p, performance.now()); return; }
-  if (a === 'k2ab') { if (down) k2Ability(p, performance.now()); return; }   // killer_2: Swap
+  if (a === 'k2ab') { if (down) k2Ability(p, performance.now()); return; }   // killer_2: Telegraph (step into / out of a TV)
+  if (a === 'k2hop') { if (down) k2Hop(p, performance.now(), n); return; }   // killer_2: the travel arrow
   if (a === 'k4ab') { if (down) k4Ability(p, performance.now()); return; }
   if (a === 'k4chg') { if (down) k4Charge(p, performance.now()); return; }   // killer_4: ATTACK held = charging a lunge
   if (a === 'k4rel') { if (down) k4Release(p, n === 1, performance.now()); return; }   // killer_4: ATTACK let go (n = 1: held long enough, lunge)
@@ -2427,7 +2437,7 @@ function checkWin() {   // every survivor escaped, dead or hanging on a hook (no
   const sv = [...HP.values()].filter(q => q.role === 'survivor');
   if (!sv.length || !sv.every(q => q.st === 'dead' || q.st === 'hooked')) return;
   const nm = q => q.name || 'Player', m = { t: 'res', esc: sv.filter(q => q.esc).map(nm), sac: sv.filter(q => !q.esc).map(nm) };
-  T.broadcast(m); S.res = m; setPhase('result', CFG.RESULT_MS);
+  k3FrogClearAll(); T.broadcast(m); S.res = m; setPhase('result', CFG.RESULT_MS);
 }
 function stepCombat(now, dtMs, killer) {
   for(const v of HP.values()){if(v.st==='sent'){
@@ -2447,7 +2457,7 @@ function stepCombat(now, dtMs, killer) {
     if (now >= v.hookEnd) { killSurvivor(v); continue; }
     const h = MAP.hooks[v.hookIdx]; let on = false, mul = 0;
     for (const r of HP.values()) {   // rescuers do NOT stack: the best one counts (a Snake Oil user rescues x SNAKE_UNHOOK_MULT; killer_1 fear slows each rescuer)
-      if (r === v || r.role !== 'survivor' || !r.on || !r.hold || now < (r.stunEnd || 0) || (r.st !== 'healthy' && r.st !== 'injured')) continue;
+      if (r === v || r.role !== 'survivor' || !r.on || !r.hold || now < (r.stunEnd || 0) || k3FrogOn(r, now) || (r.st !== 'healthy' && r.st !== 'injured')) continue;
       if (Math.hypot(r.x - h[0], r.y - h[1]) <= CFG.RESCUE_R + CFG.ACT_SLACK) { on = true; r.hatWork = true; mul = Math.max(mul, (r.snakeEnd > now ? CFG.SNAKE_UNHOOK_MULT : 1) * k1Slow(r, now) * k5Slow(r)); } }   // (r.hatWork: unhooking drains a Magician's Hat faster)
     if (on) { v.hookEnd += dtMs;   // unhook in progress: the hook timer is paused
       v.prog += dtMs * mul; if (v.prog >= rescueMs()) { rescueDone(v, now); continue; } }   // released/out of range: progress just pauses
@@ -2506,6 +2516,7 @@ function onHello(cid, m) {
   T.sendTo(cid, { t: 'welcome', you: p.id, code: S.code, players: roster(), ...st });
   if (S.started) T.sendTo(cid, { t: 'start', mapId: MAP.id, map: MAP, players: roster(), ...st });
   if (p.item) sendItem(p);
+  { const t = performance.now(); for (const q of HP.values()) if (k3FrogOn(q, t)) T.sendTo(cid, { t: 'sx', id: q.id, k: 'k3frog', ms: Math.max(0, Math.round(q.frogEnd - t)) }); }   // a re-joining player is told who is still a frog
   pushRoster();
 }
 function hostMsg(cid, m) {
@@ -2538,7 +2549,10 @@ let DR = { list: [], next: 0, nid: 1 }, TRP = [], SLK = [], FLR = [], FBG = [], 
    - Terminology: the target is called the PREY in everything the player reads (code names keep tid / K2 / k2*).
    - SEND (hook) resets his scent buffs; a new random prey is drawn, with no free-hunt period.
    - SCENT: the prey drops a glowing red ball every 1.5 s (only he sees them; each flares above the darkness every 5 s). Walking over one = permanent, compounding +4% speed / +4% vision (he starts at 90% of both) (k2Spd / k2Vis, capped).
-   - SWAP (ability): after a 1.5 s windup the prey becomes the survivor nearest to him (the new prey is told at once). k2Ability, K2.pt / pe / cd.
+   - TELEGRAPH (ability, like venting in Among Us): next to a TV (K2_TV_R) the button reads "Telegraph"; pressing it puts him INSIDE that TV (the eye animation plays on the screen). Inside he is invisible and untargetable, can't move or attack,
+     and gets ONE arrow beside the TV leading to the next TV of a fixed chain (k2Chain: nearest-neighbour tour, every TV has exactly one next TV). Tapping the arrow (act 'k2hop') slides him there (eye animation again, K2_TV_HOP_MS minimum between hops).
+     Pressing Telegraph again closes the eye for K2_TV_EXIT_MS, then he steps out next to that TV; K2_TV_CD cooldown before the next entry. State K2.tv / tx / th / tcd, code k2Ability / k2Hop / k2TvOut (host), k2TvEye / k2ArrowStep (client), event 'k2tv'.
+     The round ending (setPhase away from 'hunt'), monster form and the match reset all throw him out / reset K2.
    - His hits make survivors bleed 30% longer (K2_BLEED, stepTrails).
    WHERE: K2 state, k2Player, k2Step (host, called from the main tick during headstart AND hunt), checks in resolveAttack /
    'pickup' / botKillerThink, state sync WO_KINDS 'k2' (woList case 'k2', applyWo, woEmpty), client ring: drawK2World.
@@ -2563,10 +2577,26 @@ const diagErr = (w, e) => { try { DIAG.err.push(w + ': ' + (e && e.message || e)
 const k2On = () => !!(S.wo && S.wo.k2) && charsFinal() && isK2(killerIdRaw());   // B.I.N.G.E.'s rules / visuals (TV hooks, only-the-prey-sees-him) are live ONLY while he is the active killer
 const K2_SC_MS = 1500, K2_SC_LIFE = 40000, K2_SC_MAX = 40, K2_SC_R = 34, K2_GLOW_MS = 5000;   // SCENT: the prey drops one every 1.5 s / it lasts / max at once / pick-up radius / each scent flares once per this long (killer only)
 const K2_KICK_MAX = 10;   // gen-kick disable bonus stops growing after this many scents (10 x 0.7 s = +7 s)
-const K2_BASE = .9, K2_SPD_PER = 1.04, K2_SPD_MAX = 1.35, K2_VIS_PER = 1.04, K2_VIS_MAX = 1.5;   // he starts (and restarts after every SEND) at 90% speed and vision; each scent he collects: +4% speed and +4% vision (compounding, permanent until the next SEND; capped)
-const K2_SWAP_WIND = 1500, K2_SWAP_CD = 10000, K2_BLEED = 1.3;   // SWAP: windup / cooldown;  his hits make survivors bleed 30% longer
+const K2_BASE = .9, K2_SPD_PER = 1.03, K2_SPD_MAX = 1.35, K2_VIS_PER = 1.02, K2_VIS_MAX = 1.5;   // he starts (and restarts after every SEND) at 90% speed and vision; each scent he collects: +4% speed and +4% vision (compounding, permanent until the next SEND; capped)
+const K2_SWAP_WIND = 1500, K2_SWAP_CD = 10000;   // RECAST (his default ability, a.k.a. Swap): windup / cooldown
+const K2_BLEED = 1.3;   // his hits make survivors bleed 30% longer
+/* ---- TELEGRAPH (his ability, works like venting in Among Us). Every number you may want to tweak is right here. ---- */
+const K2_TV_R = 110;          // how close (world units) he must stand to a TV to be able to step into it
+const K2_TV_EXIT_MS = 1000;   // pressing Telegraph again: the eye-closing animation plays for this long, THEN he steps out
+const K2_TV_HOP_MS = 700;     // shortest time between two hops (the eye animation on the new TV plays during it)
+const K2_TV_CD = 4000;        // cooldown after stepping out before he can step into a TV again
+const K2_TV_EYE_MS = 900;     // how long the "eye opens" animation stays on a screen (stepping in / arriving)
+const K2_TV_ARROW_D = 62;     // client: how far from the TV (world units) the travel arrow floats, pointing at the next TV
+const K2CH = { key: '', next: [] };
+function k2Chain(hooks) {   // the FIXED CHAIN through every TV: start at TV 0, always go to the nearest TV not visited yet, the last one points back to TV 0. Host and clients compute the same list from the map, so every TV has exactly one arrow
+  const n = hooks ? hooks.length : 0, key = n + ':' + (n ? hooks[0][0] + ',' + hooks[0][1] + ',' + hooks[n - 1][0] + ',' + hooks[n - 1][1] : '');
+  if (K2CH.key === key) return K2CH.next;
+  const nx = new Array(n).fill(0), seen = new Array(n).fill(false); let c = 0; if (n) seen[0] = true;
+  for (let st = 1; st < n; st++) { let b = -1, bd = 1e18; for (let j = 0; j < n; j++) { if (seen[j]) continue; const d = Math.hypot(hooks[j][0] - hooks[c][0], hooks[j][1] - hooks[c][1]); if (d < bd) { bd = d; b = j; } } nx[c] = b; seen[b] = true; c = b; }
+  nx[c] = 0; K2CH.key = key; K2CH.next = nx; return nx;
+}
 // Sending a survivor no longer grants a temporary free hunt; B.I.N.G.E. remains prey-locked.
-function k2Empty() { return { tid: -1, at: 0, free: 0, sc: [], scN: 1, scAt: 0, n: 0, pt: -1, pe: 0, cd: 0 }; }   // tid = the PREY (-1 none, -2 free hunt) / sc = scents / n = scents collected (the buff) / pt, pe = swap candidate + windup end / cd = swap cooldown end
+function k2Empty() { return { tid: -1, at: 0, free: 0, sc: [], scN: 1, scAt: 0, n: 0, pt: -1, pe: 0, cd: 0, tv: -1, tx: 0, th: 0, tcd: 0 }; }   // tv = the TV he is inside (-1 none) / tx = when his exit finishes (0 = not leaving) / th = time of the last hop / tcd = Telegraph cooldown end   // tid = the PREY (-1 none, -2 free hunt) / sc = scents / n = scents collected (the buff) / pt, pe = swap candidate + windup end / cd = swap cooldown end
 const k2Spd = () => Math.min(K2_SPD_MAX, K2_BASE * Math.pow(K2_SPD_PER, K2.n | 0));   // host: killer_2's speed multiplier from his scents (speedOf)
 const k2Vis = () => Math.min(K2_VIS_MAX, K2_BASE * Math.pow(K2_VIS_PER, S.wo && S.wo.k2 ? S.wo.k2.n | 0 : 0));   // both sides: his vision multiplier from his scents (kVisMul / kRangeMul)
 const k2Lk = id => !EG.final && K2.tid !== id;   // host: true = killer_2 is locked onto somebody ELSE than id
@@ -2574,8 +2604,13 @@ let K2 = k2Empty();
 function k2Player() { for (const p of HP.values()) if (p.role === 'killer' && p.on && isK2(p.id)) return p; return null; }
 function k2Ok(q) { return !!q && q.role === 'survivor' && q.on && (q.st === 'healthy' || q.st === 'injured' || q.st === 'downed' || q.st === 'carried'); }   // can still be hunted
 function k2Step(now) {
-  const B = k2Player(); if (!B) { K2.tid = -1; if (K2.was) { K2.was = false; woSend('k2'); } return; }   // B.I.N.G.E. is no longer the killer: tell every client to drop its TV hooks / blind rules (woList gives [] without him)
+  const B = k2Player(); if (!B) { K2.tid = -1; K2.tv = -1; K2.tx = 0; if (K2.was) { K2.was = false; woSend('k2'); } return; }   // B.I.N.G.E. is no longer the killer: tell every client to drop its TV hooks / blind rules (woList gives [] without him)
   K2.was = true;
+  if (K2.tv >= 0) {   // inside the TV network: pinned to the TV, can't move; thrown out if the round moves on or he goes monster
+    const hk = MAP.hooks[K2.tv];
+    if (!hk || S.phase !== 'hunt' || EG.final || B.st === 'dead') k2TvOut(B, now);
+    else { B.x = hk[0]; B.y = hk[1]; B.ix = B.iy = 0; if (K2.tx && now >= K2.tx) k2TvOut(B, now); }
+  }
   if (EG.final) { if (K2.tid !== -2) { K2.tid = -2; K2.pe = 0; K2.pt = -1; K2.at = 0; K2.n = 0; K2.sc = []; } if (now >= K2.at) { K2.at = now + 2000; woSend('k2'); } return; }
   if (K2.pe) {   // SWAP windup: cancelled if the new prey is gone; otherwise the prey changes when the windup ends
     const q = HP.get(K2.pt);
@@ -2593,14 +2628,35 @@ function k2Step(now) {
     for (let i = K2.sc.length - 1; i >= 0; i--) if (Math.hypot(K2.sc[i].x - B.x, K2.sc[i].y - B.y) <= K2_SC_R) { K2.sc.splice(i, 1); K2.n++; K2.at = 0; } }   // ... and every one he walks over is a permanent, compounding speed + vision buff
   if (now >= K2.at) { K2.at = now + 2000; woSend('k2'); }   // sent on every change (at = 0) and refreshed every 2 s
 }
-function k2Ability(p, now) {   // SWAP: after a short windup the prey becomes the survivor nearest to him; the new prey is told right away
-  const B = k2Player(); if (!B || p !== B || K2.pe) return;
-  if (EG.final) { msgTo(B, 'No prey in monster form'); return; }
-  if (now < K2.cd) { msgTo(B, 'Swap ready in ' + Math.ceil((K2.cd - now) / 1000) + 's'); return; }
+function k2TvOut(B, now) {   // he steps out of the TV he is in (also: thrown out when the round ends or he turns into the monster). Lands on free floor next to the screen
+  if (K2.tv < 0) return; const hk = MAP.hooks[K2.tv] || [B.x, B.y]; let px = hk[0], py = hk[1], got = false;
+  for (let r = 0; r <= 180 && !got; r += 20) { const n = r ? Math.round(r / 10) : 1; for (let i = 0; i < n; i++) { const a = Math.PI / 2 + i * TAU / n, x = hk[0] + Math.cos(a) * r, y = hk[1] + Math.sin(a) * r; if (!circleHits(x, y, 26)) { px = x; py = y; got = true; break; } } }
+  B.x = px; B.y = py; B.ix = B.iy = 0; B.wind = 0; B.cd = 0; if (!got) resolve(B);   // out of the TV: attack is fully live again (no stale windup / cooldown)
+  K2.tv = -1; K2.tx = 0; K2.th = 0; K2.tcd = now + K2_TV_CD; K2.at = 0; woSend('k2');
+}
+function k2NearTvHost(B) { let bi = -1, bd = K2_TV_R; MAP.hooks.forEach((h, i) => { const d = Math.hypot(h[0] - B.x, h[1] - B.y); if (d <= bd) { bd = d; bi = i; } }); return bi; }
+function k2Ability(p, now) {   // ONE button: inside a TV = leave it; next to a TV (humans only) = TELEGRAPH (step in); anywhere else = RECAST (the prey becomes the nearest survivor after a windup)
+  const B = k2Player(); if (!B || p !== B) return;
+  if (K2.tv >= 0) { if (K2.tx) return; K2.tx = now + K2_TV_EXIT_MS; K2.at = 0; evSend({ k: 'k2tv', i: K2.tv, m: 1, ms: K2_TV_EXIT_MS }); woSend('k2'); return; }
+  if (K2.pe) return;
+  const bi = (!p.bot && !EG.final && now >= K2.tcd) ? k2NearTvHost(B) : -1;
+  if (bi >= 0) {   // TELEGRAPH
+    if (B.carry != null) { msgTo(B, 'Not while carrying'); return; }
+    B.wind = 0; K2.tv = bi; K2.tx = 0; K2.th = now; B.x = MAP.hooks[bi][0]; B.y = MAP.hooks[bi][1]; B.ix = B.iy = 0; K2.at = 0;
+    evSend({ k: 'k2tv', i: bi, m: 0, ms: K2_TV_EYE_MS }); woSend('k2'); return;   // the eye opens on the TV he stepped into and stays open while he is inside
+  }
+  if (EG.final) { msgTo(B, 'No prey in monster form'); return; }   // RECAST
+  if (now < K2.cd) { msgTo(B, 'Recast ready in ' + Math.ceil((K2.cd - now) / 1000) + 's'); return; }
   if (K2.tid < 0) { msgTo(B, 'No subject to recast'); return; }
   let best = null, bd = 1e9; for (const q of HP.values()) { if (!k2Ok(q) || q.id === K2.tid) continue; const d = Math.hypot(q.x - B.x, q.y - B.y); if (d < bd) { bd = d; best = q; } }
   if (!best) { msgTo(B, 'No other survivor'); return; }
-  K2.pt = best.id; K2.pe = now + K2_SWAP_WIND; K2.at = 0; msgTo(best, 'B.I.N.G.E. is recasting you as his subject!'); msgTo(B, 'Recasting...');
+  K2.pt = best.id; K2.pe = now + K2_SWAP_WIND; K2.at = 0; msgTo(best, 'B.I.N.G.E. is recasting you as his subject!'); msgTo(B, 'Recasting...'); woSend('k2');
+}
+function k2Hop(p, now, dir) {   // the travel arrow: slide to the ONE next TV of the chain (the eye opens on it again)
+  const B = k2Player(); if (!B || p !== B || K2.tv < 0 || K2.tx || now - K2.th < K2_TV_HOP_MS) return;
+  const ch = k2Chain(MAP.hooks), nx = (dir | 0) < 0 ? ch.indexOf(K2.tv) : ch[K2.tv]; if (nx == null || nx < 0 || nx === K2.tv || !MAP.hooks[nx]) return;
+  K2.tv = nx; K2.th = now; B.x = MAP.hooks[nx][0]; B.y = MAP.hooks[nx][1]; B.ix = B.iy = 0; K2.at = 0;
+  evSend({ k: 'k2tv', i: nx, m: 0, ms: K2_TV_EYE_MS }); woSend('k2');
 }
 /* ================================================================================================
    KILLER_4  --  TRANSFER  (killer_4 = the FIFTH entry of KILLERS; the code never mentions the character's name)
@@ -2744,7 +2800,7 @@ function woList(k, now) {
     case 'k5': { if (!k5Player()) return []; return [K5.act ? 1 : 0, Math.round(K5.torm * 10) / 10, left(K5.cd), K5.rings.map(r => [r.id, r.k, r.i, r.x, r.y, r.end ? Math.max(1, left(r.end)) : 0, Math.round(now - r.t0)]), K5.mv ? 1 : 0, K5.chg ? 1 : 0, Object.keys(K5.cond).map(id => [+id, Math.round(K5.cond[id].b), K5.cond[id].c]), Object.keys(K5.ping).map(id => [+id, Math.max(1, left(K5.ping[id]))])]; }   // killer_5 (see the KILLER_5 section)
     case 'k6': { if (!k6Player()) return []; return [K6.form, K6.tid, left(K6.tfEnd), left(K6.chEnd), left(K6.cd), left(K6.chAt), K6.fh, Math.round(K6.fp), K6.fo ? 1 : 0]; }   // killer_6 (see the KILLER_6 section)
     case 'k4': { if (!k4Player()) return []; return [K4.cur, K4.ps.map(q => [Math.round(q[0]), Math.round(q[1])]), left(K4.cd), K4.dis.map(left), left(K4.lcd), K4.ch ? Math.round(now - K4.ch) : -1, K4.lg ? 1 : 0, left(K4.xt), K4.imm.map(left)]; }   // killer_4 (see the KILLER_4 section)
-    case 'k2': { if (!k2Player()) return []; return [K2.tid, K2.n, K2.sc.map(q => [q.id, q.x, q.y, Math.round(now - q.t0)]), K2.pt, left(K2.pe), left(K2.cd)]; }
+    case 'k2': { if (!k2Player()) return []; return [K2.tid, K2.n, K2.sc.map(q => [q.id, q.x, q.y, Math.round(now - q.t0)]), K2.tv, left(K2.tx), left(K2.tcd), K2.pt, left(K2.pe), left(K2.cd)]; }
     case 'um': { if (!UM.act) return []; return [1, UM.swAt ? Math.round(now - UM.swAt) : -1, Object.keys(UM.hits).map(id => [+id, UM.hits[id]]), Math.round(UM.face * 100) / 100, UM.dir]; }   // the Archive monster (see the ARCHIVE MONSTER section)
     case 'ud': return [...HP.values()].filter(p => p.role === 'survivor' && p.st === 'sent' && p.udC).map(p => [p.id, p.udC.slice()]);
     case 'ne': return [left(NE.k), Object.keys(NE.s).map(id => [+id, left(NE.s[id])]).filter(e => e[1] > 0)];
@@ -3855,16 +3911,80 @@ function drawK2World(now, role) {   // killer_2: only HIS client sees it. Under 
   ctx.fillStyle = `rgba(53,230,200,${(.7 + .3 * pu).toFixed(2)})`; const by = q[1] - 46 - 4 * pu; ctx.beginPath(); ctx.moveTo(q[0] - 8, by - 10); ctx.lineTo(q[0] + 8, by - 10); ctx.lineTo(q[0], by); ctx.closePath(); ctx.fill();
   ctx.restore();
 }
-function drawK2Over(now, role) {   // killer_2, ABOVE the darkness: each scent flares for ~1.2 s once every K2_GLOW_MS (so he can spot the trail in the dark), and the Swap windup ring on the next prey
+function drawK2Over(now, role) {   // killer_2, ABOVE the darkness: each scent flares for ~1.2 s once every K2_GLOW_MS (so he can spot the trail in the dark)
   const W = S.wo.k2; if (role !== 'killer' || !W || !isK2(S.me)) return;
+  if (W.pt >= 0 && W.pe > now) { const q = posOf(W.pt); if (q) { const u = 1 - (W.pe - now) / K2_SWAP_WIND; ctx.save(); ctx.strokeStyle = `rgba(255,225,120,${(.5 + .4 * u).toFixed(2)})`; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.arc(q[0], q[1], 64 - 36 * u, 0, TAU); ctx.stroke(); ctx.restore(); } }
   for (const q of W.sc) { const age = now - q.b; if (age > K2_SC_LIFE) continue; const ph = (age % K2_GLOW_MS) / K2_GLOW_MS; if (ph >= .24) continue; const env = Math.sin(Math.PI * ph / .24);
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, 30); gr.addColorStop(0, `rgba(120,255,235,${(.9 * env).toFixed(3)})`); gr.addColorStop(.35, `rgba(40,200,180,${(.45 * env).toFixed(3)})`); gr.addColorStop(1, 'rgba(10,120,110,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(q.x, q.y, 30, 0, TAU); ctx.fill(); ctx.restore(); }
-  if (W.pt >= 0 && W.pe > now) { const q = posOf(W.pt); if (q) { const u = 1 - (W.pe - now) / K2_SWAP_WIND; ctx.save(); ctx.strokeStyle = `rgba(255,225,120,${(.5 + .4 * u).toFixed(2)})`; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.arc(q[0], q[1], 64 - 36 * u, 0, TAU); ctx.stroke(); ctx.restore(); } }
 }
 const k2Ico = () => cachedSpr('k2i', () => outlined(pxc(16, 16, r => {   // ability button icon: two recasting arrows
   r(2, 5, 10, 2, '#35e6c8'); r(11, 3, 1, 6, '#35e6c8'); r(12, 4, 1, 4, '#35e6c8'); r(13, 5, 1, 2, '#35e6c8');
   r(4, 10, 10, 2, '#1a8f80'); r(4, 8, 1, 6, '#1a8f80'); r(3, 9, 1, 4, '#1a8f80'); r(2, 10, 1, 2, '#1a8f80'); })));
 const K2_URL = {}; function k2Icon() { return K2_URL.s || (K2_URL.s = k2Ico().toDataURL()); }
+/* ---- TELEGRAPH client: the eye on a TV screen, the travel arrow, and the "inside a TV" helpers ---- */
+const K2C = { arrow: null, fx: {} };   // fx[tv index] = { t0, m (0 = eye opens, 1 = eye closes), ms }
+const k2Hid = id => !!(S.wo && S.wo.k2 && S.wo.k2.tv >= 0 && id >= 0 && isK2(id) && k2On());   // that player is B.I.N.G.E. and he is inside the TV network: nobody sees him (not even a red-eyes reveal)
+const k2InMe = () => !!(S.wo && S.wo.k2 && S.wo.k2.tv >= 0 && isK2(S.me));
+function k2NearTv(now) { const q = posOf(S.me), hs = S.map && S.map.hooks; if (!q || !hs) return -1; let bi = -1, bd = K2_TV_R; hs.forEach((h, i) => { const d = Math.hypot(h[0] - q[0], h[1] - q[1]); if (d <= bd) { bd = d; bi = i; } }); return bi; }
+const k2ArrowSpr = (teal) => cachedSpr(teal ? 'k2arrowT' : 'k2arrow2', () => outlined(pxc(16, 12, r => {   // teal = the back arrow
+  const PA = teal ? ['#d2fff4', '#35e6c8', '#3fcfb4', '#1a8f80'] : ['#cfe3ff', '#4ab8ff', '#4f86ff', '#2f6bff'];   // chunky notched arrowhead pointing right (the travel button): light-blue top half with a pale edge, deeper blue underside
+  for (let y = 0; y < 12; y++) { const d = Math.abs(y - 5.5), R = Math.round(15 - d * 1.8), L = Math.round(3 * (1 - d / 5.5)), top = y < 6;
+    for (let x = L; x <= R; x++) r(x, y, 1, 1, top ? (x >= R - 1 || y === 0 ? PA[0] : PA[1]) : (x >= R - 1 || y === 11 ? PA[2] : PA[3])); } })));
+const k2TeleIco = () => cachedSpr('k2tele', () => outlined(pxc(16, 16, r => {   // Telegraph button icon: a little CRT TV with the eye on its screen
+  r(4, 0, 1, 1, '#cfe3ff'); r(5, 1, 1, 2, '#cfe3ff'); r(11, 0, 1, 1, '#cfe3ff'); r(10, 1, 1, 2, '#cfe3ff');
+  r(1, 3, 14, 10, '#2f6bff'); r(1, 3, 14, 1, '#4ab8ff'); r(2, 4, 12, 8, '#050b18');
+  r(4, 6, 8, 4, '#cfe3ff'); r(5, 5, 6, 1, '#cfe3ff'); r(5, 10, 6, 1, '#cfe3ff'); r(7, 6, 3, 4, '#2f6bff'); r(8, 7, 1, 2, '#07164a');
+  r(3, 13, 2, 2, '#1a3fa0'); r(11, 13, 2, 2, '#1a3fa0'); })));
+const K2_TURL = {}; function k2TeleIcon() { return K2_TURL.s || (K2_TURL.s = k2TeleIco().toDataURL()); }
+function k2ArrowEl(dir) {   // dir 1 = next TV, -1 = previous TV
+  const key = dir < 0 ? 'arrowP' : 'arrow'; if (K2C[key]) return K2C[key];
+  const b = document.createElement('button'); b.id = 'k2' + key; b.setAttribute('aria-label', dir < 0 ? 'Previous TV' : 'Next TV');
+  b.style.cssText = 'position:fixed;left:0;top:0;z-index:40;width:34px;height:34px;margin:-17px 0 0 -17px;padding:0;border:0;border-radius:50%;background:radial-gradient(circle,' + (dir < 0 ? 'rgba(20,150,130,.5),rgba(20,150,130,0)' : 'rgba(30,90,200,.5),rgba(30,90,200,0)') + ' 68%);display:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer';
+  const im = document.createElement('img'); im.alt = ''; im.src = k2ArrowSpr(dir < 0).toDataURL(); im.style.cssText = 'width:27px;height:21px;image-rendering:pixelated;pointer-events:none;filter:drop-shadow(0 0 3px ' + (dir < 0 ? 'rgba(53,230,200,.95)' : 'rgba(74,184,255,.95)') + ')'; b.appendChild(im);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); sendAct('k2hop', true, dir < 0 ? -1 : 1); });
+  document.body.appendChild(b); return (K2C[key] = b);
+}
+function k2ArrowsHide() { for (const k of ['arrow', 'arrowP']) { const el = K2C[k]; if (el && el.style.display !== 'none') el.style.display = 'none'; } }
+function k2ArrowStep(now, me, k) {   // every frame: TWO arrows next to the TV he is in, one pointing at the next TV of the chain, one at the previous TV (hidden while leaving / for everybody else)
+  const J = S.wo.k2, hs = S.map && S.map.hooks;
+  const show = inGame && S.phase === 'hunt' && myRole() === 'killer' && isK2(S.me) && J && J.tv >= 0 && !J.ex && k2On() && hs && hs.length > 1;
+  if (!show) { k2ArrowsHide(); return; }
+  const ch = k2Chain(hs), nx = ch[J.tv], pv = ch.indexOf(J.tv), r = cv.getBoundingClientRect(), a = hs[J.tv];
+  const angs = [nx, pv].map(t => (t == null || t < 0 || t === J.tv || !hs[t]) ? null : Math.atan2(hs[t][1] - a[1], hs[t][0] - a[0]));
+  if (angs[0] !== null && angs[1] !== null) { let d = angs[1] - angs[0]; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) < .8) { const sh = (.8 - Math.abs(d)) / 2 * Math.sign(d || 1); angs[0] -= sh; angs[1] += sh; } }   // both want the same side of the TV: fan them apart so they never overlap
+  [[1, 'arrow'], [-1, 'arrowP']].forEach(([dir, key], i) => {
+    const ang = angs[i]; if (ang === null) { if (K2C[key]) K2C[key].style.display = 'none'; return; }
+    const px = a[0] + Math.cos(ang) * K2_TV_ARROW_D, py = a[1] + Math.sin(ang) * K2_TV_ARROW_D - 4, e2 = k2ArrowEl(dir); e2.style.display = 'block';
+    e2.style.left = (r.left + r.width / 2 + (px - me[0]) * k / dpr) + 'px'; e2.style.top = (r.top + r.height / 2 + (py - me[1]) * k / dpr) + 'px';
+    e2.style.transform = `rotate(${ang.toFixed(3)}rad) scale(${(1 + .07 * Math.sin(now / 180 + i * 1.6)).toFixed(3)})`; });
+}
+function k2TvEye(ctx, h, x, y) {   // B.I.N.G.E.'s eye (the same huge bloodshot eye he has on his own screen while running) on this TV's screen: opens when he steps in / arrives, closes slowly when he steps out
+  const hs = S.map && S.map.hooks, i = hs ? hs.indexOf(h) : -1; if (i < 0) return; let f = K2C.fx[i]; const J = S.wo && S.wo.k2, inside = !!(J && J.tv === i && !J.ex && k2On());   // inside = he is in THIS TV right now: the eye stays open (and keeps looking around) the whole time
+  if (!f && !inside) return;
+  const now = performance.now(); let u = f ? now - f.t0 : 1e9, al, o, mm = f ? f.m : 0;
+  if (f && u >= f.ms) { delete K2C.fx[i]; f = null; u = now; mm = 0; if (!inside) return; }
+  if (!f) { al = 1; o = 1; u = now; }   // steady: wide open
+  else { al = Math.min(1, u / 80) * (inside && mm === 0 ? 1 : Math.min(1, (f.ms - u) / 140)); o = mm === 0 ? 1 - Math.pow(1 - Math.min(1, u / 240), 2) : 1 - Math.pow(Math.min(1, u / (f.ms * .8)), 1.6); }
+  const q = PT_PX * TVS, ox = x - PT_W * TVS / 2, oy = y - PT_H * TVS / 2, sx = ox + TV_SX * q, sy = oy + TV_SY * q, sw = TV_SW * q, sh = TV_SH * q, cx = sx + sw / 2, E = q * 1.72, top = sy + (sh - 12 * E) / 2;   // E: eye pixel size, scaled so the eye fills the whole TV screen
+  const band = Math.max(.7, o * 12), by0 = top + (12 - band) / 2 * E;
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha *= al; ctx.beginPath(); ctx.rect(sx, sy, sw, sh); ctx.clip();
+  ctx.fillStyle = '#050b18'; ctx.fillRect(sx, sy, sw, sh);   // the picture cuts to a dark screen
+  ctx.save(); ctx.beginPath(); ctx.rect(sx, by0, sw, band * E); ctx.clip();
+  const SCL = [9, 13, 17, 19, 19, 19, 19, 19, 17, 13, 9, 5], bx = (rx, w) => cx + rx * E;
+  ctx.fillStyle = '#cfe3ff'; for (let r = 0; r < 12; r++) ctx.fillRect(cx - SCL[r] / 2 * E, top + r * E, SCL[r] * E, E);   // the white of the eye
+  ctx.fillStyle = '#c0243a'; ctx.fillRect(cx - 9.5 * E, top + 4 * E, 4 * E, E); ctx.fillRect(cx - 8.5 * E, top + 7 * E, 3 * E, E); ctx.fillRect(cx + 5.5 * E, top + 3 * E, 4 * E, E); ctx.fillRect(cx + 4.5 * E, top + 8 * E, 4 * E, E); ctx.fillRect(cx - 3 * E, top, E, 2 * E); ctx.fillRect(cx + 2 * E, top + 11 * E, E, E);   // bloodshot veins
+  const look = mm === 0 ? Math.round(Math.sin(u / 170) * 3) : 0, ix = cx + (1 + ((now / 110 | 0) & 1) + look) * E;   // the pupil twitches and looks around, like his running eye
+  const IR = [5, 7, 9, 9, 9, 9, 9, 7, 5], IN = [5, 7, 7, 7, 7, 7, 5];
+  ctx.fillStyle = '#10286e'; for (let r = 0; r < 9; r++) ctx.fillRect(ix - IR[r] / 2 * E, top + (1 + r) * E, IR[r] * E, E);
+  ctx.fillStyle = '#2f6bff'; for (let r = 0; r < 7; r++) ctx.fillRect(ix - IN[r] / 2 * E, top + (2 + r) * E, IN[r] * E, E);
+  ctx.fillStyle = '#07164a'; ctx.fillRect(ix - 2 * E, top + 3 * E, 5 * E, 5 * E);
+  ctx.fillStyle = '#fff'; ctx.fillRect(ix - 3 * E, top + 2 * E, 2 * E, E); ctx.fillRect(ix - 3 * E, top + 3 * E, E, E);
+  ctx.restore();
+  ctx.fillStyle = 'rgba(0,0,0,.62)'; ctx.fillRect(cx - 10 * E, by0, 20 * E, 1.5 * E); ctx.fillRect(cx - 10 * E, by0 + band * E - 1.5 * E, 20 * E, 1.5 * E);   // heavy lids
+  if (o < .3) { ctx.fillStyle = '#0a0a14'; ctx.fillRect(cx - 10 * E, top + 5.4 * E, 20 * E, 1.3 * E); ctx.fillStyle = 'rgba(192,36,58,.75)'; ctx.fillRect(cx - 8 * E, top + 6.2 * E, 16 * E, .6 * E); }   // closed: a dark seam
+  ctx.fillStyle = 'rgba(0,0,0,.16)'; for (let r = 0; r < TV_SH; r += 2) ctx.fillRect(sx, sy + (r + 1) * q, sw, q);   // scanlines on top
+  ctx.restore();
+}
 /* ---- killer_4 client: the face icon (the body he is about to jump to) + the two idle bodies standing in the world ---- */
 const k4Ico = v => cachedSpr('k4i' + v, () => outlined(pxc(16, 16, r => {   // ability button icon: the skull of Deyja number v (0 black/grey, 1 teal, 2 ember)
   const P = K4_PAL[v] || K4_PAL[0], BONE = '#e6dec9', BONE2 = '#b5ab92', MAW = '#1b0508', ANT = ['#6a5e50', '#3f6a5e', '#8a4a2a'][v] || '#6a5e50';
@@ -4289,7 +4409,10 @@ function drawK5Over(me, k, W, H, now) {   // above the darkness: the red glow of
    - 5 stay forever    every generator disappears for K3_GONE_MS: repair is impossible (g.dis), progress is kept. Their bodies still block movement.
    - 6 a gun           her attack button fires hitscan bullets (K3_GUN_BULLETS): it locks onto any survivor inside her vision (flashlight cone or light circle, clear line),
                        preferring the one nearest her aim; a hit = a normal hit + the laugh, nobody in her vision = a wasted bullet.
-   - Wishes 2 and 4 spend nothing until the target / destination is confirmed; closing the screen cancels for free.
+   - 7 you were a frog second screen: a map (with the radius shown), she taps a spot; a 0.3 s ritual circle on the ground (everybody sees it), then every survivor inside K3_FROG_R becomes a
+                       FROG for K3_FROG_MS (-15% speed, no interactions, any hit turns them back and still deals damage). All tuning constants sit above k3Empty; code = k3FrogCast / k3FrogStart /
+                       k3FrogEnd (host), drawFrog / frogBmp (client), sx 'k3frog' + events 'k3frw' / 'k3frc'.
+   - Wishes 2, 4 and 7 spend nothing until the target / destination is confirmed; closing the screen cancels for free.
 
    WHAT SHE DOES
    - One Wish Willows lie on the map. ONLY she can see and collect them: survivors never receive them, never see them.
@@ -4330,7 +4453,14 @@ const K3_SLOW_LONGER = 1.33, K3_SLOW_HALF = 1, K3_LAUGH_MUL = .5;   // killer_3'
 function k3SlowMs(id, ms) { return isK3(id) ? Math.round(ms * K3_SLOW_LONGER * K3_SLOW_HALF) : ms; }
 const laughMsFor = ki => ki === 3 ? CFG.LAUGH_MS * K3_LAUGH_MUL : CFG.LAUGH_MS;   // laugh length per killer index
 const K3_LOVE_MS = 40000, K3_MIN_MS = 20000, K3_MIN_N = 2, K3_LAG_MS = 20000, K3_UD_MS = 60000, K3_TP_WIND_MS = 1400, K3_TP_SPEED = 1.2, K3_TP_BOOST_MS = 15000, K3_GONE_MS = 15000, K3_GUN_BULLETS = 2, K3_INV_MS = 3000, K3_DIM = .5;   // wish tuning: durations in ms, speed multiplier, bullets, how long she stays invisible after the teleport, survivor vision left under "find love"
-function k3Empty() { return { w: [], n: 1, nid: 1, next: 0, on: false, sync: 0, full: 0, pool: [0, 1, 2, 3, 4, 5, 6], gc: 0, offer: [], aw: -1, gun: 0, love: null, gone: 0, tp: null, inv: 0, min: [], mid: 9101, mT: 0 }; }
+/* ---- wish 7 "I wish you were a frog": TUNING. Everything you may want to tweak is right here. ---- */
+const K3_FROG_R = 300;          // world units: every survivor within this distance of the chosen spot at the moment of casting becomes a frog (survivor sight is 312, her flashlight 374)
+const K3_FROG_MS = 30000;       // how long a frog stays a frog before it reverts by itself (ms)
+const K3_FROG_SPEED = .85;      // frog movement speed multiplier (0.85 = 15% slower than a normal survivor)
+const K3_FROG_WIND_MS = 300;    // cast time: the ritual circle on the ground before the spell lands (ms)
+const K3_FROG_BLOCK = ['rescue', 'repair', 'barricade', 'breakdoor', 'item', 'rbtoff', 'k4dis'];   // survivor actions a frog may not START (checked in hostAct; the effect sites in genStep / stepCombat / tsStart / useItem / egStep check it too)
+const K3_POOL_ALL = [0, 1, 2, 3, 4, 5, 6, 7];   // every wish id: the pool starts as this, and goes back to this when only two are left to make
+function k3Empty() { return { w: [], n: 1, nid: 1, next: 0, on: false, sync: 0, full: 0, pool: K3_POOL_ALL.slice(), gc: 0, offer: [], aw: -1, gun: 0, love: null, gone: 0, tp: null, inv: 0, min: [], mid: 9101, mT: 0, fg: null }; }
 let K3 = k3Empty();   // pool = wishes not used yet; offer = the 3 she is currently being shown (kept until she uses one); aw = a wish waiting for its target / destination (nothing is spent until that arrives)
 function k3Player() { for (const p of HP.values()) if (p.role === 'killer' && p.on && isK3(p.id)) return p; return null; }
 function k3Spawn(now, K) {   // true if a willow was placed
@@ -4354,18 +4484,27 @@ function k3Send() {   // straight to killer_3's connection only: survivors never
 }
 function k3Elig() { const o = []; for (const v of HP.values()) if (v.role === 'survivor' && v.on && (v.st === 'healthy' || v.st === 'injured') && !(GOD && v.host)) o.push(v); return o; }
 function k3Draw() { const a = K3.pool.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, 3); }   // every remaining wish is equally likely
-function k3Reset() { const was = !!(K3.love || K3.gone), had = K3.min.length > 0; K3 = k3Empty(); if (was) woSend('k3x'); if (had) woSend('k3m'); }
+function k3Reset() { const was = !!(K3.love || K3.gone), had = K3.min.length > 0; k3FrogClearAll(); K3 = k3Empty(); if (was) woSend('k3x'); if (had) woSend('k3m'); }
 function k3Fail(K, msg) { msgTo(K, msg); return false; }
 function k3Choose(p, w) {   // she tapped a wish card
   const K = k3Player(); if (!K || p !== K || !K3.on || K3.n < 1 || !K3.offer.includes(w) || !K3.pool.includes(w)) return;
-  if (w === 2 || w === 4) { K3.aw = w; k3Send(); return; }   // needs a target / a destination first: nothing is spent until it arrives
+  if (w === 2 || w === 4 || w === 7) { K3.aw = w; k3Send(); return; }   // needs a target / a destination first: nothing is spent until it arrives
   if (k3Grant(K, w, null, performance.now())) k3Send();
 }
 function k3Target(p, o) {   // the survivor she picked / the point she picked on the map
   const K = k3Player(); if (!K || p !== K || K3.n < 1 || K3.aw < 0 || !K3.pool.includes(K3.aw)) return; o = o && typeof o === 'object' ? o : {}; const now = performance.now();
   if (K3.aw === 2) { const v = HP.get(+o.id); if (!v || v.role !== 'survivor') return; if (k3Grant(K, 2, v, now)) k3Send(); }
-  else if (K3.aw === 4) { const x = +o.x, y = +o.y; if (!k0SpotOK(x, y) || circleHits(x, y, 30) || !navSearch(MAP.killerSpawn[0], MAP.killerSpawn[1], x, y, Infinity)) { msgTo(K, 'Pick open floor'); return; }
-    if (k3Grant(K, 4, { x: Math.round(x), y: Math.round(y) }, now)) k3Send(); }
+  else if (K3.aw === 4) { const x = +o.x, y = +o.y; if (!Number.isFinite(x) || !Number.isFinite(y)) return; const q = k3SnapSpot(x, y);   // the spot she taps happens at once; if it is a wall / generator / sealed pocket she lands on the closest open floor instead
+    if (k3Grant(K, 4, { x: Math.round(q[0]), y: Math.round(q[1]) }, now)) k3Send(); }
+  else if (K3.aw === 7) { let x = +o.x, y = +o.y; if (!Number.isFinite(x) || !Number.isFinite(y)) return; x = Math.max(0, Math.min(MAP.w, x)); y = Math.max(0, Math.min(MAP.h, y));   // frog: she can centre the spell anywhere on the map (generators, walls and all); only the survivors inside the circle matter
+    if (k3Grant(K, 7, { x: Math.round(x), y: Math.round(y) }, now)) k3Send(); }
+}
+function k3SnapSpot(x, y) {   // the closest place to (x, y) she can actually stand: open floor, room for her body, reachable from the spawn. Searches outward in rings
+  const ok = (a, b) => k0SpotOK(a, b) && !circleHits(a, b, 30) && navSearch(MAP.killerSpawn[0], MAP.killerSpawn[1], a, b, Infinity);
+  x = Math.max(60, Math.min(MAP.w - 60, x)); y = Math.max(60, Math.min(MAP.h - 60, y));
+  if (ok(x, y)) return [x, y];
+  for (let r = 16; r <= 480; r += 16) { const n = Math.max(8, Math.round(r / 8)), a0 = Math.random() * TAU; for (let i = 0; i < n; i++) { const a = a0 + i * TAU / n, px = x + Math.cos(a) * r, py = y + Math.sin(a) * r; if (ok(px, py)) return [px, py]; } }
+  return [MAP.killerSpawn[0], MAP.killerSpawn[1]];   // nothing found anywhere near: the spawn point
 }
 function k3Cancel(p) { const K = k3Player(); if (!K || p !== K || !K3.on || K3.n < 1) return; K3.aw = -1; K3.offer = k3Draw(); k3Send(); }   // picker closed: cancel any pending target, and roll a brand-new set of three
 function k3Grant(K, w, arg, now) {   // checks first (a failed wish costs nothing), then spends the willow + the wish, then applies it
@@ -4373,8 +4512,9 @@ function k3Grant(K, w, arg, now) {   // checks first (a failed wish costs nothin
   if (w === 1 && K3.min.length) return k3Fail(K, 'They are already here');
   if (w === 2 && !(arg && arg.on && (arg.st === 'healthy' || arg.st === 'injured'))) return k3Fail(K, "They can't be wished on right now");
   if (w === 6 && K3.gun > 0) return k3Fail(K, 'Already loaded');
+  if (w === 7 && K3.fg) return k3Fail(K, 'The spell is already brewing');
   K3.n--; K3.gc++; K3.offer = []; K3.aw = -1;
-  K3.pool = K3.pool.filter(x => x !== w); if (K3.pool.length <= 2) K3.pool = [0, 1, 2, 3, 4, 5, 6];   // a wish that was made is out of the pool (so no re-roll can offer it again) until only two are left to make: then all seven go back in
+  K3.pool = K3.pool.filter(x => x !== w); if (K3.pool.length <= 2) K3.pool = K3_POOL_ALL.slice();   // a wish that was made is out of the pool (so no re-roll can offer it again) until only two are left to make: then all of them go back in
   if (w === 0) {   // find love: one survivor, revealed both ways, half their sight, every survivor's items sealed; ends after 40 s or when that survivor goes down
     const e = k3Elig(), v = e[Math.floor(Math.random() * e.length)]; K3.love = { id: v.id, end: now + K3_LOVE_MS }; woSend('k3x');
     msgTo(v, 'She has found you'); for (const q of HP.values()) if (q.role === 'survivor' && q !== v) msgTo(q, 'Your items fall silent'); }
@@ -4385,6 +4525,7 @@ function k3Grant(K, w, arg, now) {   // checks first (a failed wish costs nothin
   else if (w === 5) {   // stay here forever: every generator vanishes for 15 s (repair is impossible, progress is kept)
     K3.gone = now + K3_GONE_MS; GH.g.forEach((g, i) => { if (g.st === 1) { g.dis = Math.max(g.dis, K3.gone); genRelease(g); } evSend({ k: 'puff', x: MAP.gens[i][0], y: MAP.gens[i][1], ti: 2 }); }); gsSend(); woSend('k3x'); }
   else if (w === 6) K3.gun = K3_GUN_BULLETS;   // I wish I had a gun: her next 2 attacks are bullets (k3Fire)
+  else if (w === 7) { K3.fg = { x: arg.x, y: arg.y, at: now + K3_FROG_WIND_MS }; evSend({ k: 'k3frw', x: arg.x, y: arg.y, r: K3_FROG_R, ms: K3_FROG_WIND_MS }); }   // I wish you were a frog: a telegraph ring on the ground first, then the spell lands (k3Step -> k3FrogCast)
   return true;
 }
 function k3Send2UD(K, v, now) {   // wish 2: the survivor she picked is sent into the Archive exactly like a B.I.N.G.E. send, only from where they stand (no hook)
@@ -4411,6 +4552,40 @@ function k3Fire(K, now) {   // gun mode: the attack button fires a hitscan bulle
   k3Send();
 }
 function k3Reveal() { if (!K3.inv) return; K3.inv = 0; const K = k3Player(); if (K) sxSend(K.id, 'k3inv', 0); }   // she landed a hit: the invisibility ends right there
+/* ---- wish 7 "I wish you were a frog" ----
+   She picks a spot on the map; K3_FROG_WIND_MS later (a telegraph ring is drawn on the ground for everybody) every survivor inside K3_FROG_R of it becomes a FROG for K3_FROG_MS.
+   Skipped: hooked, carried, downed, dead / escaped, in the Archive.
+   Host state = p.frogEnd (performance.now() time the frog ends, 0 = not a frog). Clients get sx 'k3frog' (ms left, 0 = revert) like every other survivor status; S.fx2[id].k3frog drives the sprite.
+   While a frog: speedOf x K3_FROG_SPEED, and no unhook / items / repair / tasks / barricades / doors / Heart Scale removal / gate escape; anything in progress is cancelled on transform.
+   Reverts: timer (k3FrogStep), ANY hit (hitSurvivor: the hit still deals its normal damage), downed / carried / hooked / sent / dead (setSt), killer gone (k3Reset), match end (checkWin, resetCombat). */
+const k3FrogOn = (p, now) => !!p && p.frogEnd > (now === undefined ? performance.now() : now);
+function k3FrogCancelActs(v) {   // whatever they were in the middle of stops right now
+  for (const h of HP.values()) if (h.st === 'hooked' && v.hold && h.hookIdx >= 0 && h.prog > 0) { const hp = MAP.hooks[h.hookIdx]; if (Math.hypot(v.x - hp[0], v.y - hp[1]) <= CFG.RESCUE_R + CFG.ACT_SLACK) { h.prog = 0; sendRp(h); } }   // an unhook in progress resets, exactly like a hit on the rescuer
+  v.hold = false; v.rep = false; v.gateT = 0; v.rm = false; v.rmT = 0; v.rmBlk = false;
+  if (v.task >= 0) tsRelease(v, 'You are a frog');   // frees the station and closes the minigame on their screen
+  if (v.rmSC) { v.rmSC = 0; sxSend(v.id, 'jrbx', 0); }   // a Heart Scale removal in progress
+}
+function k3FrogStart(v, now) {
+  const was = k3FrogOn(v, now); v.frogEnd = now + K3_FROG_MS; k3FrogCancelActs(v);   // (hit again by the spell while already a frog = the 30 s start over)
+  sxSend(v.id, 'k3frog', K3_FROG_MS);
+  if (!was) { evSend({ k: 'puff', x: v.x, y: v.y, ti: 2 }); msgTo(v, 'You are a frog!'); }
+}
+function k3FrogEnd(v, quiet) {   // quiet = a state change / cleanup (no puff, no message)
+  if (!v || !v.frogEnd) return; v.frogEnd = 0; sxSend(v.id, 'k3frog', 0);
+  if (!quiet) { evSend({ k: 'puff', x: v.x, y: v.y, ti: 2 }); msgTo(v, 'You are yourself again'); }
+}
+function k3FrogClearAll() { for (const p of HP.values()) if (p.frogEnd) k3FrogEnd(p, true); }
+function k3FrogStep(now) { for (const p of HP.values()) if (p.frogEnd && now >= p.frogEnd) k3FrogEnd(p, false); }
+function k3FrogCast(K, x, y, now) {   // the spell lands: everyone inside the radius RIGHT NOW is frogged
+  let n = 0;
+  for (const v of HP.values()) {
+    if (v.role !== 'survivor' || !v.on || (v.st !== 'healthy' && v.st !== 'injured') || (GOD && v.host)) continue;   // hooked / carried / downed / dead / in the Archive: skipped
+    if (Math.hypot(v.x - x, v.y - y) > K3_FROG_R) continue;
+    k3FrogStart(v, now); n++;
+  }
+  evSend({ k: 'k3frc', x, y, r: K3_FROG_R });
+  msgTo(K, n ? 'Ribbit! ' + n + (n === 1 ? ' frog' : ' frogs') : 'Nobody was in reach');
+}
 function k3Step(now) {
   const K = k3Player();
   if (!K) { if (K3.on) k3Reset(); return; }
@@ -4427,6 +4602,8 @@ function k3Step(now) {
   }
   if (K3.love) { const v = HP.get(K3.love.id); if (!v || !v.on || now >= K3.love.end || (v.st !== 'healthy' && v.st !== 'injured')) { K3.love = null; woSend('k3x'); } }   // 40 s are up, or that survivor went down / was hooked / escaped
   if (K3.gone && now >= K3.gone) { K3.gone = 0; woSend('k3x'); }
+  if (K3.fg && now >= K3.fg.at) { const f = K3.fg; K3.fg = null; k3FrogCast(K, f.x, f.y, now); }   // wish 7: the telegraph is over, the spell lands
+  k3FrogStep(now);   // wish 7: frogs whose time is up turn back
   try { k3mStep(now); } catch (e) { console.warn('[k3m]', e); }   // wish 1: the summoned killers
   if (K3.tp && now >= K3.tp.at) { const t = K3.tp; K3.tp = null; const ox = K.x, oy = K.y; K.x = t.x; K.y = t.y; resolve(K); evSend({ k: 'tp', id: K.id, x0: ox, y0: oy, x1: K.x, y1: K.y }); addMod(K, 'k3spd', K3_TP_SPEED, K3_TP_BOOST_MS, now); K3.inv = now + K3_INV_MS; sxSend(K.id, 'k3inv', K3_INV_MS); ch = true; }   // she lands invisible: until her first landed hit or K3_INV_MS
   if (K3.n > 0 && !K3.offer.length && K3.pool.length) { K3.offer = k3Draw(); ch = true; }
@@ -4563,7 +4740,7 @@ function k3PickFx(n) {   // she took one: a dry little crack and a bright chime
   toast('One Wish Willow collected (' + n + '/' + K3_STORE_MAX + ')'); vibrate(30);
 }
 /* ---- wishes: quotes, pixel icons, haunted picker UI ---- */
-const K3_WISH = ['I wish to find love', 'I wish to win the game', 'I wish you would die', 'I wish their network was bad', 'I wish to be there for you', 'I wish they stay here forever', 'I wish I had a gun'];
+const K3_WISH = ['I wish to find love', 'I wish to win the game', 'I wish you would die', 'I wish their network was bad', 'I wish to be there for you', 'I wish they stay here forever', 'I wish I had a gun', 'I wish you were a frog'];
 const K3_WART = [
   r => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const X = (x + .5 - 8) / 6.2, Y = -(y + .5 - 7.4) / 6.2; if (Math.pow(X * X + Y * Y - 1, 3) - X * X * Y * Y * Y <= 0) r(x, y, 1, 1, x + y > 17 ? '#8a0f1e' : '#d8283a'); }   // 0 love: a stitched, cracked heart
     r(3, 4, 2, 1, '#ff7a88'); r(2, 5, 1, 1, '#ff7a88'); [[7, 3], [8, 4], [7, 5], [8, 6], [7, 7], [8, 8], [7, 9]].forEach(([x, y]) => r(x, y, 1, 1, '#2a0a10')); [[5, 6], [6, 6], [9, 5], [10, 5], [5, 8], [10, 8]].forEach(([x, y]) => r(x, y, 1, 1, '#2a0a10')); },
@@ -4579,7 +4756,12 @@ const K3_WART = [
     [[3, 4, 11], [4, 5, 10], [5, 6, 9], [6, 7, 8]].forEach(([y, a, b]) => r(a, y, b - a + 1, 1, Gl)); r(7, 7, 2, 2, Gl); [[9, 7, 8], [10, 6, 9], [11, 5, 10], [12, 4, 11]].forEach(([y, a, b]) => r(a, y, b - a + 1, 1, Gl));
     r(6, 5, 4, 1, Sd); r(7, 6, 2, 1, Sd); r(7, 7, 1, 3, Sd); r(6, 10, 4, 1, Sd); r(5, 11, 6, 1, Sd); r(4, 12, 8, 1, Sd); r(4, 3, 1, 1, '#c8d0ff'); r(3, 12, 1, 1, '#c8d0ff'); },
   r => { r(1, 5, 8, 2, '#8a929c'); r(1, 5, 8, 1, '#c8ced6'); r(1, 4, 1, 1, '#c8ced6'); r(8, 4, 5, 4, '#6a707a'); r(8, 4, 3, 4, '#4a5058'); r(9, 5, 1, 1, '#14181c'); r(9, 7, 1, 1, '#14181c');   // 6 gun: a revolver
-    r(12, 3, 2, 2, '#4a5058'); r(11, 8, 3, 3, '#6e4a24'); r(12, 11, 3, 3, '#6e4a24'); r(11, 8, 1, 3, '#9a6a34'); r(9, 8, 2, 1, '#4a5058'); r(9, 9, 1, 2, '#4a5058'); r(0, 5, 1, 2, '#ffb030'); r(0, 4, 1, 1, '#ff3b3b'); }
+    r(12, 3, 2, 2, '#4a5058'); r(11, 8, 3, 3, '#6e4a24'); r(12, 11, 3, 3, '#6e4a24'); r(11, 8, 1, 3, '#9a6a34'); r(9, 8, 2, 1, '#4a5058'); r(9, 9, 1, 2, '#4a5058'); r(0, 5, 1, 2, '#ffb030'); r(0, 4, 1, 1, '#ff3b3b'); },
+  r => { const G = '#5fd04a', D = '#2f8f2e', L = '#b6f08a', W = '#f6f6e8', K = '#14081f', B = '#ff9aa8';   // 7 frog: a grinning green frog face
+    r(2, 2, 5, 5, G); r(9, 2, 5, 5, G); r(1, 6, 14, 7, G); r(2, 13, 12, 1, D);   // eye bumps, head, chin shade
+    r(3, 3, 3, 3, W); r(10, 3, 3, 3, W); r(4, 4, 1, 2, K); r(11, 4, 1, 2, K);   // eyes
+    r(7, 7, 1, 1, D); r(9, 7, 1, 1, D); r(3, 9, 1, 1, K); r(4, 10, 8, 1, K); r(12, 9, 1, 1, K);   // nostrils + a wide smile
+    r(5, 11, 6, 2, L); r(2, 10, 2, 1, B); r(12, 10, 2, 1, B); r(6, 6, 1, 1, D); r(10, 12, 1, 1, D); }
 ];
 const k3WSpr = i => cachedSpr('k3i' + i, () => outlined(pxc(16, 16, K3_WART[i]))), K3_WURL = [];
 const k3WIcon = i => K3_WURL[i] || (K3_WURL[i] = k3WSpr(i).toDataURL());
@@ -4668,16 +4850,14 @@ function k3BuildTarget(J) {
     b.onclick = () => { if (performance.now() - K3UI.t0 < 350) return; sendAct('k3target', true, { id: p.id }); K3UI.open = false; k3UiClose(); }; ls.appendChild(b); });
 }
 function k3BuildMap(J) {
-  const M = S.map, box = k3Shell(); k3Head(box, 'Choose where'); const hq = document.createElement('div'); hq.className = 'k3hq'; hq.innerHTML = '<img alt="" src="' + k3WIcon(4) + '">' + k3Quote(4); box.appendChild(hq);
+  const M = S.map, box = k3Shell(); k3Head(box, 'Tap where'); const hq = document.createElement('div'); hq.className = 'k3hq'; hq.innerHTML = '<img alt="" src="' + k3WIcon(J.aw) + '">' + k3Quote(J.aw); box.appendChild(hq);
   const el = K3UI.el, mp = document.createElement('div'); mp.className = 'k3mp'; const cvp = document.createElement('canvas'); mp.appendChild(cvp); box.appendChild(mp);
-  const go = document.createElement('button'); go.className = 'k3go'; go.textContent = 'MAKE THE WISH'; go.disabled = true; box.appendChild(go);
   let w = Math.min(el.clientWidth - 24, 820), h = w * M.h / M.w; const maxH = el.clientHeight - 210; if (h > maxH) { h = Math.max(120, maxH); w = h * M.w / M.h; }
   box.style.width = Math.max(260, w) + 'px'; box.style.maxWidth = '100%'; const dp = Math.min(window.devicePixelRatio || 1, 2), sc = w / M.w;
   cvp.style.width = Math.round(w) + 'px'; cvp.style.height = Math.round(h) + 'px'; cvp.width = Math.round(w * dp); cvp.height = Math.round(h * dp);
-  const P = { cv: cvp, sc, dp, pt: null, hov: null }, world = e => { const r = cvp.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * M.w, (e.clientY - r.top) / r.height * M.h]; };
+  const P = { cv: cvp, sc, dp, pt: null, hov: null, r: J.aw === 7 ? K3_FROG_R : 0 }, world = e => { const r = cvp.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * M.w, (e.clientY - r.top) / r.height * M.h]; };
   cvp.addEventListener('pointerdown', e => { P.hov = world(e); }); cvp.addEventListener('pointermove', e => { P.hov = world(e); }); cvp.addEventListener('pointerleave', () => { P.hov = null; });
-  cvp.addEventListener('pointerup', e => { e.preventDefault(); if (performance.now() - K3UI.t0 < 350) return; const [x, y] = world(e); if (!k0SpotFree(x, y)) { toast('Pick open floor'); return; } P.pt = [x, y]; go.disabled = false; });
-  go.onclick = () => { if (!P.pt) return; sendAct('k3target', true, { x: Math.round(P.pt[0]), y: Math.round(P.pt[1]) }); K3UI.open = false; k3UiClose(); };
+  cvp.addEventListener('pointerup', e => { e.preventDefault(); if (performance.now() - K3UI.t0 < 350) return; const [x, y] = world(e); if (!(x >= 0 && y >= 0 && x <= M.w && y <= M.h)) return; P.pt = [x, y]; sendAct('k3target', true, { x: Math.round(x), y: Math.round(y) }); K3UI.open = false; k3UiClose(); });   // a tap on the map IS the wish: no confirm button. The host moves a blocked spot to the nearest open floor
   const g = cvp.getContext('2d'), loop = () => { if (K3UI.el !== el) return; k3MapDraw(g, P, M); K3UI.raf = requestAnimationFrame(loop); }; loop();
 }
 function k3MapDraw(g, P, M) {
@@ -4689,7 +4869,9 @@ function k3MapDraw(g, P, M) {
   g.fillStyle = 'rgba(179,18,26,.7)'; for (const q of M.hooks || []) { g.beginPath(); g.arc(q[0], q[1], 5 * c, 0, TAU); g.fill(); }
   g.fillStyle = 'rgba(226,185,59,.55)'; for (const q of M.gens || []) g.fillRect(q[0] - 7 * c, q[1] - 5 * c, 14 * c, 10 * c);
   const me = posOf(S.me); if (me) { const rg = g.createRadialGradient(me[0], me[1], 0, me[0], me[1], 26 * c); rg.addColorStop(0, `rgba(255,40,70,${(.5 + .25 * pu).toFixed(2)})`); rg.addColorStop(1, 'rgba(255,40,70,0)'); g.fillStyle = rg; g.beginPath(); g.arc(me[0], me[1], 26 * c, 0, TAU); g.fill(); g.fillStyle = '#f6ead0'; g.beginPath(); g.arc(me[0], me[1], 5 * c, 0, TAU); g.fill(); }
-  const pt = P.pt || P.hov; if (pt) { const ok = k0SpotFree(pt[0], pt[1]), al = P.pt ? 1 : .55, col = ok ? '155,61,255' : '255,59,69';
+  const pt = P.pt || P.hov; if (pt) { const ok = true, al = P.pt ? 1 : .55, col = ok ? (P.r ? '120,235,90' : '155,61,255') : '255,59,69';
+    if (P.r) { g.fillStyle = `rgba(90,220,80,${((.1 + .06 * pu) * al).toFixed(3)})`; g.beginPath(); g.arc(pt[0], pt[1], P.r, 0, TAU); g.fill();   // frog wish: the area that will be hit
+      g.strokeStyle = `rgba(150,255,110,${(.8 * al).toFixed(3)})`; g.lineWidth = 2 * c; g.setLineDash([10 * c, 8 * c]); g.lineDashOffset = -now / 40 * c; g.beginPath(); g.arc(pt[0], pt[1], P.r, 0, TAU); g.stroke(); g.setLineDash([]); }
     for (let i = 0; i < 3; i++) { g.strokeStyle = `rgba(${col},${(al * (.9 - i * .22)).toFixed(2)})`; g.lineWidth = 2 * c; g.setLineDash([6 * c, 5 * c]); g.lineDashOffset = (i % 2 ? 1 : -1) * now / 40 * c; g.beginPath(); g.arc(pt[0], pt[1], (9 + i * 6 + 2 * pu) * c, 0, TAU); g.stroke(); }
     g.setLineDash([]); g.fillStyle = `rgba(${ok ? '232,200,255' : '255,120,120'},${al})`; g.beginPath(); g.arc(pt[0], pt[1], 3 * c, 0, TAU); g.fill(); }
   g.setTransform(1, 0, 0, 1, 0, 0); const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .72); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
@@ -4698,7 +4880,7 @@ function k3UiSync() {   // keeps the picker in step with the host's state; calle
   const J = S.wo.k3, ok = !!J && inGame && S.phase === 'hunt' && myRole() === 'killer' && isK3(S.me);
   if (!ok || J.n < 1) { K3UI.open = false; if (K3UI.el) k3UiClose(); return; }
   if (!K3UI.open || !J.of.length) { if (K3UI.el) k3UiClose(); return; }
-  const mode = J.aw === 2 ? 'target' : J.aw === 4 ? 'map' : 'pick', sig = mode + '|' + J.of.join(',') + (mode === 'target' ? '|' + k3TargetList().map(e => e.p.id + e.s).join(',') : '');
+  const mode = J.aw === 2 ? 'target' : J.aw === 4 || J.aw === 7 ? 'map' : 'pick', sig = mode + (mode === 'map' ? J.aw : '') + '|' + J.of.join(',') + (mode === 'target' ? '|' + k3TargetList().map(e => e.p.id + e.s).join(',') : '');
   if (K3UI.el && K3UI.sig === sig) return;
   k3UiClose(); K3UI.mode = mode; K3UI.sig = sig; K3UI.t0 = performance.now();
   if (mode === 'pick') k3BuildPick(J); else if (mode === 'target') k3BuildTarget(J); else k3BuildMap(J);
@@ -4807,6 +4989,34 @@ function drawK3Fx(now, me, role) {   // teleport windup swirls, her destination 
     if (e.type === 'tpw') for (let i = 0; i < 3; i++) { const r = (46 - i * 11) * (1 - .55 * u) + 6, a = (.3 + .6 * u) * (1 - i * .2); ctx.strokeStyle = `rgba(${i % 2 ? '224,38,74' : '155,61,255'},${a.toFixed(3)})`; ctx.lineWidth = 3; ctx.setLineDash([9, 7]); ctx.lineDashOffset = (i % 2 ? 1 : -1) * now / 22; ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
     else if (e.type === 'shot') { const a = 1 - u; ctx.strokeStyle = `rgba(255,236,170,${a.toFixed(3)})`; ctx.lineWidth = 3 * a + 1; ctx.beginPath(); ctx.moveTo(e.x0, e.y0); ctx.lineTo(e.x1, e.y1); ctx.stroke(); ctx.strokeStyle = `rgba(255,255,255,${a.toFixed(3)})`; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = `rgba(255,214,120,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x0, e.y0, 16 * a + 4, 0, TAU); ctx.fill(); ctx.fillStyle = e.hit ? `rgba(255,50,70,${a.toFixed(3)})` : `rgba(255,236,170,${(a * .8).toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x1, e.y1, (e.hit ? 20 : 10) * a + 3, 0, TAU); ctx.fill(); }
+    else if (e.type === 'frw') { const R = e.r, ease = 1 - Math.pow(1 - u, 3), pr = Math.min(1, u * 1.6), k = R / 110, n = 12, rot = u * 1.5, fa = .5 + .5 * ease;   // frog ritual: Deyja's rune circle (double ring, hooked / forked glyphs, thin star) that draws itself on and spins up during the 0.3 s cast
+      const X = e.x, Y = e.y, A0 = -Math.PI / 2, arc = (r, p) => { ctx.beginPath(); ctx.arc(X, Y, r, A0, A0 + TAU * Math.min(1, p)); ctx.stroke(); };
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([]);
+      const gr = ctx.createRadialGradient(X, Y, 0, X, Y, R * (.3 + .7 * ease)); gr.addColorStop(0, `rgba(120,255,110,${(.22 * ease).toFixed(3)})`); gr.addColorStop(1, `rgba(40,170,60,${(.04 + .08 * ease).toFixed(3)})`);
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(X, Y, R * (.3 + .7 * ease), 0, TAU); ctx.fill();   // the glow floods in from the centre
+      ctx.strokeStyle = ctx.fillStyle = `rgba(160,255,130,${fa.toFixed(3)})`;
+      ctx.globalAlpha = 1; ctx.lineWidth = 2.6 * k; arc(R, pr);   // outer ring
+      ctx.lineWidth = 1.6 * k; arc(R - 11 * k, pr * .95); arc(R * .55, pr * .9);   // inner rings
+      ctx.setLineDash([3 * k, 7 * k]); ctx.lineWidth = 1.4 * k; ctx.globalAlpha = .7; arc(R - 5.5 * k, pr); ctx.setLineDash([]); ctx.globalAlpha = 1;   // dotted ring between the two outer ones
+      ctx.lineWidth = 1.9 * k;   // runes between the two outer rings, lighting up one after another
+      for (let j = 0; j < n; j++) {
+        const lit = Math.max(0, Math.min(1, u * 1.5 - j / n * .9)); if (lit <= 0) continue;
+        const a = rot + j * TAU / n, c = Math.cos(a), sn = Math.sin(a), r1 = R - 9.5 * k, r2 = R - 2.5 * k, mx = X + c * (r1 + r2) / 2, my = Y + sn * (r1 + r2) / 2, tx = -sn, ty = c, w = 2.5 * k;
+        ctx.globalAlpha = Math.min(1, lit * 1.4); ctx.beginPath();
+        if (j % 3 === 0) { ctx.moveTo(X + c * r1, Y + sn * r1); ctx.lineTo(X + c * r2, Y + sn * r2); ctx.moveTo(mx + tx * w, my + ty * w); ctx.lineTo(mx - tx * w, my - ty * w); }
+        else if (j % 3 === 1) { ctx.moveTo(X + c * r2, Y + sn * r2); ctx.lineTo(mx + tx * w, my + ty * w); ctx.lineTo(X + c * r1, Y + sn * r1); ctx.lineTo(mx - tx * w, my - ty * w); ctx.lineTo(X + c * r2, Y + sn * r2); }
+        else { ctx.moveTo(mx + tx * w, my + ty * w); ctx.lineTo(mx, my); ctx.lineTo(X + c * r2, Y + sn * r2); ctx.moveTo(mx, my); ctx.lineTo(mx - tx * w - c * 1.6 * k, my - ty * w - sn * 1.6 * k); }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1; ctx.strokeStyle = `rgba(215,255,185,${(.35 + .65 * ease).toFixed(3)})`; ctx.lineWidth = 2.2 * k;   // the five-pointed star, drawn stroke by stroke, turning the other way
+      const sr = R * .55, tot = 5 * 1.902 * sr; ctx.setLineDash([tot * Math.min(1, u * 1.35), tot]); ctx.beginPath();
+      for (let j = 0; j <= 5; j++) { const an = -rot * .7 - Math.PI / 2 + j * 2 * TAU / 5, px = X + Math.cos(an) * sr, py = Y + Math.sin(an) * sr; j ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+      ctx.stroke(); ctx.setLineDash([]);
+      if (u > .55) { const f = (u - .55) / .45; ctx.fillStyle = `rgba(230,255,200,${(.55 * f).toFixed(3)})`; ctx.beginPath(); ctx.arc(X, Y, 8 * k * (.4 + f), 0, TAU); ctx.fill(); }   // a flare in the middle just before the spell lands
+      ctx.globalAlpha = 1; ctx.lineCap = 'butt'; ctx.lineJoin = 'miter'; }
+    else if (e.type === 'frc') { const a = 1 - u, R = e.r * (.7 + .4 * u);   // frog impact: a bright green shockwave
+      ctx.fillStyle = `rgba(110,240,90,${(.28 * a).toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU); ctx.fill();
+      ctx.strokeStyle = `rgba(190,255,150,${(.9 * a).toFixed(3)})`; ctx.lineWidth = 6 * a + 2; ctx.beginPath(); ctx.arc(e.x, e.y, R, 0, TAU); ctx.stroke(); }
   }
   const J = S.wo.k3; if (J && J.tp && role === 'killer' && isK3(S.me)) { const u = Math.max(0, Math.min(1, (J.tp.at - now) / K3_TP_WIND_MS)), p = J.tp;   // where she is about to appear: only on her screen
     for (let i = 0; i < 3; i++) { ctx.strokeStyle = `rgba(155,61,255,${(.85 - i * .22).toFixed(3)})`; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.lineDashOffset = now / 24; ctx.beginPath(); ctx.arc(p.x, p.y, 10 + i * 10 + 30 * u, 0, TAU); ctx.stroke(); } ctx.setLineDash([]); }
@@ -4815,7 +5025,7 @@ function drawK3Fx(now, me, role) {   // teleport windup swirls, her destination 
 function k3LagUi(now) { const on = inGame && k3Laggy(now); let e = $('k3lag'); if (on && !e) { e = document.createElement('div'); e.id = 'k3lag'; e.innerHTML = '<b>CONNECTION LOST</b>'; document.body.appendChild(e); } else if (!on && e) e.remove(); }
 function useItem(p, now) {
   if (!p.item || !p.role || p.role === 'killer' || !p.on || S.phase !== 'hunt') return;   // killers can't use items
-  if (p.role === 'survivor' && ((p.st !== 'healthy' && p.st !== 'injured') || p.task >= 0)) return;
+  if (p.role === 'survivor' && ((p.st !== 'healthy' && p.st !== 'injured') || p.task >= 0 || k3FrogOn(p, now))) return;
   if (p.role === 'survivor' && K3.love && now < K3.love.end) { msgTo(p, 'Your items are sealed'); return; }   // "find love": every survivor's items are sealed
   const id = p.item; let ok = true; const rl = p.role === 'killer' ? 1 : 0;
   if (id === 'trap') { TRP.push({ id: ITN++, x: p.x, y: p.y, role: p.role, owner: p.id, born: now, end: now + CFG.TRAP_LIFE_MS }); woSend('tr'); evSend({ k: 'set', x: p.x, y: p.y, r: rl, ti: 0 }); }
@@ -4895,7 +5105,7 @@ function itemStep(now, dtMs) {
     if (now >= t.end) { TRP = TRP.filter(x => x !== t); ch = true; continue; }
     for (const p of ps) {
       if (!p.on || !p.role || p.role === t.role || (p.role === 'survivor' && p.st !== 'healthy' && p.st !== 'injured') || Math.hypot(p.x - t.x, p.y - t.y) > (t.role === 'killer' ? CFG.TRAP_R_K : CFG.TRAP_R)) continue;
-      if (p.role === 'killer' && isK2(p.id) && k2Lk(t.owner)) continue;   // killer_2: only his target's items can hurt him
+      if (p.role === 'killer' && isK2(p.id) && (k2Lk(t.owner) || K2.tv >= 0)) continue;   // killer_2: only his target's items can hurt him
       const rt = CFG.TRAP_ROOT_MS;
       addMod(p, 'root', 0, rt, now); sxSend(p.id, 'root', rt); if (p.role === 'killer') abLockSet(p, rt, now); TRP = TRP.filter(x => x !== t); ch = true; evSend({ k: 'snap', x: t.x, y: t.y, by: t.owner, vid: p.id }); break;
     }
@@ -4907,7 +5117,7 @@ function itemStep(now, dtMs) {
     if (now >= s.end) { SLK = SLK.filter(x => x !== s); ch = true; continue; }
     for (const p of ps) {
       if (!p.on || !p.role || p.role === s.role || (p.role === 'survivor' && p.st !== 'healthy' && p.st !== 'injured') || now < (p.slickImm || 0) || Math.hypot(p.x - s.x, p.y - s.y) > (s.role === 'killer' ? CFG.SLICK_R_K : CFG.SLICK_R)) continue;
-      if (p.role === 'killer' && isK2(p.id) && k2Lk(s.owner)) continue;   // killer_2: only his target's items can hurt him
+      if (p.role === 'killer' && isK2(p.id) && (k2Lk(s.owner) || K2.tv >= 0)) continue;   // killer_2: only his target's items can hurt him
       const v = lastDir(p); if (!v) continue;
       const sm = CFG.SLICK_SLIDE_MS;
       p.slideUntil = now + sm; p.sdx = v[0]; p.sdy = v[1]; p.slickImm = now + sm + CFG.SLICK_IMMUNE_MS;
@@ -4919,7 +5129,7 @@ function itemStep(now, dtMs) {
   let nch = false;
   for (const f of FLR) if (f.nm) for (const q of ps) {
     if (!q.on || !q.role || q.id === f.owner || q.role === f.role || f.hit[q.id] || Math.hypot(q.x - f.x, q.y - f.y) > CFG.NM_R) continue;
-    if (q.role === 'killer' && isK2(q.id) && k2Lk(f.owner)) continue;   // killer_2: only his target's items can hurt him
+    if (q.role === 'killer' && isK2(q.id) && (k2Lk(f.owner) || K2.tv >= 0)) continue;   // killer_2: only his target's items can hurt him
     f.hit[q.id] = 1; nch = true;
     if (q.role === 'killer') NE.k = Math.max(NE.k, now + CFG.NM_SURV_MS); else NE.s[q.id] = Math.max(NE.s[q.id] || 0, now + CFG.NM_KILLER_MS);
   }
@@ -5080,7 +5290,7 @@ function applyEg(m, quiet) {   // endgame state from the host: gates open + dawn
 function hookRemain(st, now) { return st.hookEnd - (st.rpOn && st.holdAt ? st.holdAt : now); }   // ms left on the hook timer; frozen while a rescue is in progress
 function applyRp(m) { const o = S.st[m.id]; if (!o) return; const nw = performance.now(); if (m.on && !o.rpOn) o.holdAt = nw; else if (!m.on && o.rpOn && o.holdAt) { o.hookEnd += nw - o.holdAt; o.holdAt = 0; } o.rp = +m.p || 0; o.rpAt = performance.now(); o.rpOn = !!m.on; o.rr = +m.r || 1; }
 function setCd(ms) { S.cdEnd = performance.now() + ms; S.cdTot = ms; }
-function clearRoundState() { S.pick = {}; S.ts = tsEmpty(); S.gs = gcEmpty(); S.ds = dcEmpty(); S.gping = {}; S.powAt = 0; S.monAt = 0; S.pannAt = 0; S.lsAt = 0; S.sightAt = 0; S.itemRrAt = 0; S.eg = { on: false, final: false, endAt: 0, solo: false, soloAt: 0 }; S.res = null; S.gateT0 = 0; EG = egEmpty(); genHumStopAll(); closeTask(''); S.st = {}; S.spec = -1; S.sacAt = 0; S.cdEnd = S.cdTot = 0; TRAIL.clear(); TERROR.clear(); FX.length = 0; for (const k in AN) delete AN[k]; for (const k in LAUGH) delete LAUGH[k]; S.item = null; S.wo = woEmpty(); S.smokeW = []; S.smSig = ''; S.fx2 = {}; S.blindEnd = 0; IFX.length = 0; ALERTS.length = 0; ctxRelease(); try { k1Reset(); } catch (e) {} try { K3FX.length = 0; K3UI.open = false; k3UiClose(); } catch (e) {} try { k6Reset(); } catch (e) {} try { k5Reset(); } catch (e) {}
+function clearRoundState() { S.pick = {}; S.ts = tsEmpty(); S.gs = gcEmpty(); S.ds = dcEmpty(); S.gping = {}; S.powAt = 0; S.monAt = 0; S.pannAt = 0; S.lsAt = 0; S.sightAt = 0; S.itemRrAt = 0; S.eg = { on: false, final: false, endAt: 0, solo: false, soloAt: 0 }; S.res = null; S.gateT0 = 0; EG = egEmpty(); genHumStopAll(); closeTask(''); S.st = {}; S.spec = -1; S.sacAt = 0; S.cdEnd = S.cdTot = 0; TRAIL.clear(); TERROR.clear(); FX.length = 0; for (const k in AN) delete AN[k]; for (const k in LAUGH) delete LAUGH[k]; S.item = null; S.wo = woEmpty(); S.smokeW = []; S.smSig = ''; S.fx2 = {}; S.blindEnd = 0; IFX.length = 0; ALERTS.length = 0; ctxRelease(); try { k1Reset(); } catch (e) {} try { K2C.fx = {}; k2ArrowsHide(); } catch (e) {} try { K3FX.length = 0; K3UI.open = false; k3UiClose(); } catch (e) {} try { k6Reset(); } catch (e) {} try { k5Reset(); } catch (e) {}
   try { shopClose(); k0PickClose(); scClose(); K0PH = 0; K0PW = 0; K5AIM = { t: 0, x: 0, y: 0, f: 9, P: null }; K3MF = {}; } catch (e) { diagErr('cleanup', e); }   // killer overlays / aim state of the previous round
   try { toastClear(); for (const id of ['hitBanner', 'noteBy', 'noteVic']) { const e = $(id); if (e) { e.style.transition = 'none'; e.style.opacity = '0'; } } } catch (e) {}   // stale notifications never reach the next round
 }
@@ -5332,7 +5542,7 @@ function toast(t, kind) {   // styled like the in-game announcements; the look (
 setInterval(() => { try { if (!$('toast').classList.contains('hidden')) toastPlace(); } catch (e) {} }, 250);   // the HUD above may have grown / wrapped since the toast appeared
 const myRole = () => { const p = S.players.find(q => q.id === S.me); return p && p.role || null; };
 const killerIdRaw = () => { const p = S.players.find(q => q.role === 'killer'); return p ? p.id : -1; };
-const killerId = () => { const id = killerIdRaw(); return id >= 0 && k6Veil() ? -1 : id; };   // killer_6: while he is disguised survivors get no beam / eyes / heartbeat / laugh from him
+const killerId = () => { const id = killerIdRaw(); return id >= 0 && (k6Veil() || k2Hid(id)) ? -1 : id; };   // killer_6: while he is disguised survivors get no beam / eyes / heartbeat / laugh from him
 const myState = () => (S.st[S.me] || {}).s || 'healthy';
 function syncRoleUI() {   // small role chip in the top bar (headstart + hunt)
   const r = myRole(), c = $('chip'), show = inGame && r && (S.phase === 'headstart' || S.phase === 'hunt');
@@ -5481,7 +5691,7 @@ function k4XtOpen() { const J = S.wo.k4; return !!(J && isK4(S.me) && J.xt > per
 function sendAct(a, down, n) {
   if (a === 'block') a = 'barricade'; if (a === 'rbt') a = 'rbtoff';
   if (a === 'attack' && k6Me()) a = 'k6scr';   // killer_6: disguised, the attack button is SCREAM
-  if (a === 'attack' && down && !k3GunOn() && !k5ShockOn() && !k4XtOpen() && !(isK1(S.me) && k1InvisFx(S.me))) startPendingSwing();   // (Deyja's follow-up dash window: the tap is a dash, not a slash)   // instant local slash for the killer; the host's 'atk' message settles hit/miss (a gun shot has no slash)
+  if (a === 'attack' && down && !k3GunOn() && !k5ShockOn() && !k4XtOpen() && !k2InMe() && !(isK1(S.me) && k1InvisFx(S.me))) startPendingSwing();   // (Deyja's follow-up dash window: the tap is a dash, not a slash)   // instant local slash for the killer; the host's 'atk' message settles hit/miss (a gun shot has no slash)
   const go = () => { if (S.role === 'host') { const p = HP.get(S.me); if (p) hostAct(p, a, down, n); } else if (S.inRoom && !S.reconnecting) T.send({ t: 'act', a, down, n }); }, d = k3LagDelay(performance.now());   // "bad network": a survivor's actions arrive late
   if (d) setTimeout(go, d); else go();
 }
@@ -5881,6 +6091,7 @@ function fogVisibilityAllowed(viewerPos, targetPos) {
 }
 function canSee(viewerRole, viewerId, entityId) {
   if (entityId === viewerId) return true;          // everyone always sees themselves
+  if (k2Hid(entityId)) return false;               // killer_2 inside a TV (Telegraph): invisible to everybody, the same rule as an Among Us vent
   if (viewerRole === 'killer' && hatOn(entityId)) return false;   // Magician's Hat: the killer cannot see the wearer at all (no light, flare or hook reveals them)
   if (viewerRole === 'killer' && isK3Min(entityId) && isK3(viewerId)) return true;   // killer_3: she always sees the killers her wish summoned
   if (!viewerRole) return true;                    // no role => no darkness
@@ -7578,45 +7789,59 @@ const SKW_BURST = [   // the Skinwalker's face in monster form: a black maw ring
    'kkkktkktkttk.',
    '..kktkktkkkk.',
    '...kkkkkk..k.']];
-function skinwalkerBmp(pose, f, lau, mon) {   // Skinwalker: a tall, thin, smooth white humanoid with no face at all, arms hanging to the knees with long fingers. mon = gates-open form: the neck, torso and limbs stretch out of all proportion (one arm drags on the ground, the knees bend at different heights) and the blank face splits open into a burst of teeth
-  const H = mon ? 50 : 38, oy = H - 28;
-  return cachedSpr(`sk${pose}${f}${lau ? 1 : 0}${mon ? 1 : 0}`, () => outlined(pxc(mon ? 32 : 26, H, r0 => {
-    const ox = 3, r = (x, y, w, h, c) => r0(x + ox, y + oy, w, h, c);
-    const W1 = mon ? '#e6e8ef' : '#efeee8', W2 = mon ? '#bcc0ce' : '#cccbc4', W3 = mon ? '#8c92a6' : '#a3a29d', WH = '#ffffff';
-    const K = '#07040a', GUM = '#7a1020', GUM2 = '#3e0712', TH = '#fbf3d6', TH2 = '#bfb184';
+function skinwalkerBmp(pose, f, lau, mon) {   // Skinwalker: a tall, thin, smooth white humanoid with no face at all, arms hanging to the knees with long fingers. mon = gates-open form: the neck, torso and limbs stretch out of all proportion (one arm drags on the ground, the knees bend at different heights) and the blank face splits open into a burst of teeth. HI-RES: same model, drawn on a 2x grid (b.ss) with real shading, anatomy and skin detail
+  const H = mon ? 50 : 38, oy = H - 28, W = mon ? 32 : 26;
+  return cachedSpr(`sk${pose}${f}${lau ? 1 : 0}${mon ? 1 : 0}`, () => { const o = outlined(outlined(pxc(W * 2 + 4, H * 2 + 2, r0 => {
+    const OX = 8, OY = oy * 2 + 2, px = (x, y, c) => r0(Math.round(x) + OX, Math.round(y) + OY, 1, 1, c), cl = (v, a, b) => Math.max(a, Math.min(b, v));
+    const P = mon ? ['#f4f6fb', '#e3e6ef', '#c9cddb', '#a8adc0', '#858ba2', '#5d637c'] : ['#ffffff', '#f3f2ec', '#e2e1d9', '#c8c7bf', '#a7a6a2', '#7f7f86'];
+    const K = '#07040a', VN = mon ? '#6b4a80' : '#b9bdcc';
+    const tn = (t, x, y, dk) => P[cl(Math.round(t * 5 + (dk || 0) + (((x + y) & 1) - .5) * .42), 0, 5)];   // 6-tone ramp + a light ordered dither
+    const lit = (nx, ny) => cl(.36 + (nx * .5 + ny * .7) * .42 + Math.pow(Math.hypot(nx, ny), 3) * .1, 0, 1);   // light from the upper left, rim falls into shadow
+    const cap = (x0, y0, x1, y1, ra, rb, dk) => { const vx = x1 - x0, vy = y1 - y0, L2 = vx * vx + vy * vy || 1, m = Math.max(ra, rb) + 1;
+      for (let y = Math.floor(Math.min(y0, y1) - m); y <= Math.ceil(Math.max(y0, y1) + m); y++) for (let x = Math.floor(Math.min(x0, x1) - m); x <= Math.ceil(Math.max(x0, x1) + m); x++) {
+        const t = cl(((x + .5 - x0) * vx + (y + .5 - y0) * vy) / L2, 0, 1), dx = x + .5 - (x0 + vx * t), dy = y + .5 - (y0 + vy * t), rr = ra + (rb - ra) * t;
+        if (dx * dx + dy * dy <= rr * rr) px(x, y, tn(lit(dx / rr, dy / rr), x, y, dk)); } };
+    const egg = (cx, cy, rx, ry) => { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx - 1); x <= Math.ceil(cx + rx + 1); x++) {
+      const ny = (y + .5 - cy) / ry, nx = (x + .5 - cx) / rx; if (Math.pow(Math.abs(nx), 2.5) + Math.pow(Math.abs(ny), 2.5) <= 1) px(x, y, tn(lit(nx * .8, ny * .8), x, y)); } };
+    const ln = (x0, y0, x1, y1, c) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) px(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); };
+    const fing = (x, y, dx, len, dk) => { cap(x, y, x + dx, y + len, .95, .5, dk); px(x + dx * .35, y + len * .35, P[dk ? 2 : 0]); px(x + dx * .7, y + len * .7, P[dk ? 3 : 1]); };   // a long finger with two knuckles
     const run = pose === 'run', sw = pose === 'swing', idle = !run && !sw, [lL, lR, aL, aR, by] = run ? KRUN[f & 3] : [0, 0, 0, 0, sw ? 0 : f & 1], bx = run || (sw && f) ? 1 : 0;
-    const hb = bx + (idle && f ? 1 : 0);   // idle: the head tips a pixel off-axis every other beat
+    const hb = bx + (idle && f ? 1 : 0), b2 = by * 2, x2 = bx * 2, h2 = hb * 2, cx = 17 + x2, FD = 1.5;
+    const torso = (yt, hw0, sh) => { for (let y = yt; y < 28; y++) { const u = (y - yt) / (28 - yt), hw = hw0 - sh * Math.sin(Math.PI * u * .9); for (let x = Math.floor(cx - hw); x < Math.ceil(cx + hw); x++) { const nx = (x + .5 - cx) / hw; if (Math.abs(nx) <= 1) px(x, y, tn(lit(nx, (u - .5) * .6), x, y)); } } };
     if (!mon) {
-      const leg = (x, lift, out) => { const o = lift ? out : 0; r(x + o + bx, 14, 2, 13 - lift, W1); r(x + o + bx + 1, 14, 1, 13 - lift, W2); r(x + o + bx, 27 - lift, 4, 1, W2); };
-      // far arm: dangles to the knee, three long fingers
-      r(4 + bx, 3 + by, 1, 20 + aL, W3); r(3 + bx, 23 + by + aL, 1, 4, W3); r(5 + bx, 23 + by + aL, 1, 3, W3); r(4 + bx, 23 + by + aL, 1, 2, W3);
-      leg(6, lL, -1); leg(9, lR, 1);
-      r(6 + bx, 4 + by, 5, 10 - by, W1); r(6 + bx, 4 + by, 1, 10 - by, WH); r(10 + bx, 4 + by, 1, 10 - by, W2); r(7 + bx, 13, 3, 1, W2);   // long narrow torso
-      r(5 + bx, 2 + by, 7, 2, W1); r(5 + bx, 2 + by, 1, 1, WH); r(11 + bx, 3 + by, 1, 1, W2); r(7 + bx, 4 + by, 3, 1, W2);   // shoulders + collarbone shadow
-      r(7 + bx, 7 + by, 3, 1, W2); r(7 + bx, 9, 3, 1, W2);   // faint ribs
-      r(7 + bx, 0 + by, 3, 3, W2); r(8 + bx, 0 + by, 1, 3, W1);   // neck
-      [3, 5, 7, 7, 7, 7, 7, 5, 3].forEach((w, q) => { const x0 = 8 - (w >> 1) + hb, y = q - 9 + by; r(x0, y, w, 1, W1); if (w > 3) { r(x0, y, 1, 1, WH); r(x0 + w - 1, y, 1, 1, W2); } });   // smooth blank egg of a head: no face at all
-      if (sw && f === 0) { r(11 + bx, -3, 1, 8, W1); r(10 + bx, -7, 1, 4, W2); r(12 + bx, -7, 1, 4, W2); r(11 + bx, -6, 1, 3, W1); }   // wind-up: arm snaps overhead, fingers spread
-      else if (sw) { r(11 + bx, 4, 2, 3, W1); r(12 + bx, 5, 6, 1, W1); r(18 + bx, 4, 2, 3, W1); r(20 + bx, 3, 2, 1, W2); r(20 + bx, 5, 2, 1, W2); r(20 + bx, 7, 2, 1, W2); }   // strike: the arm whips out, fingers splayed
-      else { r(11 + bx, 3 + by, 1, 20 + aR, W1); r(11 + bx, 3 + by, 1, 3, WH); r(10 + bx, 23 + by + aR, 1, 3, W2); r(12 + bx, 23 + by + aR, 1, 4, W2); r(11 + bx, 23 + by + aR, 1, 2, W1); }
+      // far arm (in shadow): dangles to the knee, three long fingers
+      cap(9 + x2, 8 + b2, 9 + x2, 46 + b2 + 2 * aL, 1.15, 1.0, FD);
+      { const y = 46 + b2 + 2 * aL; fing(8 + x2, y, -.5, 9, FD); fing(9 + x2, y, 0, 12, FD); fing(10 + x2, y, .5, 8, FD); }
+      for (const [x, lift, out] of [[6, lL, -1], [9, lR, 1]]) { const hx = 2 * (x + (lift ? out : 0) + bx) + 2, yb = 54 - 2 * lift;   // legs: thigh, kneecap, calf, long flat foot with toes
+        cap(hx, 26, hx, 40, 2.1, 2.1); cap(hx, 40, hx, yb - 2, 2.1, 1.8); px(hx - 1, 40, P[0]); px(hx - 1, 41, P[1]); px(hx + 1, 47, P[4]); cap(hx - 2, yb, hx + 4, yb + .5, 1.4, 1.1); for (const t of [1, 2.5, 4]) px(hx + t + 1, yb + 1, P[4]); }
+      torso(8 + b2, 5.2, .4); cap(12.5 + x2, 6.5 + b2, 21.5 + x2, 6.5 + b2, 2.5, 2.5);   // long narrow torso + shoulder bar
+      ln(13 + x2, 8 + b2, 16 + x2, 9 + b2, P[4]); ln(21 + x2, 8 + b2, 18 + x2, 9 + b2, P[4]); ln(cx, 10 + b2, cx, 20, P[3]);   // collarbones + sternum
+      for (let i = 0; i < 4; i++) { const y = 13 + i * 3.5 + b2 * (i < 1 ? 1 : 0); ln(cx - 1, y, cx - 4.5, y + 1, P[3]); ln(cx + 1, y, cx + 4.5, y + 1, P[4]); px(cx - 3, y + 2, P[0]); }   // faint ribs
+      for (let y = 21; y < 28; y++) for (let x = cx - 2; x <= cx + 2; x++) if ((x + y) & 1) px(x, y, P[3]);   // sunken belly
+      cap(17 + x2, 0 + b2, 17 + x2, 9 + b2, 3, 3.3); ln(15 + x2, 2 + b2, 15 + x2, 8 + b2, P[4]); ln(19 + x2, 2 + b2, 19 + x2, 8 + b2, P[4]);   // neck with two tendons
+      egg(17 + h2, -9.5 + b2, 7.6, 9.2); ln(14 + h2, 1 + b2, 20 + h2, 1 + b2, P[4]);   // smooth blank egg of a head (no face at all) + a chin shadow
+      if (sw && f === 0) { cap(23 + x2, 8, 23 + x2, -4, 1.15, 1.0); fing(22 + x2, -4, -2, -9); fing(23 + x2, -4, 0, -10); fing(24.5 + x2, -4, 2.5, -9); }   // wind-up: arm snaps overhead, fingers spread
+      else if (sw) { cap(23.5 + x2, 9, 36, 10.5, 1.2, 1.0); cap(36, 10.5, 40, 10.5, 2.2, 1.8); fing(40, 8, 5, -2); fing(40, 10.5, 6, 0); fing(40, 13, 5, 2); }   // strike: the arm whips out, fingers splayed
+      else { const y = 46 + b2 + 2 * aR; cap(23 + x2, 8 + b2, 23 + x2, y, 1.15, 1.0); fing(22 + x2, y, -.5, 8); fing(23 + x2, y, 0, 11); fing(24 + x2, y, .5, 8); }
     } else {
-      const leg = (x, lift, out, kn, ky) => { const o = lift ? out : 0, sx = x + kn + o + bx; r(x + o + bx, 13, 2, ky - 13, W1); r(x + o + bx + 1, 13, 1, ky - 13, W2); r(sx, ky, 2, 28 - ky - lift, W1); r(sx + 1, ky, 1, 28 - ky - lift, W2); r(x + o + bx + (kn < 0 ? -1 : 1), ky - 1, 1, 2, W3); r(sx - (kn < 0 ? 1 : 0), 27 - lift, 3, 1, W3); };   // knees jut out sideways, one far higher than the other
       // far arm: far too long, jointed twice, knuckles and fingers dragging on the ground
-      r(4 + bx, 0 + by, 1, 11, W3); r(3 + bx, 11 + by, 1, 1, W3); r(2 + bx, 12 + by, 1, 10 + aL, W3); r(1 + bx, 21 + by + aL, 1, 1, W3); r(0 + bx, 24, 1, 4, W3); r(2 + bx, 24, 1, 4, W3); r(1 + bx, 22 + by + aL, 1, 5 - aL, W3);
-      leg(6, lL, -1, -2, 17); leg(9, lR, 1, 2, 21);
-      r(6 + bx, 1 + by, 5, 13 - by, W1); r(6 + bx, 1 + by, 1, 13 - by, WH); r(10 + bx, 1 + by, 1, 13 - by, W2); r(7 + bx, 13, 3, 1, W2);   // thin torso, ribs showing
-      for (let q = 3; q < 12; q += 2) r(7 + bx, q + by, q & 2 ? 3 : 2, 1, W3);
-      r(5 + bx, -1 + by, 7, 2, W1); r(5 + bx, -1 + by, 1, 1, WH); r(11 + bx, 0 + by, 1, 1, W2);
-      r(7 + bx, -8 + by, 3, 8, W2); r(8 + bx, -8 + by, 1, 8, W1); r(7 + bx, -5 + by, 1, 1, W3); r(9 + bx, -3 + by, 1, 1, W3);   // neck stretched to twice its length
-      [3, 5, 7, 9, 11, 11, 11, 11, 11, 11, 9, 7, 5, 3].forEach((w, q) => { const x0 = 8 - (w >> 1) + hb, y = q - 21 + by; r(x0, y, w, 1, W1); if (w > 3) { r(x0, y, 1, 1, WH); r(x0 + w - 1, y, 1, 1, W2); } });
-      // the burst of teeth, wider while he laughs or strikes
-      const big = lau || sw || (idle && f), map = SKW_BURST[big ? 1 : 0], PAL = { k: K, g: GUM, G: '#c01830', t: '#ffffff', u: TH2 };
-      for (let yy = 0; yy < 11; yy++) for (let xx = 0; xx < 13; xx++) { const c = PAL[map[yy][xx]]; if (c) r(2 + xx + hb, -19 + yy + by, 1, 1, c); }
-      if (sw && f === 0) { r(13 + bx, -11, 1, 12, W1); r(12 + bx, -19, 1, 8, W2); r(14 + bx, -19, 1, 8, W2); r(13 + bx, -17, 1, 6, W1); }   // wind-up: the arm shoots up past the head
-      else if (sw) { r(11 + bx, 2, 2, 3, W1); r(13, 3, 11, 1, W1); r(24, 1, 2, 5, W1); r(26, 0, 2, 1, W2); r(26, 2, 3, 1, W2); r(26, 4, 3, 1, W2); r(26, 6, 2, 1, W2); }   // strike: it reaches halfway across the screen
-      else { r(12 + bx, 0 + by, 1, 4, W1); r(12 + bx, 0 + by, 1, 2, WH); r(13 + bx, 4 + by, 1, 4, W1); r(14 + bx, 8 + by, 1, 12 + aR, W1); r(15 + bx, 19 + by + aR, 1, 1, W2); r(14 + bx, 20 + by + aR, 2, 2, W2); r(14 + bx, 22 + by + aR, 1, 5 - aR, W2); r(16 + bx, 20 + by + aR, 1, 6, W2); r(15 + bx, 22 + by + aR, 1, 4, W1); }   // near arm: the elbow juts out, then a hand with fingers a foot too long
+      cap(9 + x2, 0 + b2, 7 + x2, 22 + b2, 1.2, 1.1, FD); cap(7 + x2, 22 + b2, 4 + x2, 46 + 2 * aL, 1.1, 1.0, FD); cap(7 + x2, 22 + b2, 7 + x2, 22 + b2, 1.2, 1.2, FD);
+      fing(3 + x2, 46 + 2 * aL, -3, 9, FD); fing(4.5 + x2, 46 + 2 * aL, 0, 10, FD); fing(6 + x2, 46 + 2 * aL, 1, 8, FD);
+      for (const [x, lift, out, kn, ky] of [[6, lL, -1, -2, 17], [9, lR, 1, 2, 21]]) { const hx = 2 * (x + (lift ? out : 0) + bx) + 2, kx = hx + kn * 2, k2 = ky * 2, yb = 54 - 2 * lift;   // knees jut out sideways, one far higher than the other
+        cap(hx, 26, kx, k2, 2.1, 2.1, 0); cap(kx, k2, kx, yb - 2, 2.1, 1.8); cap(kx + kn, k2, kx + kn, k2, 1.2, 1.2); px(kx, yb - 12, P[4]); cap(kx - (kn < 0 ? 3 : 1), yb, kx + 4, yb + .5, 1.3, 1.1); }
+      torso(2 + b2, 5.2, .4); cap(12.5 + x2, 0 + b2, 21.5 + x2, 0 + b2, 2.5, 2.5);   // thin torso, ribs showing
+      ln(cx, 4 + b2, cx, 22, P[3]); for (let i = 0; i < 5; i++) { const y = 6 + i * 4 + b2; ln(cx - 1, y, cx - 5, y + 1, P[5]); ln(cx + 1, y, cx + 5, y + 1, P[5]); px(cx - 3, y + 2, P[0]); px(cx + 3, y + 2, P[1]); }
+      for (let y = 23; y < 28; y++) for (let x = cx - 2; x <= cx + 2; x++) if ((x + y) & 1) px(x, y, P[4]);
+      cap(17 + x2, -16 + b2, 17 + x2, 2 + b2, 2.8, 3.4); ln(15 + x2, -14 + b2, 15 + x2, 0, P[5]); ln(19 + x2, -14 + b2, 19 + x2, 0, P[5]); for (let y = -13; y < 0; y += 3) px(17 + x2, y + b2, P[0]);   // neck stretched to twice its length: tendons, vertebrae
+      egg(17 + h2, -28.5 + b2, 11.4, 14.2);
+      const big = lau || sw || (idle && f), map = SKW_BURST[big ? 1 : 0], PAL = { k: K, g: '#7a1020', G: '#c01830', t: '#ffffff' };   // the burst of teeth, wider while he laughs or strikes
+      for (let yy = 0; yy < 11; yy++) for (let xx = 0; xx < 13; xx++) { const m = map[yy][xx], c = PAL[m]; if (!c) continue; const X = 4 + xx * 2 + h2, Y = -38 + yy * 2 + b2; r0(X + OX, Y + OY, 2, 2, c); }
+      for (const [a, b, c, d] of [[13, -41, 15, -38], [21, -41, 19, -38], [17, -42, 17, -39]]) ln(a + h2, b + b2, c + h2, d + b2, P[5]);   // hairline cracks across the pale crown above the teeth burst
+      if (sw && f === 0) { cap(27 + x2, 2, 27 + x2, -22, 1.15, 1.0); fing(26 + x2, -22, -2, -16); fing(27 + x2, -22, 0, -17); fing(28 + x2, -22, 2, -16); }   // wind-up: the arm shoots up past the head
+      else if (sw) { cap(24, 6, 48, 6.5, 1.2, 1.0); cap(48, 6.5, 51, 6.5, 2.6, 2.2); fing(51, 2, 6, -1); fing(51, 5, 7, 1); fing(51, 8, 7, 3); fing(51, 11, 6, 5); }   // strike: it reaches halfway across the screen
+      else { const y = 40 + b2 + 2 * aR; cap(24 + x2, 2 + b2, 28 + x2, 10 + b2, 1.2, 1.1); cap(28 + x2, 10 + b2, 29 + x2, 22 + b2, 1.1, 1.0); cap(29 + x2, 22 + b2, 29 + x2, y, 1.0, 1.0); cap(28 + x2, 10 + b2, 28 + x2, 10 + b2, 1.2, 1.2); fing(28 + x2, y, -1, 12); fing(29.5 + x2, y, 0, 14); fing(31 + x2, y, 1.5, 11); }   // near arm: the elbow juts out, then a hand with fingers a foot too long
     }
-  })));
+  }))); o.ss = .5; return o; });
 }
 /* ---- FEAR (killer_1, formerly The Banshee / Phantasia): a female knight who is fear itself. Seen from three-quarters BEHIND, turned right (facing away from the viewer, the way she moves). Silver-white plate (spiked pauldrons, ornate breastplate edge, greaves) under a long black cloak with a ragged hem, long white hair down her back under a black spiked crown, a sliver of cold profile in the corner of the frame, and a great black-hilted sword she rests point-down. Same chunky pixel size as Jack Bane / B.I.N.G.E. / The Harbinger (b.ss .85). 
    pose: idle (breathing, leaning on the sword), run (sword carried low out in front, cloak and hair trail behind), swing (f 0: the sword is hauled up behind the shoulder; f 1: it is thrust out and a crescent tears across). lau = she screams (head thrown back, mouth open, sound arcs).
@@ -7919,6 +8144,24 @@ function drawHuman(e, hurt) {
   nameTag(e, 44 - 55 * (1 - k));
 }
 const drawHealthy = e => drawHuman(e, false), drawInjured = e => drawHuman(e, true);
+/* ---- wish 7: the frog. Small green pixel-art frog (sits / hops), same blit + shadow + colour ring + name tag as a survivor; the colour ring under it keeps who it is readable. Art follows the Frogs asset pack ---- */
+function k3FrogFx(id, now) { const f = S.fx2[id]; return !!f && f.k3frog > (now === undefined ? performance.now() : now); }
+const FROG_PAL = { D: '#002000', G: '#63e568', S: '#40bc46', L: '#b8f8bb', K: '#000000' };   // palette lifted from the Frogs animal asset pack: dark outline, bright green, shaded green, pale belly, black eyes
+const FROG_SIT = ['....DDD..DDDD......', '...DKKSDDGKKGD.....', '...DKKGSSGKKGGD....', '..DSGKKKGGGGGGD....', '.DSGGGGGGGGGGGGD...', 'DGLLLLLLLGGGGGGD...', 'DLLLLLLLLLGGGGGDD..', 'DLLLLLLLLLLGGGGDGD.', 'DLLLLLLLLLLGGSSGGGD', 'DLLLLLLLLLLGSSDGGSD', '.DLLLLLLLLGSSDSSSSD', '..DDGGGGDSSSSDDSSSD', '..DGDSSDGDSSDGGSSD.', '..DDDDDDDDDDDDDDD..'];   // sitting frog (the pale-bellied one)
+const FROG_HOP = ['...DDD..DDDD.......', '..DKKSDDGKKGD......', '..DKKGSSGKKGGD.....', '..DGGGGGGGGGGD.....', '..DGGKKKGGGGGGD....', '..DGGGGGGGGGGGD....', '.DDGGGGGGDDGGGGD...', 'DSSSGGGGDGGGGSSSD..', 'DDDDSGGGDDDSSSSSD..', '....DSSSSSSSSSSSSD.', '.....DSSSSSSSSSSSD.', '......DSSSSSSSSSSD.', '.......DDSSSSSSSSD.', '.........DDDDDDSSSD', '..........DSSD.DSSD', '...........DSD..DSD', '...........DDD..DDD'];   // mid-hop frog (legs stretched out)
+const frogBmp = (pose, puff) => cachedSpr('frog2' + pose + puff, () => {   // the reference frogs look to the left; the game's sprites look right, so the rows are mirrored. The art carries its own dark outline, so no extra outlined() pass
+  const rows = (pose ? FROG_HOP : FROG_SIT).map(r => r.split('').reverse());
+  if (!pose && puff) for (let y = 5; y <= 9; y++) { const r = rows[y]; let last = -1; for (let x = 0; x < r.length; x++) if (r[x] === 'L') last = x; for (let x = last + 1; x <= last + 2 && x < r.length; x++) if (r[x] === 'G') r[x] = 'L'; }   // idle breath: the pale belly swells a little
+  return pxc(rows[0].length, rows.length, r => { for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) { const c = FROG_PAL[rows[y][x]]; if (c) r(x, y, 1, 1, c); } });
+});
+function drawFrog(e) {
+  const a = animFor(e.p.id, e.x, e.y, e.now), mv = a.sp > 25; let pose = 0, lift = 0;
+  if (mv) { const u = (a.ph / 2.6 + e.p.id * .37) % 1; if (u >= .18 && u <= .86) { pose = 1; lift = Math.sin((u - .18) / .68 * Math.PI) * 15; } }   // one hop about every 2.6 stride units (~39 world units walked); the sprite is in the air in the middle of the hop
+  const puff = mv ? 0 : (((e.now + e.p.id * 211) / 600) | 0) & 1;
+  charShadow(e, 13 - lift * .25, 20); colorRing(e, 15, 20);
+  blit(frogBmp(pose, puff), e.x, e.y + 22 - lift, a.face, PS * 1.1, e.flash);
+  nameTag(e, 34);
+}
 function drawDowned(e) {   // crawling when moving, otherwise gasping on the floor
   const ci = charIdx(e.p.id), a = animFor(e.p.id, e.x, e.y, e.now), mv = a.sp > 12, f = mv ? (((e.now + e.p.id * 61) / 210) | 0) & 3 : 4 + ((((e.now / 650) | 0)) & 1);
   charShadow(e, 30, 12); colorRing(e, 28, 12);
@@ -8082,6 +8325,7 @@ const DRAW_BY_STATE = { healthy: drawHealthy, injured: drawInjured, downed: draw
 function drawPlayer(e, state) {
   if (S.wo.k6 && k6Draw(e, state)) return;   // killer_6: disguise + CHAOS
   if (e.p.role === 'killer') { if (k3Invis(e.p.id)) { if (pickView().id !== e.p.id) return; let ga = .4; const fx = S.fx2[e.p.id], lf = fx && fx.k1inv > performance.now() ? fx.k1inv - performance.now() : 1e9; if (lf < 3000) ga = Math.floor(lf / (lf > 1500 ? 250 : 125)) % 2 ? .1 : .8; ctx.save(); ctx.globalAlpha = ga; drawKiller(e); ctx.restore(); return; } /* War Cry: in the last 3 s her own ghost blinks (slow, then faster for the last 1.5 s) so she knows it is about to end */ return drawKiller(e); }   // invisible to everyone but herself (she sees a faded ghost)
+  if ((state === 'healthy' || state === 'injured') && k3FrogFx(e.p.id, e.now)) return drawFrog(e);   // wish 7: a frog until the timer runs out
   (DRAW_BY_STATE[state] || drawHealthy)(e);
 }
 function entityOf(p, q, vId, now) {   // builds the draw entity from roster + snapshot + status record
@@ -8183,6 +8427,7 @@ function plankTile(horiz, ph, pal, seed) { const R = mkR(seed), L = 64, T = ph *
       g.fillStyle = pal.p[R() * pal.p.length | 0]; g.fillRect(0, y, L, ph); g.fillStyle = pal.hi; g.fillRect(0, y, L, 1); g.fillStyle = pal.gap; g.fillRect(0, y + ph - 2, L, 2);
       g.fillRect(8 + (R() * 44 | 0), y, 1, ph - 2); g.fillStyle = pal.grain; for (let n = 0; n < 5; n++) g.fillRect(R() * 56 | 0, y + 2 + (R() * (ph - 6) | 0), 4 + (R() * 8 | 0), 1); } }); }
 const RUGS = [[310,510,300,160],[1270,670,240,140],[2270,480,300,150],[330,1790,260,140],[1270,1320,240,130],[2090,1190,280,160]];
+const RUGS_F = RUGS.map(q => [q[0], 2200 - q[1] - q[3], q[2], q[3]]);   // layout 1 is the map flipped top-to-bottom
 const ROOM_X = [0, 900, 1840, 2800], ROOM_Y = [0, 1080, 2200];
 function buildArt(M) {
   const pat = c => ctx.createPattern(c, 'repeat'), R = mkR(77), stains = [];
@@ -8240,8 +8485,8 @@ function drawWorld(M, vx, vy, vw, vh) {
   } else {
     ctx.fillStyle = '#0b0d16'; ctx.fillRect(0, 0, M.w, M.h);
     for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) { const x0 = Math.max(ROOM_X[i], vx), x1 = Math.min(ROOM_X[i + 1], vx + vw), y0 = Math.max(ROOM_Y[j], vy), y1 = Math.min(ROOM_Y[j + 1], vy + vh);
-      if (x1 > x0 && y1 > y0) { ctx.fillStyle = ART.floor[j * 3 + i]; ctx.fillRect(x0, y0, x1 - x0, y1 - y0); } }
-    for (const r of RUGS) if (r[0] < vx + vw && r[0] + r[2] > vx && r[1] < vy + vh && r[1] + r[3] > vy) drawRug(r);
+      if (x1 > x0 && y1 > y0) { ctx.fillStyle = ART.floor[(M.layout === 1 ? 1 - j : j) * 3 + i]; ctx.fillRect(x0, y0, x1 - x0, y1 - y0); } }
+    for (const r of (M.layout === 1 ? RUGS_F : RUGS)) if (r[0] < vx + vw && r[0] + r[2] > vx && r[1] < vy + vh && r[1] + r[3] > vy) drawRug(r);
   }
   ctx.fillStyle = 'rgba(100,8,14,.5)';
   for (const st of ART.stains) { if (st.x < vx - 40 || st.x > vx + vw + 40 || st.y < vy - 40 || st.y > vy + vh + 40) continue; for (const [dx, dy, r] of st.bl) { ctx.beginPath(); ctx.arc(st.x + dx, st.y + dy, r, 0, 7); ctx.fill(); } }
@@ -8388,7 +8633,7 @@ function drawPortalAt(ctx, h, t) {   // (name kept) one B.I.N.G.E. hook: a big C
   ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(x - 2 * q, y + 22 * q, 22 * q, 4.8 * q, 0, 0, TAU); ctx.fill();   // floor shadow
   for (const [k, a] of [[1.9, .04], [1.5, .05], [1.15, .06]]) { ctx.fillStyle = `rgba(80,150,255,${(a + .02 * pu).toFixed(3)})`; ctx.beginPath(); ctx.ellipse(x + 2 * q, y + 23 * q, 19 * q * k, 5 * q * k, 0, 0, TAU); ctx.fill(); }   // the screen's glow, in hard bands on the floor
   ctx.imageSmoothingEnabled = false; ctx.drawImage(P.body, x - PT_W * TVS / 2, y - PT_H * TVS / 2, PT_W * TVS, PT_H * TVS); ctx.restore();
-  tvScreenFx(ctx, P, x, y, t, 0);
+  tvScreenFx(ctx, P, x, y, t, 0); try { k2TvEye(ctx, h, x, y); } catch (e) {}
 }
 function drawHooks(vx, vy, vw, vh) {   // iron gallows hook: base plate, post, beam + brace, hanging chain and a big curved steel hook over a pool of blood
   const t = performance.now() / 1000;
@@ -8849,7 +9094,7 @@ function applyWo(k, a, quiet) {
   else if (k === 'k3x') { S.wo.k3x = a && a.length ? { lid: a[0], le: now + a[1], ge: now + a[2] } : null; return; }   // "find love" target + its timer, and the "generators gone" timer: public to everyone
   else if (k === 'k1') { k1Apply(a, now); return; }
   else if (k === 'k6') { k6Apply(a, now); return; }
-  else if (k === 'k2') { S.wo.k2 = a && a.length ? { tid: a[0], n: a[1] | 0, sc: (a[2] || []).map(e => ({ id: e[0], x: e[1], y: e[2], b: now - e[3] })), pt: a[3], pe: now + a[4], cd: now + a[5] } : null; return; }   // killer_2: the current target's id
+  else if (k === 'k2') { S.wo.k2 = a && a.length ? { tid: a[0], n: a[1] | 0, sc: (a[2] || []).map(e => ({ id: e[0], x: e[1], y: e[2], b: now - e[3] })), tv: a[3], ex: a[4] > 0, tcd: now + a[5], pt: a[6] == null ? -1 : a[6], pe: now + (a[7] | 0), cd: now + (a[8] | 0) } : null; return; }   // killer_2: the current target's id
   else if (k === 'k4') { S.wo.k4 = a && a.length ? { cur: a[0] | 0, ps: a[1], cd: now + a[2], dis: (a[3] || [0, 0, 0]).map(t => now + t), imm: (a[8] || [0, 0, 0]).map(t => now + t), lcd: now + (a[4] | 0), ch: a[5] >= 0 ? now - a[5] : 0, lg: !!a[6], xt: now + (a[7] | 0) } : null; if (S.wo.k4 && S.wo.k4.lg) K4H.t0 = 0; return; }   // a lunge in flight ends the local hold (it may have gone off by itself after a very long charge)   // killer_4: which body he controls + where all three stand
   else if (k === 'k5') { k5Apply(a, now); return; }
   else if (k === 'um') {   // Archive monster: [active, ms since its last swing began (-1 = none), [[survivorId, hits]], aim angle]
@@ -8898,6 +9143,11 @@ function applySx(m) {   // status effect on a player {id, k: root|slide|adr|cras
   if (m.k === 'blind') { if (m.id === S.me) { S.blindEnd = now + ms; S.blindTot = ms; try { sfxTone(3400, 3400, ms / 1000, .12, 'sine'); sfxNoise(.12, .5, 'highpass', 3000, 3000); } catch (e) {} vibrate(60); } return; }
   if (m.k === 'hatgo' || m.k === 'hat' || m.k === 'hatw') { const hf = S.fx2[m.id] || (S.fx2[m.id] = {}), rt = m.k === 'hatw' ? CFG.HAT_WORK_MULT : 1; if (m.k === 'hatgo') hf.hatT0 = now; hf.hatLeft = ms; hf.hatT = now; hf.hatRate = rt; hf.hat = now + ms / rt;   // Magician's Hat: ms = hat time left (0 = gone), it ticks down at x1 ('hat') or x HAT_WORK_MULT ('hatw'); 'hatgo' = just put on
     if (m.k === 'hatgo') { const q = interp(m.id); try { sfxHat(q ? evVol(q[0], q[1], 900) : .5); } catch (e) {} } return; }
+  if (m.k === 'k3frog') {   // wish 7: frog on (ms left) / off (0)
+    const f = S.fx2[m.id] || (S.fx2[m.id] = {}), was = f.k3frog > now; f.k3frog = now + ms;
+    if (m.id === S.me && ms > 0) { if (TK) closeTask(''); if (ctxHeld) ctxRelease(); vibrate([40, 30, 40]); }   // my minigame / held button stops
+    if (ms > 0 && !was) { const q = interp(m.id); try { const v = q ? evVol(q[0], q[1], 900) : .5; sfxTone(210, 120, .09, v * .3, 'square'); sfxTone(260, 140, .09, v * .3, 'square', .12); } catch (e) {} }
+    return; }
   const f = S.fx2[m.id] || (S.fx2[m.id] = {}); f[m.k] = now + ms;
   if (m.id === S.me && (m.k === 'root' || m.k === 'slide' || m.k === 'stun')) vibrate(m.k === 'root' ? [60, 30, 90] : m.k === 'stun' ? 120 : 50);
   if (m.k === 'snake') { const q = interp(m.id); try { sfxAdr(q ? evVol(q[0], q[1], 900) : .5); } catch (e) {} }
@@ -8912,6 +9162,8 @@ function onEv(m) {
     case 'k1w': case 'k1i': k1Ev(m, now); break;
     case 'k6t': case 'k6s': k6Ev(m, now); break;
     case 'k5p': case 'k5s': case 'k5x': case 'k5f': k5Ev(m, now); break;
+    case 'k3frw': K3FX.push({ type: 'frw', x: m.x, y: m.y, r: m.r, t0: now, end: now + m.ms }); try { const v = Math.max(.3, evVol(m.x, m.y, 1000)); sfxTone(300, 520, m.ms / 1000, v * .16, 'triangle'); sfxTone(150, 260, m.ms / 1000, v * .12, 'sine'); } catch (e) {} break;
+    case 'k3frc': K3FX.push({ type: 'frc', x: m.x, y: m.y, r: m.r, t0: now, end: now + 520 }); try { const v = Math.max(.3, evVol(m.x, m.y, 1000)); sfxTone(220, 110, .14, v * .3, 'square'); sfxTone(260, 130, .14, v * .3, 'square', .16); sfxNoise(.12, v * .2, 'bandpass', 900, 500, .02, .01); } catch (e) {} break;
     case 'k3tpw': K3FX.push({ type: 'tpw', x: m.x, y: m.y, t0: now, end: now + m.ms }); try { const v = Math.max(.3, evVol(m.x, m.y, 1000)); sfxTone(160, 900, m.ms / 1000, v * .28, 'sawtooth'); sfxTone(320, 1800, m.ms / 1000, v * .14, 'sine'); } catch (e) {} break;
     case 'k3shot': K3FX.push({ type: 'shot', x0: m.x0, y0: m.y0, x1: m.x1, y1: m.y1, hit: m.hit, t0: now, end: now + 240 }); try { const v = Math.max(.35, evVol(m.x0, m.y0, 1200)); sfxNoise(.1, v * .8, 'lowpass', 3200, 400); sfxTone(240, 55, .13, v * .5, 'square'); } catch (e) {} break;
     case 'snap': ifx({ type: 'snap', x: m.x, y: m.y, t0: now, end: now + 450 }); sfxSnap(Math.max(.3, evVol(m.x, m.y, 1000))); trigNotify(m, 0, V); break;
@@ -8922,6 +9174,7 @@ function onEv(m) {
     case 'k4t': { const kid4 = killerIdRaw(); if (kid4 >= 0) { LAUGH[kid4] = { t0: now, nb: 1 }; } } break;   // killer_4: NO cloud / teleport cue, no sound and no GROWL bubble (nb = no bubble); he just does the laugh sprite animation in the body he lands in
     case 'tp': ifx({ type: 'tp', x0: m.x0, y0: m.y0, x1: m.x1, y1: m.y1, t0: now, end: now + 600 }); sfxTp(evVol(m.x0, m.y0, 800)); break;
     case 'nm': ifx({ type: 'puff', x: m.x, y: m.y, col: '#9b3dff', t0: now, end: now + 700 }); if (m.r !== myR) { try { sfxNightmare(role ? .9 : .5); } catch (e) {} vibrate([40, 40, 80]); } break;
+    case 'k2tv': { K2C.fx[m.i] = { t0: now, m: m.m, ms: m.ms }; try { const hh = S.map && S.map.hooks && S.map.hooks[m.i]; if (hh) { const v = Math.max(.3, evVol(hh[0], hh[1], 1000)); if (m.m === 0) { sfxTone(140, 520, .22, v * .22, 'square'); sfxNoise(.18, v * .18, 'bandpass', 2600, 900, .02, .01); } else { sfxTone(520, 120, m.ms / 1000 * .8, v * .16, 'square'); sfxNoise(.2, v * .12, 'bandpass', 1200, 500, .05, .01); } } } catch (e) {} break; }
     case 'puff': ifx({ type: 'puff', x: m.x, y: m.y, col: m.c || col, t0: now, end: now + 500 }); break;
     case 'dsw': { const kq = interp(m.id) || [0, 0]; fxAdd({ type: 'slash', k: m.id, dir: nextDir(m.id), ang: +m.a || 0, hit: false, pending: false, t0: now, end: now + CFG.SLASH_MS }); sfxWhoosh(evVol(kq[0], kq[1])); break; }
   }
@@ -8929,7 +9182,7 @@ function onEv(m) {
 function flashCheck(m) {   // blind me if the bang is inside my screen (any wall / light / facing), unless I threw it
   if (S.me < 0 || m.by === S.me || myState() === 'dead' || !myRole()) return;
   if (m.only != null && m.only !== S.me) return;   // a phantom's flash only blinds the killer who hit it
-  if (myRole() === 'killer' && S.wo.k2 && isK2(S.me) && S.wo.k2.tid !== -2 && m.by !== S.wo.k2.tid) return;   // killer_2: only his target's flashbang blinds him
+  if (myRole() === 'killer' && S.wo.k2 && isK2(S.me) && (S.wo.k2.tv >= 0 || (S.wo.k2.tid !== -2 && m.by !== S.wo.k2.tid))) return;   // killer_2: only his target's flashbang blinds him
   const q = interp(S.me); if (!q) return;
   const W = cv.width, H = cv.height, k = Math.min(W, H) / CFG.VIEW, vw = W / k, vh = H / k;
   if (Math.abs(m.x - q[0]) > vw / 2 + 20 || Math.abs(m.y - q[1]) > vh / 2 + 20) return;
@@ -9253,7 +9506,7 @@ function ctxFor(mp, role, st) {   // which context action is available right now
     for (const p of S.players) if ((S.st[p.id] || {}).s === 'downed' && !((S.st[p.id] || {}).protEnd > performance.now())) { const q = posOf(p.id); if (q && Math.hypot(q[0] - mp[0], q[1] - mp[1]) <= CFG.PICKUP_R) return 'pickup'; }
     const gn = performance.now(), gens = S.map.gens || [];   // KICK: an OPEN, damaged, enabled generator in reach whose kick cooldown is over
     for (let i = 0; i < gens.length; i++) { const e = S.gs.g[i]; if (e && e.st === 1 && e.prog > 0 && e.disEnd <= gn && e.kcdEnd <= gn && Math.hypot(gens[i][0] - mp[0], gens[i][1] - mp[1]) <= CFG.GEN_R) return 'kick'; }
-  } else if (role === 'survivor' && (st === 'healthy' || st === 'injured')) {
+  } else if (role === 'survivor' && (st === 'healthy' || st === 'injured') && !k3FrogFx(S.me)) {   // (a frog gets no action button at all)
     for (const id in S.st) if (S.st[id].s === 'hooked' && +id !== S.me) { const h = S.map.hooks[S.st[id].hk]; if (h && Math.hypot(h[0] - mp[0], h[1] - mp[1]) <= CFG.RESCUE_R) return 'rescue'; }
     { const J4 = S.wo.k4, n4 = performance.now(); if (J4 && J4.ps) for (let i = 0; i < 3; i++) { const q = J4.ps[i]; if (i === J4.cur || !q || k4OffC(J4, i, n4) || (J4.imm && J4.imm[i] > n4) || !k4Near(q)) continue; if (Math.hypot(q[0] - mp[0], q[1] - mp[1]) <= K4_DIS_R) return 'k4dis'; } }   // killer_4: DISABLE an idle body that stands in a "near" circle (priority: RESCUE, then DISABLE, then REPAIR ...)
     const gn = performance.now(), gens = S.map.gens || [];   // REPAIR: an OPEN, enabled generator in reach (priority: RESCUE, then REPAIR, then DO TASK)
@@ -9281,12 +9534,12 @@ function updateControls(now) {
   const itI = hunt && !dead && !abil && S.item ? ITEMS.findIndex(x => x.id === S.item) : -1;   // held item -> button on the right side
   const J = abil && isK0(S.me) ? S.wo.k0 : null, J1 = abil && isK1(S.me) ? S.wo.k1 : null, J3 = abil && isK3(S.me) ? (S.wo.k3 || { n: 0 }) : null, J6 = abil && isK6(S.me) ? S.wo.k6 : null, J5 = abil && isK5(S.me) ? S.wo.k5 : null, J2 = abil && isK2(S.me) ? S.wo.k2 : null, J4 = abil && isK4(S.me) ? S.wo.k4 : null, m1 = J1 ? k1Mode() : 0, itK = abil ? (J ? -10 - J.held : J1 ? -20 - m1 : J6 ? -400 - J6.form : J5 ? -500 - (J5.act ? 1 : 0) : J2 ? -600 : J4 ? -700 - J4.cur - 10 * (k4NextC(J4, now) + 2) : J3 ? -30 - J3.n * 10 - (J3.gun | 0) : -3) : itI >= 0 ? itI + 100 * (S.itemC | 0) : itI;
   if (itK !== UIC.item) { UIC.item = itK; const b = $('itm'); b.classList.toggle('hidden', itK === -1); b.classList.toggle('abil', abil && !J && !J1 && !J3 && !J6 && !J5 && !J2 && !J4);
-    if (abil) { $('itmN').textContent = J ? (J.held ? K0_NAME[J.held] + (J.q ? ' +1' : '') : 'Shop') : J1 ? (m1 ? 'Guard' : 'War Cry') : J3 ? (J3.n ? 'Wish x' + J3.n : 'No wish') : J6 ? (J6.form === 1 ? 'Chaos' : 'Transform') : J5 ? (J5.act ? 'Trail ON' : 'Trail') : J2 ? 'Swap' : J4 ? 'Transfer' : 'Ability'; if (J) $('itmI').src = k0Icon(J.held || 'shop'); else if (J1) $('itmI').src = k1Icon(m1 ? 'guard' : 'wail'); else if (J3) $('itmI').src = k3Icon(); else if (J6) $('itmI').src = k6Icon(J6.form === 1 ? 'ch' : 'tf'); else if (J5) $('itmI').src = k5Icon(J5.act ? 'on' : 'off'); else if (J2) $('itmI').src = k2Icon(); else if (J4) $('itmI').src = k4Icon(k4NextC(J4, now) < 0 ? (J4.cur + 1) % 3 : k4NextC(J4, now)); b.style.setProperty('--ic', J1 ? '#3affd0' : J6 ? '#e9e6dc' : J2 ? '#c2412e' : J4 ? K4_COL[(J4.cur + 1) % 3] : '#ff4f57'); }   // killer_4: the icon is the face of the Deyja he will jump to
+    if (abil) { $('itmN').textContent = J ? (J.held ? K0_NAME[J.held] + (J.q ? ' +1' : '') : 'Shop') : J1 ? (m1 ? 'Guard' : 'War Cry') : J3 ? (J3.n ? 'Wish x' + J3.n : 'No wish') : J6 ? (J6.form === 1 ? 'Chaos' : 'Transform') : J5 ? (J5.act ? 'Trail ON' : 'Trail') : J2 ? 'Recast' : J4 ? 'Transfer' : 'Ability'; if (J) $('itmI').src = k0Icon(J.held || 'shop'); else if (J1) $('itmI').src = k1Icon(m1 ? 'guard' : 'wail'); else if (J3) $('itmI').src = k3Icon(); else if (J6) $('itmI').src = k6Icon(J6.form === 1 ? 'ch' : 'tf'); else if (J5) $('itmI').src = k5Icon(J5.act ? 'on' : 'off'); else if (J2) $('itmI').src = k2Icon(); else if (J4) $('itmI').src = k4Icon(k4NextC(J4, now) < 0 ? (J4.cur + 1) % 3 : k4NextC(J4, now)); b.style.setProperty('--ic', J1 ? '#3affd0' : J6 ? '#e9e6dc' : J2 ? '#c2412e' : J4 ? K4_COL[(J4.cur + 1) % 3] : '#ff4f57'); }   // killer_4: the icon is the face of the Deyja he will jump to
     else if (itI >= 0) { $('itmI').src = itemSprite(itI).toDataURL(); $('itmN').textContent = ITEMS[itI].name + ((S.itemC | 0) > 1 ? ' x' + S.itemC : ''); b.style.setProperty('--ic', ITEMS[itI].col); } }
   if (abil && J1) { const cdl = Math.max(0, (m1 ? J1.gd : J1.wail) - now), t1 = k1InvisFx(S.me) ? 'Reveal' : (m1 ? 'Guard' : 'War Cry') + (cdl > 0 ? ' ' + Math.ceil(cdl / 1000) + 's' : ''); if (t1 !== UIC.k1t) { UIC.k1t = t1; $('itmN').textContent = t1; $('itm').style.opacity = cdl > 0 ? .55 : ''; } }   // killer_1: cooldown shown in the label
   else if (UIC.k1t) { UIC.k1t = ''; $('itm').style.opacity = ''; }
-  if (abil && J2) { const cd2 = Math.max(0, J2.cd - now), sw = J2.pt >= 0 && J2.pe > now, t2 = sw ? 'Recasting...' : 'Recast' + (cd2 > 0 ? ' ' + Math.ceil(cd2 / 1000) + 's' : ''); if (t2 !== UIC.k2t) { UIC.k2t = t2; $('itmN').textContent = t2; $('itm').style.opacity = cd2 > 0 || sw ? .55 : ''; } }   // killer_2: Swap label + cooldown
-  else if (UIC.k2t) { UIC.k2t = ''; $('itm').style.opacity = ''; }
+  if (abil && J2) { const nr = k2NearTv(now), inn = J2.tv >= 0, ext = inn && J2.ex, cdl = Math.max(0, J2.tcd - now), tele = inn || (nr >= 0 && cdl <= 0), cd2 = Math.max(0, J2.cd - now), sw = J2.pt >= 0 && J2.pe > now, t2 = ext ? 'Exiting...' : inn ? 'Exit TV' : tele ? 'Telegraph' : sw ? 'Recasting...' : 'Recast' + (cd2 > 0 ? ' ' + Math.ceil(cd2 / 1000) + 's' : ''), dim = ext || (!tele && (cd2 > 0 || sw)); if (t2 !== UIC.k2t || dim !== UIC.k2d) { UIC.k2t = t2; UIC.k2d = dim; $('itmN').textContent = t2; $('itmI').src = tele ? k2TeleIcon() : k2Icon(); $('itm').style.opacity = dim ? .55 : ''; } }   // killer_2: Recast by default, Telegraph next to a TV, Exit TV inside one
+  else if (UIC.k2t) { UIC.k2t = ''; UIC.k2d = false; $('itm').style.opacity = ''; }
   if (abil && J4) { const cd4 = Math.max(0, J4.cd - now), none4 = k4NextC(J4, now) < 0, t4 = none4 ? 'All out' : 'Transfer' + (cd4 > 0 ? ' ' + Math.ceil(cd4 / 1000) + 's' : ''); if (t4 !== UIC.k4t) { UIC.k4t = t4; $('itmN').textContent = t4; $('itm').style.opacity = cd4 > 0 || none4 ? .55 : ''; } }   // killer_4: Transfer label + cooldown
   else if (UIC.k4t) { UIC.k4t = ''; $('itm').style.opacity = ''; }
   if (abil && J6) { const cd6 = J6.form === 0 ? Math.max(0, J6.cd - now) : 0, lk6 = J6.form === 0 ? Math.max(0, J6.chEnd - now) : 0, cc6 = J6.form === 1 ? Math.max(0, J6.chCd - now) : 0, t6 = J6.form === 2 ? 'Changing...' : J6.form === 1 ? 'Chaos' + (cc6 > 0 ? ' ' + Math.ceil(cc6 / 1000) + 's' : '') : lk6 > 0 ? 'Chaos ' + Math.ceil(lk6 / 1000) + 's' : 'Transform' + (cd6 > 0 ? ' ' + Math.ceil(cd6 / 1000) + 's' : ''); if (t6 !== UIC.k6t) { UIC.k6t = t6; $('itmN').textContent = t6; $('itm').style.opacity = cd6 > 0 || lk6 > 0 || cc6 > 0 || J6.form === 2 ? .55 : ''; } }   // transform is greyed out while CHAOS runs   // killer_6: label + cooldown
@@ -9297,7 +9550,7 @@ function updateControls(now) {
     const fp = Math.round(fu), kf = $('k5f'); if (kf.classList.contains('hidden')) kf.classList.remove('hidden');
     if (fp !== UIC.k5f) { UIC.k5f = fp; kf.firstElementChild.style.width = fp + '%'; kf.lastElementChild.textContent = 'TORMENT ' + fp; } if (low !== UIC.k5l) { UIC.k5l = low; kf.classList.toggle('low', low); } if (!!J5.chg !== UIC.k5c) { UIC.k5c = !!J5.chg; kf.classList.toggle('chg', UIC.k5c); } }
   else if (UIC.k5t) { UIC.k5t = ''; UIC.k5d = ''; UIC.k5f = -1; UIC.k5l = false; UIC.k5c = false; $('k5f').classList.remove('chg'); $('itm').style.opacity = ''; $('k5f').classList.add('hidden'); }
-  { const f0 = S.fx2[S.me], bw = abil ? !!f0 && f0.ablock > now : (itI >= 0 && k3Sealed(now) > 0); if (bw !== UIC.bw) { UIC.bw = bw; $('itm').classList.toggle('bw', bw); } }   // an item / ability that is blocked turns black and white for as long as it is blocked
+  { const f0 = S.fx2[S.me], bw = abil ? !!f0 && f0.ablock > now : (itI >= 0 && (k3Sealed(now) > 0 || (!!f0 && f0.k3frog > now))); if (bw !== UIC.bw) { UIC.bw = bw; $('itm').classList.toggle('bw', bw); } }   // an item / ability that is blocked turns black and white for as long as it is blocked
   { const Jc = S.wo.k5, ce = Jc && Jc.cond && myRole() === 'survivor' ? Jc.cond.find(e => e[0] === S.me) : null;   // survivor: my own condemn bar (only while it is above 0)
     let kc = $('k5c'); if (!kc && ce) { kc = document.createElement('div'); kc.id = 'k5c'; kc.innerHTML = '<i></i><u></u><b></b>'; document.body.appendChild(kc); }
     if (kc) { const on = !!ce, v = ce ? ce[1] : 0, st = ce ? (ce[2] ? 'CONDEMNED ' : 'CONDEMN ') + v : '', k5 = on ? st : ''; kc.style.display = on ? '' : 'none'; if (k5 !== UIC.k5s) { UIC.k5s = k5; kc.firstElementChild.style.width = v + '%'; kc.lastElementChild.textContent = st; kc.classList.toggle('on', !!(ce && ce[2])); } } }
@@ -9613,11 +9866,12 @@ function draw() {
   FP.clear(); predFrame(now, dtF, vId); statsHud(now); netDbg(now); const me = posOf(vId) || [S.map.w / 2, S.map.h / 2], M = S.map; const realm = inUD(me[0], me[1]); mmFrame(now, V, me);
   // Reveal / select / result screens, and the killer during headstart: pure black (the DOM overlay carries the text).
   if (ph === 'reveal' || ph === 'select' || ph === 'result' || (role === 'killer' && ph === 'headstart')) {
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); stepHeartbeat(0, dtF, now); genHumStopAll(); rayCount = 0; debugLine(now); return; }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); k2ArrowsHide(); stepHeartbeat(0, dtF, now); genHumStopAll(); rayCount = 0; debugLine(now); return; }
   k1VisStep(now, dtF, role, vId, ph);
   if (role === 'survivor' && ph === 'hunt' && vId === S.me && vSt !== 'dead' && S.wo.k1 && k1Lvl(vId, now) === 3) {   // killer_1 BREAKDOWN: choppy frame rate (the picture only refreshes every 70-160 ms; the game itself keeps running)
     if (now < K1C.lagAt) { lastFrame = now - dtF * 1000; return; } K1C.lagAt = now + rnd(70, 160); }
   const worldTf = () => ctx.setTransform(k, 0, 0, k, W / 2 - me[0] * k, H / 2 - me[1] * k);
+  try { k2ArrowStep(now, me, k); } catch (e) {}   // killer_2 inside a TV: the single travel arrow
   smokeRebuild(false); stepTrails(now); stepTerror(now); buildVis(role, ph, me, k, W, H); if(!realm){if(ph==='hunt')stepStatusAudio(now);stepGenAudio(now,ph);}
   // ---- world, drawn normally ----
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#05070b'; ctx.fillRect(0, 0, W, H); worldTf();
@@ -9629,7 +9883,7 @@ function draw() {
   }
   // ---- dots: only the ones canSee() allows, one drawPlayer() per state ----
   ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.font = (S.players.length > 6 ? 'bold 12px' : 'bold 15px') + ' system-ui,sans-serif';
-  for (const p of S.players) { const q = posOf(p.id); if (!q || Math.abs(q[0] - me[0]) > vw || Math.abs(q[1] - me[1]) > vh || !canSee(role, vId, p.id)) continue;
+  for (const p of S.players) { const q = posOf(p.id); if (!q || Math.abs(q[0] - me[0]) > vw || Math.abs(q[1] - me[1]) > vh || !canSee(role, vId, p.id) || k2Hid(p.id)) continue;   // (inside a TV even his own body is not drawn)
     const s = effSt(p.id); if (s === 'dead') continue;
     const fe = entityOf(p, q, vId, now); ctx.globalAlpha = (p.on ? 1 : .4) * (fe.hat ? (p.id === vId ? .5 : .3) : 1); animFor(p.id, q[0], q[1], now); drawSnakeGhosts(p, q, s, vId, now); drawStatusFx(fe, q, now, 0); drawPlayer(fe, s); drawStatusFx(fe, q, now, 1); ctx.globalAlpha = 1; if (fe.hat) drawHatFx(fe, now); }   // Magician's Hat wearers are drawn see-through (50% for themselves, 30% for teammates)
   if (!realm && S.phase === 'hunt') drawK1World(me, vw, vh, now, role, vId);
@@ -9729,7 +9983,7 @@ $('mBright').onclick = () => { brightIdx = (brightIdx + 1) % CFG.BRIGHT_LEVELS.l
 $('mMap').onclick = () => { MM.on = !MM.on; store.set('dotsMinimap', MM.on ? '1' : '0'); refreshMenu(); };
 $('mTasks').onclick = () => { menuOpen(false); if (S.role === 'host' && S.started && S.phase === 'hunt') tsFinishSet(); };   // debug: instantly complete the current set
 $('tQuit').onclick = taskQuit;
-function itemPress() { audioInit(); if (myRole() === 'killer') { if (S.phase === 'hunt') abilityPress(); return; } if (S.item) sendAct('item', true); }
+function itemPress() { audioInit(); if (myRole() === 'killer') { if (S.phase === 'hunt') abilityPress(); return; } if (S.item) { if (k3FrogFx(S.me)) { toast("Frogs can't use items"); return; } sendAct('item', true); } }
 bindBtn($('itm'), itemPress);
 $('mGenFix').onclick = () => { menuOpen(false); dbgFixNextGen(); }; $('mGenKick').onclick = () => { menuOpen(false); dbgKickNearest(); }; $('mUD').onclick=()=>{menuOpen(false);const p=HP.get(S.me);if(!DEBUG||S.role!=='host'||!p||p.role!=='survivor')return;const h=MAP.hooks.findIndex((_,i)=>HU[i]===-1);p.sentHook=h<0?0:h;p.sentEnd=performance.now()+CFG.UD_MS;p.x=UD.spawns[0][0];p.y=UD.spawns[0][1];p.ix=p.iy=0;setSt(p,'sent',{hk:p.sentHook,ms:CFG.UD_MS});};   // debug only (the buttons are hidden without ?debug=1)
 addEventListener('resize', () => { if (TK && TK.relayout) TK.relayout(); }); addEventListener('orientationchange', () => setTimeout(() => { if (TK && TK.relayout) TK.relayout(); }, 300));

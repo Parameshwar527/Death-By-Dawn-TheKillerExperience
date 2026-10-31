@@ -3366,7 +3366,7 @@ function abilityPress() { if (isK0(S.me) && S.wo.k0) { if (S.wo.k0.held) k0PickO
      The effects of the meter (hallucinations) are NOT in yet: drawK1Hallu() is an empty hook that receives the survivor's fear and tier.
    - ABILITY BUTTON (or Left Shift). The button has two modes, decided by where she stands:
        WAR CRY (default)   she turns invisible for up to K1_INV_MS (15 s). Her next ATTACK, or the ability button pressed again, is the reveal: no swing, hits nobody,
-                           +K1_WAIL_FEAR (5) fear to every survivor within K1_WAIL_R. For K1_REVEAL_CD (2 s) she cannot attack and moves 70% slower (K1_REVEAL_SLOW),
+                           +K1_WAIL_FEAR (5) fear to every survivor within K1_WAIL_R. For K1_REVEAL_CD (2 s) she cannot attack and moves 50% slower (K1_REVEAL_SLOW),
                            then she gets +30% speed (K1_BOOST_SPD) for K1_BOOST_MS (2 s). Cooldown K1_WAIL_CD (15 s, counted from when she leaves invisibility). No clone is spawned.
        GUARD            when she stands within K1_GUARD_REACH of a generator (not repaired yet) or a hook (free or occupied) that has no guard yet, and Guard is ready.
                            A clone of her appears there and moves around that post (never farther than K1_GUARD_ROAM) for K1_GUARD_MS (15 s). It fills the fear meter
@@ -3400,7 +3400,7 @@ function abilityPress() { if (isK0(S.me) && S.wo.k0) { if (S.wo.k0.held) k0PickO
 const K1_FEAR_R0 = 600, K1_FEAR_R = K1_FEAR_R0 * 1.2 * 1.2, K1_FEAR_RATE = 11,   // K1_FEAR_R0 = the original radius: the falloff per unit of distance is still computed from it, so fear is exactly as strong at every distance as before and just keeps going (down to ~14%) out to the new radius (600 -> 720 -> 864, a further +20%). Fill rate 10 -> 12 per second at point blank (+20%), then reduced to 11 per second
     K1_FEAR_FAR = .4, K1_CLONE_EFF = .5, K1_DRAIN_DELAY = 2000, K1_DRAIN_RATE = 5;   // passive: radius / fear per second at point blank (11/s) / strength at the edge of the radius (x) / clone strength / time away before draining (ms, 2 s) / drain per second
 const K1_WAIL_R = 210, K1_WAIL_FEAR = 5, K1_WAIL_CD = 15000, K1_CLONE_SPD = CFG.KILLER_SPEED * .75;   // War Cry: radius / fear / cooldown / walking speed of the fake killer sprites (hallucinations)
-const K1_INV_MS = 15000, K1_REVEAL_CD = 2000, K1_REVEAL_SLOW = .3, K1_BOOST_SPD = 1.3, K1_BOOST_MS = 2000;   // WAR CRY: invisible up to 15 s (ATTACK or the ability button again = the cry, which ends it; or it just runs out). Right after she leaves invisibility: no attacking for 2 s (K1_REVEAL_CD) and -70% speed for that time (K1_REVEAL_SLOW = x0.3), then +30% speed (K1_BOOST_SPD = x1.3) for 2 s (K1_BOOST_MS). The ability button has a K1_WAIL_CD (15 s) cooldown, counted from the moment she leaves invisibility.
+const K1_INV_MS = 15000, K1_REVEAL_CD = 2000, K1_REVEAL_SLOW = .5, K1_BOOST_SPD = 1.3, K1_BOOST_MS = 2000;   // WAR CRY: invisible up to 15 s (ATTACK or the ability button again = the cry, which ends it; or it just runs out). Right after she leaves invisibility: no attacking for 2 s (K1_REVEAL_CD) and -50% speed for that time (K1_REVEAL_SLOW = x0.5), then +30% speed (K1_BOOST_SPD = x1.3) for 2 s (K1_BOOST_MS). The ability button has a K1_WAIL_CD (15 s) cooldown, counted from the moment she leaves invisibility.
 //   // War Cry: how long she stays invisible at most (ms; she is revealed by her ATTACK, or silently when this runs out) / attack cooldown after the reveal (ms)
 const K1_GUARD_MS = 15000, K1_GUARD_CD = 35000, K1_GUARD_REACH = 130, K1_GUARD_ROAM = 140, K1_GUARD_SPD = CFG.KILLER_SPEED * .5;   // GUARD: how long the clone stands guard (ms) / cooldown (ms, from the moment it is placed) / how close to a generator or hook she must be / how far the clone strays from its post / its walking speed
 const K1_HALLU_FREQ = 1.5;   // fear hallucinations (fake red eyes, fake heartbeat, fake killer sprite) happen this much more often at every level: every gap between them is divided by this (1.5 = 50% more frequent)
@@ -3435,7 +3435,7 @@ function k1Reveal(B, now) {   // the ATTACK (or the ability button again) while 
   if (B.carry != null || B.wind || now < B.cd) return;
   k1Unveil(B);
   k1Pulse(B.x, B.y, K1_WAIL_FEAR, K1_WAIL_R, now);
-  B.cd = now + K1_REVEAL_CD; notifyCd(B, K1_REVEAL_CD); addMod(B, 'k1r', K1_REVEAL_SLOW, K1_REVEAL_CD, now); K1.boostAt = now + K1_REVEAL_CD;   // 2 s: no attack and -70% speed; then +30% speed for 2 s (k1Step starts it)
+  B.cd = now + K1_REVEAL_CD; notifyCd(B, K1_REVEAL_CD); addMod(B, 'k1r', K1_REVEAL_SLOW, K1_REVEAL_CD, now); K1.boostAt = now + K1_REVEAL_CD;   // 2 s: no attack and -50% speed; then +30% speed for 2 s (k1Step starts it)
   evSend({ k: 'k1w', x: Math.round(B.x), y: Math.round(B.y), r: K1_WAIL_R });   // the war cry animation + ring + sound
   woSend('k1');
 }
@@ -3593,7 +3593,8 @@ function k1ClonePts(now) {   // where the clones are right now: [x, y, facing] (
 const K3EF = {};   // client: last walking direction of each summoned killer, for the way its red eyes face
 const k3mAlive = () => !!(S.wo && S.wo.k3m && S.wo.k3m.length && S.phase === 'hunt');   // killer_3's summoned killers are on the map
 function k1MinDist(kp, me, now) {   // distance from `me` to the killer or to the nearest clone (heartbeat + hush use the nearest threat)
-  let d = kp ? Math.hypot(kp[0] - me[0], kp[1] - me[1]) : 1e9; for (const c of k1ClonePts(now)) d = Math.min(d, Math.hypot(c[0] - me[0], c[1] - me[1]));
+  const kidI = killerIdRaw(); let d = kp && !(kidI >= 0 && k1InvisFx(kidI)) ? Math.hypot(kp[0] - me[0], kp[1] - me[1]) : 1e9;   // War Cry: while she is invisible she has NO terror radius (no heartbeat, vignette, stab or woods hush from her; her Guard clones still do)
+  for (const c of k1ClonePts(now)) d = Math.min(d, Math.hypot(c[0] - me[0], c[1] - me[1]));
   const J4 = S.wo && S.wo.k4; if (J4 && J4.ps) for (let i = 0; i < 3; i++) { if (i === J4.cur || k4OffC(J4, i, performance.now())) continue; const q = J4.ps[i]; if (q) d = Math.min(d, Math.hypot(q[0] - me[0], q[1] - me[1])); }   // killer_4: the two idle bodies give the heartbeat too
   if (k3mAlive()) for (const e of S.wo.k3m) { const q = posOf(e.id); if (q) d = Math.min(d, Math.hypot(q[0] - me[0], q[1] - me[1])); }   // killer_3's summoned killers have a terror radius too
   return d;
@@ -5173,7 +5174,7 @@ const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite
     ['Ability', 'Curse of Set', 'Costs coins. Pick a generator on the map: a remote jammer takes it dark for 10s and anyone repairing it is kicked off. It never removes progress and does not use the kick cooldown.']]],
   [1, [
     ['Passive', 'Fear', 'Every survivor has a fear meter that fills while they are near her and drains once they get away. The higher it climbs, the slower they repair and unhook, the less they see, and the more they hallucinate: fake red eyes, fake heartbeats, even a fake killer. At full fear they panic, then get a short break from it.'],
-    ['Ability', 'War Cry', 'She vanishes from sight for up to 15s. Her next ATTACK, or pressing the ability again, is not a swing: it reveals her with a war cry that frightens everyone nearby. It hits nobody. For the next 2s she cannot attack and moves 70% slower, then she gets a 30% speed boost for 2s.'],
+    ['Ability', 'War Cry', 'She vanishes from sight for up to 15s. Her next ATTACK, or pressing the ability again, is not a swing: it reveals her with a war cry that frightens everyone nearby. It hits nobody. For the next 2s she cannot attack and moves 50% slower, then she gets a 30% speed boost for 2s.'],
     ['Ability', 'Guard', 'Next to a generator or a hook she posts a clone of her that prowls around it for 15s. It scares anyone who works close, with the red eyes and heartbeat of the real killer. It cannot hurt anybody.']]],
   [2, [
     ['Passive', 'Subject', 'B.I.N.G.E. stands for Broadcasting Infinite Nightmares, Gruesome Episodes. He only films one survivor at a time, his subject. A new subject is cast after the old one is hooked. Hooking sends the survivor into the Archive, the vault of a true-crime network where footage that was never aired is kept. They must collect the director’s-cut evidence (script pages, clapperboards, taped exhibits) before the credits roll while kill.exe hunts them.'],
@@ -6116,7 +6117,8 @@ function phaseSound(ph) {
   if (ph === 'hunt') { metalHit(.9, 78, 3.5); sfxTone(60, 38, 1.4, .8, 'sine'); sfxNoise(.4, .5, 'lowpass', 600, 120); }   // the hunt begins: a deep gong
   else if (ph === 'result') { metalHit(.8, 65, 3.2); sfxTone(110, 55, 1.8, .4, 'triangle', .25); }
 }
-function eyesSound() { if (myRole() !== 'survivor' || k6Veil()) return; const kid = killerId(), q = kid >= 0 ? interp(kid) : null; sfxEyes(q ? evVol(q[0], q[1], 900) : .4); }
+function eyesSound() { if (myRole() !== 'survivor' || k6Veil()) return; const kid = killerId(), q = kid >= 0 ? interp(kid) : null; if (kid >= 0 && k1InvisFx(kid) && !(S.wo && S.wo.k1 && S.wo.k1.cl && S.wo.k1.cl.length)) return;   // War Cry: an invisible killer gives no eyes sound (her Guard clones still do)
+  sfxEyes(q ? evVol(q[0], q[1], 900) : .4); }
 function stateSound(m, prev) {   // called from applyStatus on a real state change (not on the bulk catch-up after joining/reconnecting)
   const ps = prev ? prev.s : 'healthy', hooks = S.map.hooks || [], q = interp(m.id) || [0, 0];
   if (m.s === 'carried') sfxPickup(evVol(q[0], q[1]));
@@ -9643,7 +9645,7 @@ function draw() {
     if (VIS.mins) for (const v of VIS.mins) tintCone(v, 1);
     if (realm) { let prox = 0; const um = S.wo && S.wo.um; if (um && um.act) { const uq = interp(UM_ID); if (uq) prox = Math.max(0, Math.min(1, 1 - Math.hypot(uq[0] - me[0], uq[1] - me[1]) / 520)); } drawVhs(W, H, now, prox); }   // B.I.N.G.E.'s Archive: VHS horror, worse the closer kill.exe is
     const kid = killerId(), kp = kid >= 0 ? posOf(kid) : null;
-    if (!realm && role === 'survivor' && ph === 'hunt' && kp && S.eyesStart && !k2Blind(role, vId)) {   // red eyes reveal: visible through walls, only if the killer is NOT already lit
+    if (!realm && role === 'survivor' && ph === 'hunt' && kp && S.eyesStart && !k2Blind(role, vId) && !k1InvisFx(kid)) {   // (War Cry: no eyes while she is invisible) red eyes reveal: visible through walls, only if the killer is NOT already lit
       const t = now - S.eyesStart;
       if (t >= 0 && t < S.eyesMs && !canSee(role, vId, kid)) {
         // Only if the killer is inside the visible world rectangle (inner margin EYE_GLOW so the glow isn't clipped); off-screen = no eyes at all.

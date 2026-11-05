@@ -515,6 +515,11 @@ small{color:#8e99dd}
 /* ---------- layout hardening: HUD rows vs minimap / debug stats on narrow screens ---------- */
 @media (max-width:600px){#under{padding-left:var(--mmr,0px)}}   /* the minimap sits top-right: narrow screens reserve its width so the objective / generator chips wrap beside it instead of under it */
 @media (max-width:600px) and (orientation:portrait){#under{top:calc(var(--sat) + var(--bar) + 30px)}}   /* ...and drop below the corner fps / ping lines */
+/* landscape phone: generators chip, tasks chip and the player status dots sit right under the top edge (they used to start below the 44px top bar); the killer's attack-cooldown number drops under them so the two never overlap */
+@media (orientation:landscape) and (max-height:520px){
+ #under{top:calc(var(--sat) + 4px);gap:3px}
+ #cd{position:relative;top:40px}
+}
 #toast{overflow-wrap:anywhere}
 
 /* ---------- landscape-first setup (DBD_myversion) ---------- */
@@ -644,7 +649,7 @@ const CFG = {
     // Last Light: blind time (ms) / ability-disable time of its Holy Light (ms) / icon glow after it fires; Reaction: speed multiplier and duration (ms) after leaving a generator / an unhook or using the block / break button; Potential: the bar's size, as % of one generator (dumped on the generator the moment it is full) / the bar is emptied after this long without repairing / a generator at or above this % takes the holder's repair directly, and the holder banks BONUS (10%) of that repair on top
   PK_TK_MULT: 2.04, PK_UNDYING_FIRST_MS: 1000, PK_UNDYING_STEP_MS: 4000,   // Telekinetic: repair / unhook reach x this (1.7 + 20% = 2.04); Undying: downed time the first time (ms), plus this much more each further time (capped at DOWN_RECOVER_MS)
   PK_OFFER_N: 2, PK_OFFER_CHANCE: .5, PK_TWIN_REP: 1.15, PK_TWIN_VIS: 1.2, PK_TWIN_R: 0, /* Long Last Twin: repair speed x / vision x while the twins are close; PK_TWIN_R = how close (0 = Telekinetic's reach, GEN_R x PK_TK_MULT) */   // perks offered to each survivor / default chance that a maxHolders perk shows up in a match at all (a perk can set its own offerChance)
-  PK_GEN_MULT: 1.5, PK_HOOK_MS: 50000,   // survivor perks ON (global): generators need this much more repair work (x1.5 = 50% more) / time until a hooked survivor dies (ms)
+  PK_GEN_MULT: 1.3, PK_HOOK_MS: 40000,   // survivor perks ON (global): generators need this much more repair work (x1.3 = 30% more) / time until a hooked survivor dies (ms; 40 s = same as without perks)
   PK_DROP_RATE: .5, PK_ITEM_PERK_BONUS: .06, PK_ITEM_PERK_BONUS_CAP: .18,   // perks ON: items drop at x PK_DROP_RATE of today's rate; every item perk held adds PK_ITEM_PERK_BONUS to that rate, capped at PK_ITEM_PERK_BONUS_CAP
   PK_DD_PROT_MS: 3000, PK_DD_DECAY_MS: 66667, PK_DD_SLOW: .05, PK_DD_TAP: .04, PK_DD_THRESH: .2, PK_DD_SPEED: 1.1, PK_DD_REPAIR: 1.2, PK_DD_KICK_KEEP: .85, PK_DD_MIN_K: 1100, PK_DD_R: 70, PK_DD_RESET: .5, PK_DD_PING_MS: 3000, PK_DD_SYNC_MS: 1500,   // DEMONIC DEAL: totem bar full-to-empty (ms) / a generator a holder leaves (bar above the threshold) cannot be kicked for this long (ms) / drain speed x while the holder is downed / carried / hooked / sent (much slower) / each tap on the totem restores this much of the bar / the perk works while the bar is above this / holder speed x / holder generator repair x / share of a generator's progress KEPT after a kick (.85 = kicks remove 15%; the best holder counts, no stacking) / totem spawns at least this far from the killer's start / reach to enchant / bar after it hits zero / how long the killer sees the holder (ms) / host resend (ms)
   HEADSTART_MS: 5000,                  // survivors move, killer frozen
@@ -1906,6 +1911,39 @@ function botK6(p, B, now, L, tgt, down) {   // returns true when it took over th
   return false;
 }
 
+/* ---------- killer_7 (Game Guard) bot: knife up close, swaps to the RIFLE when a survivor is at range, stands still to aim and shoots, runs to a locker to reload, and opens a locker a survivor hides in ---------- */
+function botK7Locker(p, B) {   // walk to the nearest locker and open it (reload + kicks out anyone inside)
+  let bi = -1, bd = 1e9; for (let i = 0; i < K7.L.length; i++) { const d = Math.hypot(K7.L[i].x - p.x, K7.L[i].y - p.y); if (d < bd) { bd = d; bi = i; } }
+  if (bi < 0) return false; return botK7Open(p, B, bi);
+}
+function botK7Open(p, B, i) {
+  const l = K7.L[i]; if (!l) return false; const d = Math.hypot(l.x - p.x, l.y - p.y);
+  B.goal = [l.x + l.nx * (K7_LK_D / 2 + CFG.RADIUS + 8), l.y + l.ny * (K7_LK_D / 2 + CFG.RADIUS + 8)]; B.arrive = 16;
+  if (d <= K7_LK_R - 12 && abRate(B, 'k7o', 500)) { hostAct(p, 'lkopen', true); abLog('k7.open'); }
+  return true;
+}
+function botK7(p, B, now, L, tgt, down) {   // true = it decided the movement / action for this think
+  if (!K7.on || p !== k7Player() || p.carry != null) return false;
+  const A = BA(), R = CFG.FLASH_RANGE * K7_RANGE, swapping = now < K7.swEnd;
+  if (!tgt) {   // nobody in sight: low on bullets = go and reload (Easy only when empty)
+    if (!down && K7.bul <= (A.wise === 0 ? 0 : 2) && K7.L.length) { if (p.kick) hostAct(p, 'kick', false); return botK7Locker(p, B); }
+    return false; }
+  if (p.kick) hostAct(p, 'kick', false);
+  if (tgt.lk >= 0 && K7.L[tgt.lk]) { B.tid = -1; return botK7Open(p, B, tgt.lk); }   // he is hiding in a locker: open it (kicks him out, and reloads)
+  const d = abDist(tgt, p), a = Math.atan2(tgt.y - p.y, tgt.x - p.x), los = losClear(p.x, p.y, tgt.x, tgt.y);
+  if (K7.form === 0) {   // knife: a survivor far away and bullets in the magazine = swap to the rifle (the normal knife chase carries on meanwhile)
+    if (K7.bul > 0 && d > 190 && !swapping && !p.wind && now >= p.cd && abRate(B, 'k7sw', 1200) && Math.random() < A.use) { hostAct(p, 'k7ab', true); abLog('k7.rifle'); }
+    return false; }
+  if (K7.bul <= 0) {   // rifle, empty
+    if (d < 150) { if (!swapping && !p.wind && abRate(B, 'k7sw', 1200)) { hostAct(p, 'k7ab', true); abLog('k7.knife'); } return false; }   // too close to run: back to the knife
+    B.tid = -1; if (K7.L.length) return botK7Locker(p, B); return false; }
+  if (d < R * .92 && los) {   // rifle: stop, aim, fire when the narrow cone is on him
+    B.tid = tgt.id; B.still = true; S.faceTarget = a + (Math.random() - .5) * A.aim * .6;
+    if (!swapping && now >= p.cd && !p.wind && Math.abs(angDiff(S.face, a)) < .06 && abRate(B, 'k7s', A.wise === 0 ? 700 : A.wise === 1 ? 450 : 0)) { hostAct(p, 'attack', true); abLog('k7.shot'); }
+    return true; }
+  B.tgt = tgt; B.tid = tgt.id; B.direct = d < 260; B.arrive = 10; return true;   // too far / no clear line: close the distance
+}
+
 /* ---------- the dispatcher the killer think calls ---------- */
 function botKAb(p, B, now, L, tgt, down) {   // true = it decided the movement / action for this think
   if (p.st === 'dead') return false; const ki = kAbIdx(p.id);
@@ -1916,6 +1954,7 @@ function botKAb(p, B, now, L, tgt, down) {   // true = it decided the movement /
   else if (ki === 4) botK4(p, B, now, tgt);
   else if (ki === 5) botK5(p, B, now, tgt);
   else if (ki === 6) { if (botK6(p, B, now, L, tgt, down)) return true; }
+  else if (ki === 7) { if (botK7(p, B, now, L, tgt, down)) return true; }
   return false;
 }
 function botKRoam(p, B, now) {   // nobody in sight: ability errands (willows, scents, guards) instead of the plain patrol
@@ -2073,7 +2112,7 @@ const RULESET_ABIL = { SNAKE_MULT: CFG.SNAKE_MULT, SNAKE_MS: CFG.SNAKE_MS, TP_DI
 const RULESET_LEGACY = { SNAKE_MULT: 1.7, SNAKE_MS: 6000, TP_DIST: 195, TRAP_R: 30, TRAP_R_K: 45, SURV_ITEM_MULT: 0.75, ITEM_CHARGES: {} };
 function applyRuleset() { const src = abilitiesOn() ? RULESET_ABIL : RULESET_LEGACY; for (const k in src) CFG[k] = src[k]; }
 const perksRule = () => !!S.rules.perks && abilitiesOn();
-const hookGraceMs = () => perksRule() ? CFG.PK_HOOK_MS : CFG.HOOK_GRACE_MS;   // survivor perks ON: a hook lasts 50 s   // survivor perks are ON (the setting; perkSetup decides whether a match really has a perk screen)
+const hookGraceMs = () => perksRule() ? CFG.PK_HOOK_MS : CFG.HOOK_GRACE_MS;   // survivor perks ON: a hook lasts PK_HOOK_MS (40 s)   // survivor perks are ON (the setting; perkSetup decides whether a match really has a perk screen)
 let PERK_TEST_SEL = null;   // Test Room only (lobby button "Choose perks"): a Set of perk ids the host ticked; only these are offered. null = every implemented perk
 const PERK_TEST_ONLY = null;   // TESTING: when this list is set, ONLY these perks are ever offered (every match, not just the Test Room). Set it to null to offer every implemented perk again
 const perkPool = () => PERK_TEST_ONLY ? PERKS.filter(p => PERK_TEST_ONLY.includes(p.id)) : PERKS.filter(p => S.test && PERK_TEST_SEL ? PERK_TEST_SEL.has(p.id) : p.implemented);
@@ -2559,7 +2598,7 @@ function genStep(now, dtMs, killer) {   // every hunt tick: expire disabled time
     let wsum = 0; for (const id of cnt[i]) { const q = HP.get(id); wsum += (q && q.snakeEnd > now ? CFG.SNAKE_REPAIR_MULT : 1) * k1Slow(q, now) * k5Slow(q) * (q && q.bbRep > now ? BB.SWAP_REP : 1) * (q && ddActive(q) ? CFG.PK_DD_REPAIR : 1) * (q && twinNearH(q) ? CFG.PK_TWIN_REP : 1); }   // killer_1: each repairer's fear slows their contribution
     const kr = CFG.GEN_RATE_BY_K[clampN(k, 1, 9)], boost = wsum / k;
     let sl = 0; for (const id of cnt[i]) { const pg = K0.ping[id]; sl += pg && pg.sc && now - pg.s < K0_SCAN_SLOW_MS ? K0_SCAN_SLOW : 1; } sl /= k;   // IR scanner: pinged repairers are slower
-    let gain = 100 * kr * boost * sl * split / charges * dt / (perksRule() ? CFG.PK_GEN_MULT : 1);   // survivor perks ON: 50% more repair work per generator
+    let gain = 100 * kr * boost * sl * split / charges * dt / (perksRule() ? CFG.PK_GEN_MULT : 1);   // survivor perks ON: 30% more repair work per generator
     const ph = cnt[i].filter(id => hasPerk(id, 'potential'));   // POTENTIAL: a holder's share goes into their own bar (banked, not on the generator, so a kick cannot touch it)
     if (ph.length) { const sh = gain / k, hi = g.prog >= CFG.PK_POT_HI; if (!hi) gain -= sh * ph.length; for (const id of ph) { const q = HP.get(id); if (q) { q.pot = Math.min(CFG.PK_POT_CAP, (q.pot || 0) + sh * (hi ? CFG.PK_POT_BONUS : 1)); q.potAt = now; } } }   // generator at 75%+: the holder's repair goes straight onto it and 10% of it is banked as a bonus
     g.prog += gain;
@@ -2779,7 +2818,7 @@ function ddStep(now, dtMs) {   // host, every tick of the hunt
 const pkReact = p => { if (p.role !== 'survivor' || !hasPerk(p.id, 'reaction')) return; addMod(p, 'react', CFG.PK_REACT_MULT, CFG.PK_REACT_MS, performance.now()); sxSend(p.id, 'react', CFG.PK_REACT_MS); };   // REACTION (host): a speed mod + the visual cue for everyone; only on the three triggers in hostAct
 function hitSurvivor(v, now, minion) {   // minion = 1: hit by one of killer_3's summoned killers (the real killer's own hit hooks stay out of it)
   k4Lust3(now);   // Huggy: Blood Lust after a hit
-  if (K7.on && v.role === 'survivor') { K7.h[v.id] = K7_HEARTS; K7.dirty = true; }   // killer_7: any real hit refills the hearts
+  if (K7.on && v.role === 'survivor') { K7.h[v.id] = K7_HP; if (K7.w[v.id]) { delete K7.w[v.id]; dropMod(v, 'k7wound'); } K7.dirty = true; }   // killer_7: any real hit refills the health bar to 100%
   v.twHitAt = now;   // (Long Last Twin: marks who was hit this tick, so one swing never hits a twin twice)
   if (k3FrogOn(v, now)) k3FrogEnd(v, false);   // command 7: a frog that gets hit turns back at once; the hit below still deals its normal damage
   if (!minion) { k6ChaosEnd();   // killer_6: CHAOS ends with his first landed hit
@@ -3275,7 +3314,7 @@ function woList(k, now) {
     case 'k1': { if (!k1Player()) return []; const r = v => Math.round(v); return [left(K1.wailAt), left(K1.gdAt), Object.keys(K1.f).map(id => [+id, Math.round(K1.f[id] * 10) / 10]), K1.clones.map(c => [c.id, r(c.x), r(c.y), r(c.vx), r(c.vy), left(c.end), c.tk, c.ti]), Object.keys(K1.brk).concat(Object.keys(K1.imm).filter(id => !(id in K1.brk))).map(id => [+id, left(K1.brk[id] || 0), left(K1.imm[id] || 0)]).filter(e => e[1] || e[2])]; }   // killer_1 (see the KILLER_1 section)
     case 'k5': { if (!k5Player()) return []; return [K5.act ? 1 : 0, Math.round(K5.torm * 10) / 10, left(K5.cd), K5.rings.map(r => [r.id, r.k, r.i, r.x, r.y, r.end ? Math.max(1, left(r.end)) : 0, Math.round(now - r.t0)]), K5.mv ? 1 : 0, K5.chg ? 1 : 0, Object.keys(K5.cond).map(id => [+id, Math.round(K5.cond[id].b), K5.cond[id].c]), Object.keys(K5.ping).map(id => [+id, Math.max(1, left(K5.ping[id]))])]; }   // killer_5 (see the KILLER_5 section)
     case 'k6': { if (!k6Player()) return []; return [K6.form, K6.tid, left(K6.tfEnd), left(K6.chEnd), left(K6.cd), left(K6.chAt), K6.fh, Math.round(K6.fp), K6.fo ? 1 : 0]; }   // killer_6 (see the KILLER_6 section)
-    case 'k7': { if (!k7Player()) return []; return [K7.form, K7.bul, left(K7.swEnd), K7.L.map(l => [Math.round(l.x), Math.round(l.y), l.nx, l.ny, l.occ]), Object.keys(K7.h).map(id => [+id, K7.h[id]])]; }   // killer_7 (see the KILLER_7 section)
+    case 'k7': { if (!k7Player()) return []; return [K7.form, K7.bul, left(K7.swEnd), K7.L.map(l => [Math.round(l.x), Math.round(l.y), l.nx, l.ny, l.occ]), Object.keys(K7.h).map(id => [+id, K7.h[id]]), Object.keys(K7.w).filter(id => K7.w[id].rev > now).map(id => [+id, left(K7.w[id].rev), left(K7.w[id].bl), K7.w[id].n])]; }   // killer_7 (see the KILLER_7 section)
     case 'k4': { if (!k4Player()) return []; return [K4.cds.map(left), K4.ch ? Math.round(now - K4.ch) : -1, K4.lg ? 1 : 0, left(K4.slU), K4.bl > now ? 1 : 0]; }   // killer_4 (see the KILLER_4 section)
     case 'k2': { if (!k2Player()) return []; return [K2.tid, K2.n, K2.sc.map(q => [q.id, q.x, q.y, Math.round(now - q.t0)]), K2.tv, left(K2.tx), left(K2.tcd), K2.pt, left(K2.pe), left(K2.cd)]; }
     case 'sb': return SBH.map((h, i) => h.on ? [i, Math.round(h.left), h.rate || 1, 0] : h.arm ? [i, 0, 1, 1] : null).filter(Boolean);   // Sabotage: [hook index, ms left, repair speed x]
@@ -5006,11 +5045,11 @@ function drawK3Glints(me, vw, vh, now, role) {
    - ABILITY BUTTON (or Q / Left Shift): swap KNIFE <-> RIFLE (K7_SW_MS = 0.5 s, the attack button is on cooldown meanwhile).
        KNIFE = a normal killer.
        RIFLE = ambient circle unchanged, flashlight cone only K7_ANGLE degrees but K7_RANGE x longer (that is also the bullet's range). ATTACK fires a hitscan bullet
-               (like Freaky Nikki's gun): it only hits a survivor inside the narrow cone with a clear line. Every shot costs 1 of K7_BULLETS and slows him by 70% for 1 s (hit or miss).
-   - HEARTS: every survivor has K7_HEARTS hearts (shown top right of THEIR minimap, nobody else's). A bullet that hits removes one. At 0 the survivor takes a NORMAL hit
-       (healthy -> injured, injured -> downed), the hearts go back to 3 and he laughs / is slowed like after a swing. Any real hit refills the hearts too. No passive regen.
+               (like Freaky Nikki's gun): it only hits a survivor inside the narrow cone with a clear line. Every shot costs 1 of K7_BULLETS, has a 0.5 s cooldown and slows him by 50% for 1 s (hit or miss).
+   - HEALTH BAR: every survivor has a K7_HP bar (shown under THEIR minimap, nobody else's). A bullet that hits removes K7_DMG (30%; four bullets = a hit) and also reveals the survivor to the killer (event 'bond'), slows them 15% per stacked bullet and, from the 2nd bullet, makes them bleed (k7Wound; 2 s reveal per bullet). At 0 the survivor takes a NORMAL hit
+       (healthy -> injured, injured -> downed), the bar goes back to 100% and he laughs / is slowed like after a swing. Any real hit refills the bar too. No passive regen (only 10 s in a locker heals 50%).
    - LOCKERS: when he is picked, K7_LK_PAIRS pairs (10 lockers, the two of a pair always side by side) are placed against the walls. The killer opens one (OPEN) = his bullets go back to
-       K7_BULLETS. A survivor can HIDE in a free one (invisible, cannot move, EXIT button): every K7_HEAL_MS inside heals one heart. If the killer opens an occupied locker the
+       K7_BULLETS. A survivor can HIDE in a free one (invisible, cannot move, EXIT button): every second inside heals K7_HEAL_RATE (5%) of the bar, so 10 s = 50%. If the killer opens an occupied locker the
        survivor is thrown out and slowed 70% for K7_KICK_MS.
 
    WHERE EVERYTHING IS (search for the names)
@@ -5023,9 +5062,9 @@ function drawK3Glints(me, vw, vh, now, role) {
       - buttons: ctxFor (HIDE / EXIT / OPEN), abilityPress, updateControls (ability + attack labels), CTX_LABEL
       - drawing: killerBmp -> guardBmp, drawKiller (rifle flag), atkAnim, drawSlashSkin, drawItemsWorld -> drawK7World, draw loop -> drawK7Over, INFO_KILLERS (guide)
    ################################################################################################ */
-const K7_TERROR = .6, K7_ANGLE = 7, K7_RANGE = 1.7, K7_BULLETS = 5, K7_HEARTS = 3, K7_SW_MS = 500, K7_SHOT_MS = 1000, K7_SHOT_SLOW = .3;   // terror (distance divisor) / rifle cone (degrees) / rifle beam + bullet range (x) / magazine / hearts / swap time / shot cooldown + slow time / slow multiplier (70% slower)
-const K7_LK_PAIRS = 5, K7_LK_W = 30, K7_LK_D = 20, K7_LK_R = 70, K7_HEAL_MS = 10000, K7_KICK_SLOW = .3, K7_KICK_MS = 1500, K7_OPEN_CD = 700, K7_SEND_MS = 400;   // locker pairs / one locker's width along the wall / depth / interaction reach / ms hiding per healed heart / kicked-out slow / its length / killer's locker cooldown / resend gap
-function k7Empty() { return { on: false, init: false, form: 0, swEnd: 0, bul: K7_BULLETS, L: [], h: {}, dirty: false, sendAt: 0 }; }   // form: 0 knife, 1 rifle; L = lockers [{x, y, nx, ny, occ}] (nx,ny = the way the door faces); h = hearts per survivor id
+const K7_TERROR = .6, K7_ANGLE = 8, K7_RANGE = 1.7, K7_BULLETS = 8, K7_HP = 100, K7_DMG = 30, K7_HEAL_RATE = 5, K7_W_SLOW = .15, K7_W_MS = 2000, K7_BLEED_MS = 2000, K7_SW_MS = 500, K7_SHOT_MS = 500, K7_SHOT_SLOW = .5, K7_SLOW_MS = 1000, K7_OPEN_ANIM = 650;   // terror (distance divisor) / rifle cone (degrees) / rifle beam + bullet range (x) / magazine / health bar (percent) / health one bullet takes / swap time / shot cooldown / slow multiplier (50% slower) / how long the shot slow lasts / locker-open animation length
+const K7_LK_PAIRS = 5, K7_LK_W = 60, K7_LK_D = 40, K7_ENTER_ANIM = 750, K7_LK_R = 70, K7_KICK_SLOW = .3, K7_KICK_MS = 1500, K7_OPEN_CD = 700, K7_SEND_MS = 400;   // locker pairs / one locker's width along the wall / depth / interaction reach / kicked-out slow / its length / killer's locker cooldown / resend gap
+function k7Empty() { return { on: false, init: false, form: 0, swEnd: 0, bul: K7_BULLETS, L: [], h: {}, w: {}, dirty: false, sendAt: 0 }; }   // form: 0 knife, 1 rifle; L = lockers [{x, y, nx, ny, occ}] (nx,ny = the way the door faces); h = hearts per survivor id
 let K7 = k7Empty();
 const isK7 = id => kAbIdx(id) === 7;   // killer_7 = the eighth KILLERS entry; its ability code never mentions the character's name
 function k7Player() { for (const p of HP.values()) if (p.role === 'killer' && p.on && isK7(p.id)) return p; return null; }
@@ -5065,56 +5104,70 @@ function k7Ability(p, now) {   // swap knife <-> rifle
   K7.form = K7.form ? 0 : 1; K7.swEnd = now + K7_SW_MS; const t = Math.max(p.cd, K7.swEnd); p.cd = t; notifyCd(p, t - now); p.kick = false; p.kickT = 0; p.kickGen = -1;
   woSend('k7'); evSend({ k: 'k7sw', x: p.x, y: p.y, g: K7.form });
 }
+function k7Wound(v, now) {   // a bullet landed (bar not empty): reveal him to the killer, slow him 15% per stacked bullet, and from the 2nd bullet on he bleeds
+  let w = K7.w[v.id]; if (!w || now >= w.rev) w = K7.w[v.id] = { n: 0, rev: now, bl: 0 };   // the last stack ran out = a fresh one
+  w.n++; w.rev = Math.max(w.rev, now) + K7_W_MS;   // every bullet adds 2 s of reveal
+  addMod(v, 'k7wound', Math.max(.1, 1 - K7_W_SLOW * w.n), w.rev - now, now);   // 15% slower per bullet, for as long as the reveal lasts
+  if (w.n >= 2) w.bl = now + K7_BLEED_MS;   // every additional bullet: he bleeds (blood trail) for 2 s
+  const K = k7Player(); if (K) evSend({ k: 'bond', id: v.id, kid: K.id, ms: w.rev - now, sh: hatHid(v, now) ? 0 : 1, sk: 0 });   // location pin on the killer's screen + minimap
+  msgTo(v, w.n >= 2 ? 'Shot again! You are bleeding and slowed' : 'Shot! The Guard can see you');
+  K7.dirty = true;
+}
 function k7Fire(K, now) {   // rifle: the attack button fires one hitscan bullet at a survivor inside the narrow cone (clear line); nobody there = a wasted bullet
   if (K7.bul <= 0) { msgTo(K, 'Out of bullets - open a locker'); K.cd = now + 500; notifyCd(K, 500); return; }
-  K7.bul--; const f = S.face, R = CFG.FLASH_RANGE * K7_RANGE, HA = K7_ANGLE * Math.PI / 360 + .05; let best = null, bs = 99;
+  K7.bul--; const f = S.face, R = CFG.FLASH_RANGE * K7_RANGE, HA = K7_ANGLE * Math.PI / 360; let best = null, bs = 99;
   for (const v of k3Elig()) {
     if (v.lk >= 0 || hatHid(v, now)) continue; const dx = v.x - K.x, dy = v.y - K.y, d = Math.hypot(dx, dy); if (d > R) continue;
     const da = Math.abs(angDiff(Math.atan2(dy, dx), f)); if (da > HA + Math.atan2(CFG.RADIUS * .6, Math.max(d, 1))) continue; if (!losClear(K.x, K.y, v.x, v.y)) continue;
     const sc = da + d / 4000; if (sc < bs) { bs = sc; best = v; } }
   let ex = K.x + Math.cos(f) * R, ey = K.y + Math.sin(f) * R, down = false, left = 0;
-  if (best) { ex = best.x; ey = best.y; const hv = K7.h[best.id] == null ? K7_HEARTS : K7.h[best.id]; if (hv <= 1) { down = true; hitSurvivor(best, now); } else { K7.h[best.id] = hv - 1; left = hv - 1; } }
+  if (best) { ex = best.x; ey = best.y; const hv = K7.h[best.id] == null ? K7_HP : K7.h[best.id], nh = hv - K7_DMG; if (nh <= 0) { down = true; hitSurvivor(best, now); } else { K7.h[best.id] = nh; left = nh; k7Wound(best, now); } }   // each bullet takes K7_DMG (30%) of the bar; an empty bar = a normal hit (healthy -> injured, injured -> down), the bar goes back to 100% and he gets the normal hit cooldown + slow
   else for (let s = 20; s <= R; s += 20) { const x = K.x + Math.cos(f) * s, y = K.y + Math.sin(f) * s; if (circleHits(x, y, 2)) { ex = x; ey = y; break; } }
   const ms = down ? CFG.ATTACK_HIT_CD_MS : K7_SHOT_MS; K.cd = now + ms; notifyCd(K, ms);
-  addMod(K, 'attackSlow', down ? (EG.final ? CFG.MONSTER_SLOW_MULT : EG.solo ? soloSlowMult(now) : CFG.ATTACK_SLOW_MULT) : (EG.final ? CFG.MONSTER_SLOW_MULT : K7_SHOT_SLOW), ms, now);   // a bullet that only takes a heart slows him 70% for 1 s; the bullet that lands a real hit slows him like a landed swing
-  evSend({ k: 'k7shot', x0: K.x, y0: K.y, x1: ex, y1: ey, hit: best ? 1 : 0, vid: best ? best.id : -1, hl: left, dn: down ? 1 : 0 });
+  addMod(K, 'attackSlow', down ? (EG.final ? CFG.MONSTER_SLOW_MULT : EG.solo ? soloSlowMult(now) : CFG.ATTACK_SLOW_MULT) : (EG.final ? CFG.MONSTER_SLOW_MULT : K7_SHOT_SLOW), down ? ms : K7_SLOW_MS, now);   // every shot (hit or miss) has a 0.5 s cooldown but slows him 50% for 1 s; the bullet that lands a real hit slows him like a landed swing
+  evSend({ k: 'k7shot', x0: K.x, y0: K.y, x1: ex, y1: ey, hit: best ? 1 : 0, vid: best ? best.id : -1, hl: Math.round(left), dn: down ? 1 : 0 });
   if (down) { const am = { t: 'atk', k: K.id, a: Math.round(f * 100) / 100, h: [[best.id, best.st]], g: 1 }; T.broadcast(am); try { onAtk(am); } catch (e) {} }   // the laugh + hit effects of a normal hit
   K7.dirty = true; woSend('k7');
 }
 function k7Enter(p, now) {   // a survivor hides in the nearest free locker
   if (!K7.on || p.role !== 'survivor' || !p.on || p.lk >= 0 || (p.st !== 'healthy' && p.st !== 'injured') || k3FrogOn(p, now)) return;
   const i = k7Near(p, true); if (i < 0) return; const l = K7.L[i];
-  l.occ = p.id; p.lk = i; p.lkT = 0; p.rep = p.hold = p.kick = false; p.ix = p.iy = 0; woSend('k7'); evSend({ k: 'k7lk', x: l.x, y: l.y, m: 1 });
+  const sx = p.x, sy = p.y; l.occ = p.id; p.lk = i; p.lkT = 0; p.rep = p.hold = p.kick = false; p.ix = p.iy = 0; p.x = l.x; p.y = l.y;   // the survivor steps INTO the locker and stays there
+  woSend('k7'); evSend({ k: 'k7lk', x: l.x, y: l.y, nx: l.nx, ny: l.ny, m: 1, id: p.id, sx: Math.round(sx), sy: Math.round(sy) });
 }
-function k7Exit(p) { if (p.lk < 0) return; const l = K7.L[p.lk]; k7Free(p); woSend('k7'); if (l) evSend({ k: 'k7lk', x: l.x, y: l.y, m: 0 }); }
+function k7Front(p, l) { if (!l) return; p.x = l.x + l.nx * (K7_LK_D / 2 + CFG.RADIUS + 8); p.y = l.y + l.ny * (K7_LK_D / 2 + CFG.RADIUS + 8); }   // the spot just in front of a locker door (checked free when the lockers were placed)
+function k7Exit(p) { if (p.lk < 0) return; const l = K7.L[p.lk]; k7Free(p); k7Front(p, l); woSend('k7'); if (l) evSend({ k: 'k7lk', x: l.x, y: l.y, nx: l.nx, ny: l.ny, m: 0, id: p.id, sx: Math.round(p.x), sy: Math.round(p.y) }); }
 function k7Open(K, now) {   // the killer opens a locker: bullets back to full; anyone inside is thrown out and slowed
   if (!K7.on || K.role !== 'killer' || K !== k7Player() || K.carry != null || K.wind || now < (K.k7OpenAt || 0)) return;
   let bi = -1, bd = K7_LK_R + CFG.ACT_SLACK; for (let i = 0; i < K7.L.length; i++) { const l = K7.L[i], d = Math.hypot(l.x - K.x, l.y - K.y); if (d > bd) continue; if (!losClear(K.x, K.y, l.x + l.nx * (K7_LK_D / 2 + 6), l.y + l.ny * (K7_LK_D / 2 + 6))) continue; bd = d; bi = i; }
   if (bi < 0) return; const l = K7.L[bi]; K.k7OpenAt = now + K7_OPEN_CD; K7.bul = K7_BULLETS;
-  const v = l.occ >= 0 ? HP.get(l.occ) : null; if (v) { k7Free(v); addMod(v, 'k7kick', K7_KICK_SLOW, K7_KICK_MS, now); msgTo(v, 'The Guard opened your locker!'); }
+  const v = l.occ >= 0 ? HP.get(l.occ) : null; if (v) { k7Free(v); k7Front(v, l); addMod(v, 'k7kick', K7_KICK_SLOW, K7_KICK_MS, now); msgTo(v, 'The Guard opened your locker!'); }
   msgTo(K, v ? 'Locker opened: ' + K7_BULLETS + ' bullets, survivor kicked out' : 'Locker opened: ' + K7_BULLETS + ' bullets');
   K7.dirty = true; woSend('k7'); evSend({ k: 'k7op', x: l.x, y: l.y, o: v ? 1 : 0 });
 }
 function k7Step(now, dtMs) {   // host, every tick of the hunt
   const B = k7Player(); K7.on = !!B; if (!B) return; let ch = false;
-  if (!K7.init) { K7.init = true; K7.bul = K7_BULLETS; K7.form = 0; k7Place(); for (const v of HP.values()) if (v.role === 'survivor') K7.h[v.id] = K7_HEARTS; ch = true; }
+  if (!K7.init) { K7.init = true; K7.bul = K7_BULLETS; K7.form = 0; K7.w = {}; k7Place(); for (const v of HP.values()) if (v.role === 'survivor') K7.h[v.id] = K7_HP; ch = true; }
   for (const v of HP.values()) {
     if (v.role !== 'survivor' || !(v.lk >= 0)) continue;
     if (!v.on || (v.st !== 'healthy' && v.st !== 'injured')) { k7Free(v); ch = true; continue; }
-    v.lkT = (v.lkT || 0) + dtMs; if (v.lkT >= K7_HEAL_MS) { v.lkT = 0; if ((K7.h[v.id] == null ? K7_HEARTS : K7.h[v.id]) < K7_HEARTS) { K7.h[v.id] = (K7.h[v.id] == null ? K7_HEARTS : K7.h[v.id]) + 1; ch = true; } }   // 10 s hiding = one heart back
+    const cur = K7.h[v.id] == null ? K7_HP : K7.h[v.id]; if (cur < K7_HP) { K7.h[v.id] = Math.min(K7_HP, cur + K7_HEAL_RATE * dtMs / 1000); K7.dirty = true; }   // hiding in a locker refills the bar slowly and smoothly: K7_HEAL_RATE percent per second (the ONLY way it regenerates)
   }
+  for (const id in K7.w) if (now >= K7.w[id].rev) delete K7.w[id];   // the stack ends when the reveal does
   if (K7.dirty && now - K7.sendAt >= K7_SEND_MS) ch = true;
   if (ch) { K7.sendAt = now; K7.dirty = false; woSend('k7'); }
 }
 /* ---- client ---- */
-const K7C = { fx: [], inAt: 0, lastH: -1, hitAt: 0, sig: '', hs: '' };
+const K7C = { fx: [], op: [], en: [], bl: -2, bf: -1, inAt: 0, lastH: -1, hitAt: 0, sig: '', hs: '' };
 function k7Apply(a, now) {
   if (!a || !a.length) { S.wo.k7 = null; return; }
   const hid = {}, L = (a[3] || []).map(l => { if (l[4] >= 0) hid[l[4]] = 1; return { x: l[0], y: l[1], nx: l[2], ny: l[3], occ: l[4] }; }), h = {}; for (const e of a[4] || []) h[e[0]] = e[1];
-  S.wo.k7 = { form: a[0], bul: a[1], swEnd: now + a[2], L, h, hid };
+  const w = {}; for (const e of a[5] || []) w[e[0]] = { rev: now + e[1], bl: now + e[2], n: e[3] };
+  S.wo.k7 = { form: a[0], bul: a[1], swEnd: now + a[2], L, h, hid, w };
 }
+const k7Bleed = (id, now) => { const J = S.wo && S.wo.k7, w = J && J.w && J.w[id]; return !!w && now < w.bl; };   // this survivor is bleeding from a Game Guard bullet (blood trail)
 const k7Hid = id => !!(S.wo && S.wo.k7 && S.wo.k7.hid && S.wo.k7.hid[id]);   // this survivor is inside a locker (invisible to everyone, like the Magician's Hat)
-function k7NearC(mp, free) { const J = S.wo.k7; if (!J) return -1; let bi = -1, bd = K7_LK_R + CFG.ACT_SLACK; for (let i = 0; i < J.L.length; i++) { const l = J.L[i]; if (free && l.occ >= 0) continue; const d = Math.hypot(l.x - mp[0], l.y - mp[1]); if (d <= bd) { bd = d; bi = i; } } return bi; }
+function k7NearC(mp, free) { const J = S.wo.k7; if (!J) return -1; let bi = -1, bd = K7_LK_R + CFG.ACT_SLACK; for (let i = 0; i < J.L.length; i++) { const l = J.L[i]; if (free && l.occ >= 0) continue; const d = Math.hypot(l.x - mp[0], l.y - mp[1]); if (d <= bd && losClear(mp[0], mp[1], l.x + l.nx * (K7_LK_D / 2 + 6), l.y + l.ny * (K7_LK_D / 2 + 6))) { bd = d; bi = i; } } return bi; }   // same clear-line rule as the host's k7Near, so HIDE / OPEN only show when they will work
 const K7_ART = {
   rifle: r => { r(1, 9, 4, 4, '#5a3b24'); r(1, 9, 4, 1, '#7a5636'); r(5, 8, 7, 3, '#2a2d36'); r(5, 8, 7, 1, '#4d5260'); r(12, 8, 4, 2, '#2a2d36'); r(12, 8, 4, 1, '#4d5260'); r(7, 11, 2, 3, '#2a2d36'); r(5, 6, 3, 2, '#4d5260'); r(2, 13, 6, 1, '#15151d'); },
   knife: r => { for (let i = 0; i < 8; i++) { r(5 + i, 9 - i, 2, 2, i > 5 ? '#f2f5fb' : '#c3cad8'); } r(3, 11, 3, 3, '#17171f'); r(5, 9, 3, 1, '#8a8f9c'); r(4, 10, 1, 1, '#ff2f7a'); }
@@ -5150,15 +5203,31 @@ function guardBmp(pose, f, lau, mon, gun) {   // Game Guard: pink hooded jumpsui
 }
 function drawK7World(on, now, role) {   // the lockers (under the darkness: only where light reaches)
   const J = S.wo.k7; if (!J) return;
+  for (let i = K7C.op.length - 1; i >= 0; i--) if (now - K7C.op[i].t0 > K7_OPEN_ANIM + 50) K7C.op.splice(i, 1);
+  for (let i = K7C.en.length - 1; i >= 0; i--) if (now - K7C.en[i].t0 > K7_ENTER_ANIM + 50) K7C.en.splice(i, 1);
+  const DW = Math.round(K7_LK_D * .45);   // thickness of the door strip
   for (const l of J.L) {
-    if (!on(l.x, l.y, 60)) continue;
+    if (!on(l.x, l.y, 70)) continue;
     const hz = l.ny !== 0, w = hz ? K7_LK_W : K7_LK_D, h = hz ? K7_LK_D : K7_LK_W, x0 = Math.round(l.x - w / 2), y0 = Math.round(l.y - h / 2);
-    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x0 + 2, y0 + 3, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x0 + 3, y0 + 4, w, h);
     ctx.fillStyle = '#323c47'; ctx.fillRect(x0, y0, w, h);
-    const d = hz ? [x0 + 2, l.ny < 0 ? y0 : y0 + h - 9, w - 4, 9] : [l.nx < 0 ? x0 : x0 + w - 9, y0 + 2, 9, h - 4];   // the door strip, on the side that faces the room
+    ctx.fillStyle = '#3d4955'; if (hz) ctx.fillRect(x0 + 2, y0 + 2, w - 4, 2); else ctx.fillRect(x0 + 2, y0 + 2, 2, h - 4);   // top-edge highlight
+    let oa = 0; for (const o of K7C.op) if (Math.abs(o.x - l.x) < 2 && Math.abs(o.y - l.y) < 2) { const u = (now - o.t0) / K7_OPEN_ANIM; if (u >= 0 && u < 1) oa = Math.max(oa, u < .3 ? u / .3 : u < .65 ? 1 : 1 - (u - .65) / .35); }   // 0 closed .. 1 wide open (reload animation)
+    let en = null; for (const o of K7C.en) if (Math.abs(o.x - l.x) < 2 && Math.abs(o.y - l.y) < 2) { const u = (now - o.t0) / K7_ENTER_ANIM; if (u >= 0 && u < 1) { en = { o, u }; oa = Math.max(oa, u < .22 ? u / .22 : u < .72 ? 1 : 1 - (u - .72) / .28); } }   // a survivor going in / coming out: the door swings open, he walks through, the door shuts
+    const d = hz ? [x0 + 3, l.ny < 0 ? y0 : y0 + h - DW, w - 6, DW] : [l.nx < 0 ? x0 : x0 + w - DW, y0 + 3, DW, h - 6];   // the door strip, on the side that faces the room
+    const sp = hz ? Math.round(w / 6) : Math.round(h / 6);   // vent slot spacing
+    if (oa > 0) {   // opening: the dark inside shows, and the door swings away from its hinge (left / top edge)
+      ctx.fillStyle = '#07090c'; ctx.fillRect(d[0], d[1], d[2], d[3]);
+      ctx.fillStyle = `rgba(255,47,122,${(.25 + .45 * oa).toFixed(2)})`;
+      if (!en) { if (hz) { for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 4 + i * sp, d[1] + 3, 3, 5); } else { for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 3, d[1] + 4 + i * sp, 5, 3); } }
+      const sw = 1 - .82 * oa; ctx.fillStyle = '#6f7f8d';
+      if (hz) { ctx.fillRect(d[0], d[1], Math.max(2, Math.round(d[2] * sw)), d[3]); ctx.fillStyle = '#8fa0ae'; ctx.fillRect(d[0], d[1], Math.max(2, Math.round(d[2] * sw)), 1); }
+      else { ctx.fillRect(d[0], d[1], d[2], Math.max(2, Math.round(d[3] * sw))); ctx.fillStyle = '#8fa0ae'; ctx.fillRect(d[0], d[1], d[2], 1); }
+      continue;
+    }
     ctx.fillStyle = '#6f7f8d'; ctx.fillRect(d[0], d[1], d[2], d[3]); ctx.fillStyle = '#8fa0ae'; if (hz) ctx.fillRect(d[0], l.ny < 0 ? d[1] : d[1] + d[3] - 1, d[2], 1); else ctx.fillRect(l.nx < 0 ? d[0] : d[0] + d[2] - 1, d[1], 1, d[3]);
-    ctx.fillStyle = '#1d242c'; if (hz) for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 4 + i * 7, d[1] + 2, 3, 5); else for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 2, d[1] + 4 + i * 7, 5, 3);
-    ctx.fillStyle = '#ff2f7a'; if (hz) ctx.fillRect(d[0] + d[2] - 4, d[1] + 3, 2, 3); else ctx.fillRect(d[0] + 3, d[1] + d[3] - 4, 3, 2);
+    ctx.fillStyle = '#1d242c'; if (hz) for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 5 + i * sp, d[1] + 3, 4, Math.max(5, DW - 6)); else for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 3, d[1] + 5 + i * sp, Math.max(5, DW - 6), 4);
+    ctx.fillStyle = '#ff2f7a'; if (hz) ctx.fillRect(d[0] + d[2] - 6, d[1] + Math.round(DW / 2) - 1, 3, 4); else ctx.fillRect(d[0] + Math.round(DW / 2) - 1, d[1] + d[3] - 6, 4, 3);
   }
 }
 const DDO = {};   // player id -> end time of the red ritual oval under them (Demonic Deal went dark)
@@ -5182,11 +5251,19 @@ function drawK7Over(me, k, W, H, now) {   // above the darkness: bullet tracers 
   for (const e of F) { const u = Math.min(1, (now - e.t0) / (e.end - e.t0)), a = 1 - u;
     ctx.strokeStyle = `rgba(255,47,122,${a.toFixed(3)})`; ctx.lineWidth = 3 * a + 1; ctx.beginPath(); ctx.moveTo(e.x0, e.y0); ctx.lineTo(e.x1, e.y1); ctx.stroke(); ctx.strokeStyle = `rgba(255,236,242,${a.toFixed(3)})`; ctx.lineWidth = 1; ctx.stroke();
     ctx.fillStyle = `rgba(255,190,120,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x0, e.y0, 14 * a + 3, 0, TAU); ctx.fill(); ctx.fillStyle = e.hit ? `rgba(255,47,70,${a.toFixed(3)})` : `rgba(255,200,160,${(a * .6).toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x1, e.y1, (e.hit ? 18 : 8) * a + 3, 0, TAU); ctx.fill(); }
+  { ctx.save(); ctx.globalCompositeOperation = 'source-over'; const V0 = pickView(), J0 = S.wo.k7;   // the killer sees a small health bar over every survivor whose bar is below 100%
+    if (J0 && S.phase === 'hunt' && V0.role === 'killer') for (const p of S.players) {
+      if (p.role !== 'survivor') continue; const hv = J0.h[p.id]; if (hv == null || hv >= K7_HP) continue; const s0 = (S.st[p.id] || {}).s || 'healthy'; if (s0 !== 'healthy' && s0 !== 'injured') continue;
+      if (k7Hid(p.id) || !canSee('killer', V0.id, p.id)) continue; const q = posOf(p.id); if (!q) continue;
+      const bw = 34, bh = 5, x = Math.round(q[0] - bw / 2), y = Math.round(q[1] - 38), f = Math.max(0, Math.min(1, hv / K7_HP)); ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(10,3,6,.85)'; ctx.fillRect(x - 1, y - 1, bw + 2, bh + 2); ctx.fillStyle = 'rgba(70,14,26,.9)'; ctx.fillRect(x, y, bw, bh);
+      ctx.fillStyle = f > .5 ? '#ff5c85' : f > .3 ? '#ff3a5c' : '#e0122f'; ctx.fillRect(x, y, Math.round(bw * f), bh); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x, y, Math.round(bw * f), 1);
+      ctx.strokeStyle = 'rgba(255,120,150,.7)'; ctx.lineWidth = 1; ctx.strokeRect(x - .5, y - .5, bw + 1, bh + 1); } ctx.restore(); }
   const J = S.wo.k7;
   if (J && J.form === 1 && S.phase === 'hunt') {
     const kid = killerIdRaw(), kp = kid >= 0 ? posOf(kid) : null, fa = interpFace(), V = pickView();
     if (kp && fa !== null && isK7(kid)) {
-      const R = CFG.FLASH_RANGE * K7_RANGE, HA = K7_ANGLE * Math.PI / 360 + .05, kSeen = V.role === 'killer' || canSee(V.role, V.id, kid);
+      const R = CFG.FLASH_RANGE * K7_RANGE, HA = K7_ANGLE * Math.PI / 360, kSeen = V.role === 'killer' || canSee(V.role, V.id, kid);
       for (const p of S.players) { if (p.role !== 'survivor') continue; const s = (S.st[p.id] || {}).s || 'healthy'; if (s !== 'healthy' && s !== 'injured') continue; if (k7Hid(p.id)) continue;
         const q = posOf(p.id); if (!q) continue; const dx = q[0] - kp[0], dy = q[1] - kp[1], d = Math.hypot(dx, dy); if (d > R || Math.abs(angDiff(Math.atan2(dy, dx), fa)) > HA + Math.atan2(CFG.RADIUS * .6, Math.max(d, 1))) continue;
         if (!(V.role === 'killer' ? canSee('killer', V.id, p.id) : (p.id === V.id || canSee(V.role, V.id, p.id)))) continue; if (!losClear(kp[0], kp[1], q[0], q[1])) continue;
@@ -5199,7 +5276,7 @@ function drawK7Over(me, k, W, H, now) {   // above the darkness: bullet tracers 
 }
 function k7Css() {
   if ($('k7Css')) return; const st = document.createElement('style'); st.id = 'k7Css';
-  st.textContent = '#k7h{position:fixed;z-index:7;display:flex;gap:3px;pointer-events:none;font:900 19px/1 "Courier New",monospace;text-shadow:0 1px 2px #000}#k7h i{font-style:normal;color:#ff2f5f;filter:drop-shadow(0 0 2px rgba(255,40,90,.7))}#k7h i.x{color:#3a2a30;filter:none}#k7h.hit i{animation:k7p .4s}@keyframes k7p{0%{transform:scale(1.55)}100%{transform:scale(1)}}#k7hide{position:fixed;inset:0;z-index:6;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 10%,rgba(0,0,0,.8) 72%);display:none}#k7hide b{position:absolute;left:0;right:0;top:calc(var(--sat,0px) + 96px);text-align:center;color:#ffd0dc;font:800 14px "Courier New",monospace;text-shadow:0 1px 3px #000}';
+  st.textContent = '#k7h{position:fixed;z-index:7;width:92px;pointer-events:none;font:900 9px/1 "Courier New",monospace;letter-spacing:.06em;color:#ffb3c6;text-shadow:0 1px 2px #000}#k7h .kb{height:6px;margin-top:2px;border:1px solid rgba(255,120,150,.6);background:rgba(20,6,12,.7);overflow:hidden}#k7h .kf{height:100%;width:100%;background:linear-gradient(#ff5c85,#c4122f);transition:width .25s}#k7h.hit{animation:k7p .4s}@keyframes k7p{0%{transform:translateX(-3px)}30%{transform:translateX(3px)}60%{transform:translateX(-2px)}100%{transform:none}}#k7b{position:fixed;z-index:7;display:flex;gap:2px;pointer-events:none;filter:drop-shadow(0 1px 2px #000)}#k7b i{display:block;width:5px;height:13px;border-radius:2px 2px 1px 1px;background:linear-gradient(#ffd98a 0 30%,#d9a441 30% 100%);box-shadow:0 0 3px rgba(255,200,100,.5)}#k7b i.x{background:#2a2a32;box-shadow:none;opacity:.7}#k7b.fire{animation:k7f .25s}@keyframes k7f{0%{transform:translateY(2px)}100%{transform:none}}#k7hide{position:fixed;inset:0;z-index:6;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 10%,rgba(0,0,0,.8) 72%);display:none}#k7hide b{position:absolute;left:0;right:0;top:calc(var(--sat,0px) + 96px);text-align:center;color:#ffd0dc;font:800 14px "Courier New",monospace;text-shadow:0 1px 3px #000}';
   document.head.appendChild(st);
 }
 function k7Ui(now) {   // survivors: my hearts (top right of the minimap) + the hiding screen
@@ -5207,19 +5284,26 @@ function k7Ui(now) {   // survivors: my hearts (top right of the minimap) + the 
   let el = $('k7h'), hd = $('k7hide');
   if (!on) { if (el) el.style.display = 'none'; if (hd) hd.style.display = 'none'; K7C.lastH = -1; K7C.inAt = 0; return; }
   k7Css(); if (!el) { el = document.createElement('div'); el.id = 'k7h'; document.body.appendChild(el); } if (!hd) { hd = document.createElement('div'); hd.id = 'k7hide'; hd.innerHTML = '<b></b>'; document.body.appendChild(hd); }
-  const hv = J.h[S.me] == null ? K7_HEARTS : J.h[S.me], m = $('mm'), r = m && !m.classList.contains('hidden') ? m.getBoundingClientRect() : null;
-  el.style.display = 'flex'; const pos = r ? Math.round(innerWidth - r.right + 6) + ',' + Math.round(r.top + 5) : 'n'; if (pos !== K7C.sig) { K7C.sig = pos; el.style.right = r ? Math.round(innerWidth - r.right + 6) + 'px' : '8px'; el.style.top = r ? Math.round(r.top + 5) + 'px' : 'calc(var(--sat,0px) + 52px)'; }
-  if (hv !== K7C.lastH) { const dn = K7C.lastH >= 0 && hv < K7C.lastH; K7C.lastH = hv; let h = ''; for (let i = 0; i < K7_HEARTS; i++) h += '<i' + (i < hv ? '' : ' class="x"') + '>\u2665</i>'; el.innerHTML = h; if (dn) { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); } }
+  const hv = J.h[S.me] == null ? K7_HP : J.h[S.me], m = $('mm'), r = m && !m.classList.contains('hidden') ? m.getBoundingClientRect() : null;
+  el.style.display = 'none';   // the health bar now lives on the character itself (drawMeterBars), nothing on the side of the screen
   const hid = k7Hid(S.me); if (hid && !K7C.inAt) K7C.inAt = now; if (!hid) K7C.inAt = 0;
-  if (hd) { hd.style.display = hid ? 'block' : 'none'; if (hid) { const left = hv >= K7_HEARTS ? 'hearts full' : '+1 heart in ' + Math.max(1, Math.ceil((K7_HEAL_MS - ((now - K7C.inAt) % K7_HEAL_MS)) / 1000)) + 's'; if (left !== K7C.hs) { K7C.hs = left; hd.firstChild.textContent = 'HIDING \u00b7 ' + left; } } }
+  if (hd) { hd.style.display = hid ? 'block' : 'none'; if (hid && K7C.hs !== 'h') { K7C.hs = 'h'; hd.firstChild.textContent = 'HIDING'; } }
+}
+function k7BulUi(now) {   // the Game Guard: his bullet count as little bullets right under the minimap
+  const J = S.wo.k7, on = !!J && inGame && S.phase === 'hunt' && myRole() === 'killer' && isK7(S.me);
+  let el = $('k7b'); if (!on) { if (el) el.style.display = 'none'; return; }
+  k7Css(); if (!el) { el = document.createElement('div'); el.id = 'k7b'; document.body.appendChild(el); }
+  const m = $('mm'), r = m && !m.classList.contains('hidden') ? m.getBoundingClientRect() : null; el.style.display = 'flex';
+  const pos = r ? Math.round(r.left) + ',' + Math.round(r.bottom) : 'n'; if (pos !== K7C.bs) { K7C.bs = pos; el.style.left = r ? Math.round(r.left) + 'px' : 'calc(var(--sal,0px) + 8px)'; el.style.top = r ? Math.round(r.bottom + 19) + 'px' : 'calc(var(--sat,0px) + 60px)'; }
+  const b = J.bul | 0, f = J.form === 1 ? 1 : 0; if (b !== K7C.bl || f !== K7C.bf) { const dn = K7C.bl >= 0 && b < K7C.bl; K7C.bl = b; K7C.bf = f; let h = ''; for (let i = 0; i < K7_BULLETS; i++) h += '<i' + (i < b ? '' : ' class="x"') + '></i>'; el.innerHTML = h; el.style.opacity = f ? '1' : '.55'; if (dn) { el.classList.remove('fire'); void el.offsetWidth; el.classList.add('fire'); } }
 }
 function k7Ev(m, now) {
   if (m.k === 'k7shot') {
     K7C.fx.push({ x0: m.x0, y0: m.y0, x1: m.x1, y1: m.y1, hit: m.hit, t0: now, end: now + 260 });
     try { const v = Math.max(.35, evVol(m.x0, m.y0, 1400)); sfxNoise(.12, v * .9, 'lowpass', 3800, 500); sfxTone(260, 45, .13, v * .55, 'square'); sfxTone(1200, 300, .05, v * .2, 'sawtooth'); } catch (e) {}
-    if (m.vid === S.me) { shake(CFG.SHAKE_KILLER_PX); vibrate([60, 30, 80]); if (!m.dn) noteShow('noteBy', 'SHOT! ' + m.hl + (m.hl === 1 ? ' heart left' : ' hearts left'), '#ff4f6a', 1800); }
-  } else if (m.k === 'k7op') { try { const v = Math.max(.3, evVol(m.x, m.y, 900)); metalHit(v * .7, 150, 2); sfxNoise(.12, v * .4, 'bandpass', 1400, 700); if (m.o) sfxTone(180, 90, .2, v * .3, 'sawtooth', .05); } catch (e) {} }
-  else if (m.k === 'k7lk') { try { const v = Math.max(.25, evVol(m.x, m.y, 700)); sfxNoise(.1, v * .35, 'bandpass', 900, 500); sfxTone(m.m ? 200 : 260, m.m ? 140 : 180, .1, v * .22, 'square'); } catch (e) {} }
+    if (m.vid === S.me) { shake(CFG.SHAKE_KILLER_PX); vibrate([60, 30, 80]); if (!m.dn) noteShow('noteBy', 'SHOT!', '#ff4f6a', 1800); }
+  } else if (m.k === 'k7op') { K7C.op.push({ x: m.x, y: m.y, t0: now }); try { const v = Math.max(.3, evVol(m.x, m.y, 900)); metalHit(v * .7, 150, 2); sfxNoise(.12, v * .4, 'bandpass', 1400, 700); if (m.o) sfxTone(180, 90, .2, v * .3, 'sawtooth', .05); } catch (e) {} }
+  else if (m.k === 'k7lk') { K7C.en.push({ x: m.x, y: m.y, nx: m.nx || 0, ny: m.ny || 0, sx: m.sx, sy: m.sy, id: m.id, dir: m.m ? 1 : 0, t0: now }); try { const v = Math.max(.25, evVol(m.x, m.y, 700)); sfxNoise(.1, v * .35, 'bandpass', 900, 500); sfxTone(m.m ? 200 : 260, m.m ? 140 : 180, .1, v * .22, 'square'); } catch (e) {} }
   else if (m.k === 'k7sw') { try { const v = Math.max(.3, evVol(m.x, m.y, 900)); sfxNoise(.06, v * .5, 'highpass', 3000, 3000); sfxTone(m.g ? 420 : 330, m.g ? 300 : 240, .08, v * .3, 'square', .05); sfxNoise(.05, v * .5, 'highpass', 3500, 3500, .3); } catch (e) {} }
 }
 /* ################################################################################################
@@ -6014,9 +6098,9 @@ const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite
     ['Ability', 'Chaos', 'While disguised the ability turns into Chaos. For a while every survivor looks like the Skinwalker and everyone seems to carry the killer\'s terror. It ends when he lands a hit.']]],
   [7, [
     ['Passive', 'Quiet steps', 'His terror radius is 40% shorter, so you hear the heartbeat later.'],
-    ['Ability', 'Knife / Rifle', 'Swaps between his knife (a normal killer) and a rifle. With the rifle his flashlight narrows to a thin 7 degree beam, but he sees 70% further and that is how far his bullets fly. He holds 5 bullets, and every shot slows him for a second, hit or miss.', [[7, false, 0], [7, false, 1], [7, true, 0]]],
-    ['Ability', 'Hearts', 'Every survivor has 3 hearts, shown by the minimap. A bullet takes one. At zero it counts as a normal hit (injured, then downed) and the hearts come back.'],
-    ['Ability', 'Lockers', 'Ten lockers stand along the walls in side by side pairs. Opening one reloads his rifle. Survivors can hide in one, and every 10 seconds inside heals a heart. If he opens an occupied locker the survivor is thrown out and slowed.']]]
+    ['Ability', 'Knife / Rifle', 'Swaps between his knife (a normal killer) and a rifle. With the rifle his flashlight narrows to a thin 8 degree beam, but he sees 70% further and that is how far his bullets fly. He holds 8 bullets (counted under the minimap), shots have a half second cooldown, and every shot slows him by half for a second, hit or miss.', [[7, false, 0], [7, false, 1], [7, true, 0]]],
+    ['Ability', 'Health bar', 'Every survivor has a health bar under their minimap. A bullet takes 30% of it, and four bullets empty it. Each bullet that lands also reveals the survivor to the killer and slows them 15% for as long as the reveal lasts (2s, +2s per extra bullet, +15% slow per extra bullet); from the second bullet they also bleed for 2s. The killer sees the bar over any survivor below 100%. When it is empty it counts as a normal hit (injured, then downed), the bar refills to 100%, and he gets the normal hit cooldown and slow. It only comes back by hiding in a locker.'],
+    ['Ability', 'Lockers', 'Ten lockers stand along the walls in side by side pairs. Opening one plays a short door animation and reloads his rifle. Survivors can hide in one, and the health bar slowly refills while they stay inside (5% per second). If he opens an occupied locker the survivor is thrown out and slowed.']]]
 ];
 function objPic(kind) {   // small pictures for the Objects tab, drawn with the game's own sprite code (nothing here touches a running round)
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
@@ -7495,13 +7579,18 @@ function drawPotBars(now, me, vw, vh, role, vId) {
 function drawMeterBars(now, me, vw, vh, role, vId) {
   if (S.phase !== 'hunt' || role !== 'survivor' || vId !== S.me) return;
   const st = effSt(S.me); if (st !== 'healthy' && st !== 'injured') return;
-  let f = 0, col = '', tick = 0;
+  let f = 0, col = '', tick = 0, kal = 1;
   const J5 = S.wo.k5, ce = J5 && J5.cond ? J5.cond.find(e => e[0] === S.me) : null;
   if (ce && ce[1] > 0) { f = Math.min(1, ce[1] / 100); col = ce[2] ? '#ff2a2a' : '#ff6a3d'; tick = K5_COND / 100; }   // condemn bar (white tick = where 'condemned' starts)
   else if (S.wo.k1 && k1Is()) { const v = k1Fear(S.me); if (v > .5) { f = Math.min(1, v / 100); col = K1_TCOL[k1Tier(v)]; } }   // fear meter (colour follows its tier)
+  if (!(f > 0) && S.wo.k7) {   // Game Guard: my health bar, shown under my feet while it is below 100%; when it is full again it fades away
+    const hv = S.wo.k7.h[S.me] == null ? K7_HP : S.wo.k7.h[S.me];
+    if (hv < K7_HP) { K7C.hfT = 0; K7C.hvL = hv; f = Math.max(.02, hv / K7_HP); col = hv > 60 ? '#4cd964' : hv > 30 ? '#ffb020' : '#ff3b3b'; }
+    else { if (K7C.hvL != null && !K7C.hfT) { K7C.hfT = now; K7C.hvL = null; } if (K7C.hfT && now - K7C.hfT < 1200) { f = 1; col = '#4cd964'; kal = 1 - (now - K7C.hfT) / 1200; } }
+  }
   if (!(f > 0)) return;
   const q = posOf(S.me); if (!q) return;
-  const W = 58, H = 11, x = Math.round(q[0]) - W / 2, y = Math.round(q[1]) + 16, iw = W - 4; ctx.save(); ctx.globalAlpha = 1;   // BIG bar under my feet (was 33x6)
+  const W = 58, H = 11, x = Math.round(q[0]) - W / 2, y = Math.round(q[1]) + 16, iw = W - 4; ctx.save(); ctx.globalAlpha = kal;   // BIG bar under my feet (was 33x6)
   const hi = f > .66 ? .5 + .5 * Math.sin(now / 130) : 0; if (hi > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (hi * .35).toFixed(2) + ')'; ctx.fillRect(x - 3, y - 3, W + 6, H + 6); }   // blinks near the top
   ctx.fillStyle = '#0a0b14'; ctx.fillRect(x, y, W, H); ctx.fillStyle = '#2a2f45'; ctx.fillRect(x + 2, y + 2, iw, H - 4);
   ctx.fillStyle = col; ctx.fillRect(x + 2, y + 2, Math.max(2, Math.round(iw * f)), H - 4); ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(x + 2, y + 2, Math.max(2, Math.round(iw * f)), 2);
@@ -9086,10 +9175,12 @@ const TRAIL = new Map();   // id -> [{x,y,t}]
 const effSt = id => { const s = (S.st[id] || {}).s || 'healthy'; return s === 'sent' && S.wo.um && (S.wo.um.hits[id] | 0) >= 1 ? 'injured' : s; };   // in the Upside Down, one hit from Vecna = injured (look + blood trail)
 function stepTrails(now) {
   for (const p of S.players) {
-    if (effSt(p.id) !== 'injured') { TRAIL.delete(p.id); continue; }
-    const q = posOf(p.id); if (!q) continue; let t = TRAIL.get(p.id); if (!t) { TRAIL.set(p.id, t = []); t.since = now; }
+    const inj = effSt(p.id) === 'injured', bl7 = !inj && k7Bleed(p.id, now);   // bl7: bleeding from Game Guard bullets (only while the bleed lasts)
+    if (!inj && !bl7) { const t0 = TRAIL.get(p.id); if (t0 && t0.k7) { while (t0.length && now - t0[0].t > CFG.BLOOD_LIFE_MS) t0.shift(); if (!t0.length) TRAIL.delete(p.id); } else TRAIL.delete(p.id); continue; }   // a bullet trail just fades out
+    const q = posOf(p.id); if (!q) continue; let t = TRAIL.get(p.id); if (!t) { TRAIL.set(p.id, t = []); t.since = now; t.k7 = bl7; }
     while (t.length && now - t[0].t > CFG.BLOOD_LIFE_MS) t.shift();
-    if (now - t.since > CFG.BLOOD_PRODUCE_MS * (k2On() ? K2_BLEED : 1)) continue;   // after BLOOD_PRODUCE_MS of being injured no new drops appear (old ones just fade)
+    if (inj && t.k7) { t.k7 = false; t.since = now; }   // a bullet trail turns into the normal injured trail
+    if (inj && now - t.since > CFG.BLOOD_PRODUCE_MS * (k2On() ? K2_BLEED : 1)) continue;   // after BLOOD_PRODUCE_MS of being injured no new drops appear (old ones just fade)
     const l = t[t.length - 1];
     if (!l || Math.hypot(q[0] - l.x, q[1] - l.y) >= CFG.BLOOD_STEP) {   // a splat: random size, a few satellite droplets, remembers which way it was travelling (for the smear)
       const ang = l ? Math.atan2(q[1] - l.y, q[0] - l.x) : rnd(0, TAU), r = rnd(6, 10), sat = []; for (let j = 0, n = 2 + (Math.random() * 3 | 0); j < n; j++) { const a = rnd(0, TAU), d = rnd(r * .9, r * 2.4); sat.push([Math.cos(a) * d, Math.sin(a) * d, rnd(1.5, 3.4)]); }
@@ -9669,6 +9760,9 @@ function mmFrame(now, V, me) { if(inUD(me[0],me[1])){$('mm').classList.add('hidd
   const gg = S.map.gens || [], sz = Math.max(3, Math.round(4 * dpr));   // generators: grey = locked, yellow = open, green = fixed
   for (let i = 0; i < gg.length; i++) { const e = S.gs.g[i] || { st: 0 }; g.fillStyle = e.st === 2 ? '#5dff9a' : e.st === 1 ? '#ffd93a' : '#8a93a8'; g.fillRect(Math.round(gg[i][0] * k - sz / 2), Math.round(gg[i][1] * k - sz / 2), sz, sz); }
   if (S.wo.dd && myRole() === 'survivor') for (const e of S.wo.dd) if (e.id === S.me) { const v = ddVal(e, now), r = Math.max(3.2, 3.6 * dpr), x = e.x * k, y = e.y * k, low = v <= CFG.PK_DD_THRESH; g.fillStyle = low ? '#ff4a3a' : '#ff9a2a'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.moveTo(x, y - r - 1); g.lineTo(x + r + 1, y); g.lineTo(x, y + r + 1); g.lineTo(x - r - 1, y); g.closePath(); g.fill(); g.stroke(); }   // Demonic Deal: my totem (orange diamond, red when the bar is low)
+  if (myRole() === 'killer' && isK7(S.me) && S.wo.k7) for (const l of S.wo.k7.L) {   // Game Guard: his lockers (reload points) as small pink locker icons
+    const hz = l.ny !== 0, lw = Math.max(3, Math.round((hz ? 5 : 3.4) * dpr)), lh = Math.max(3, Math.round((hz ? 3.4 : 5) * dpr)), x = Math.round(l.x * k - lw / 2), y = Math.round(l.y * k - lh / 2);
+    g.fillStyle = '#ff2f7a'; g.fillRect(x, y, lw, lh); g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr * .7); g.strokeRect(x + .5, y + .5, lw - 1, lh - 1); g.fillStyle = '#2a0a16'; if (hz) g.fillRect(x + 1, y + (l.ny < 0 ? 1 : lh - 2), lw - 2, 1); else g.fillRect(x + (l.nx < 0 ? 1 : lw - 2), y + 1, 1, lh - 2); }
   g.fillStyle = '#fff'; g.strokeStyle = '#ff3b45'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(me[0] * k, me[1] * k, Math.max(2.5, 2.8 * dpr), 0, TAU); g.fill(); g.stroke();
 }
 /* ---------- auras: hooked teammates glow through the darkness; off-screen ones get an edge-pinned arrow (survivors only) ---------- */
@@ -9806,7 +9900,7 @@ function soloSightShown(now) {   // LAST STAND: walk the pulse cycles from the s
   return false;
 }
 const BOND = [];   // client: Bonded reveals { id (holder), kid (killer), end, sh (killer sees the holder), sk (holder sees the killer) }
-function bondTarget(V, b) { return V.id === b.id && b.sk ? posOf(b.kid) : V.id === b.kid && b.sh ? posOf(b.id) : b.all && b.sk && V.role === 'survivor' ? posOf(b.kid) : null; }   // (b.all = Banesberry's mark: every survivor sees the killer)   // the other side's position, if I am one of the two and it is revealed to me
+function bondTarget(V, b) { return V.id === b.id && b.sk ? posOf(b.kid) : V.id === b.kid && b.sh && !k7Hid(b.id) ? posOf(b.id) : b.all && b.sk && V.role === 'survivor' ? posOf(b.kid) : null; }   // (b.all = Banesberry's mark: every survivor sees the killer)   // the other side's position, if I am one of the two and it is revealed to me
 function twinMate(id) { const w = S.wo.tw; return w ? (id === w.a ? w.b : id === w.b ? w.a : -1) : -1; }   // client: my twin's id, or -1
 function twinNearC(id) {   // client: my twin's id if both are alive and within twinR(), else -1
   const o = twinMate(id); if (o < 0) return -1; const sa = (S.st[id] || {}).s, sb = (S.st[o] || {}).s; if (!twinAlive(sa) || !twinAlive(sb)) return -1;
@@ -10531,7 +10625,7 @@ function updateControls(now) {
     if (q !== UIC.cd) { $('atk').style.setProperty('--cd', q); UIC.cd = q; } $('atk').classList.toggle('dis', carrying); }
 }
 function updateAux(now, V) {
-  k3UiSync(); k6UiSync(); k3LagUi(now); try { k7Ui(now); } catch (e) {}
+  k3UiSync(); k6UiSync(); k3LagUi(now); try { k7Ui(now); } catch (e) {} try { k7BulUi(now); } catch (e) {}
   const dead = myState() === 'dead'; $('game').classList.toggle('spectating', dead);
   { const bl = now < S.blindEnd ? Math.min(1, (S.blindEnd - now) / (S.blindTot * .55)) : 0, q = Math.round(bl * 50) / 50; if (q !== UIC.blind) { UIC.blind = q; $('flashOv').style.opacity = q; } }   // flashbang whiteout
   $('dead').classList.toggle('hidden', !(dead && S.sacAt && now - S.sacAt < CFG.DEATH_OVERLAY_MS));

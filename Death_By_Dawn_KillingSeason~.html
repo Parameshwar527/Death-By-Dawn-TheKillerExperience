@@ -644,8 +644,8 @@ const CFG = {
   SELECT_MS: 15000,                    // cosmetic character select (ends early when everyone has locked in)
   // ---- survivor perks (host setting "Survivor perks"; every number here is a starting guess, tune freely) ----
   PK_KILLER_MS: 20000, PK_CHAR_MS: 10000, PK_PICK_MS: 10000,   // perks ON, pre-match: the killer has PK_KILLER_MS for the character; survivors have PK_CHAR_MS for the character, then PK_PICK_MS for the perk (parallel, they end together)
-  PK_LL_BLIND_MS: 1200, PK_LL_AB_MS: 1000, PK_LL_GLOW_MS: 3000, PK_REACT_MULT: 1.5, PK_REACT_MS: 350, PK_POT_CAP: 25, PK_POT_IDLE_MS: 3000, PK_POT_HI: 75, PK_POT_BONUS: .1, PK_REFORM_CD_MS: 30000, PK_REFORM_GLOW_MS: 3000, PK_SAB_CD_MS: 30000, PK_SAB_DIS_MS: 20000, PK_SAB_MARK_MS: 3000, PK_SAB_KMULT: 3, PK_SAB_GLOW_MS: 3000, PK_SAB_R: 96,   // Sabotage: holder cooldown after a success (ready from the start) / how long a sabotaged hook stays off / how long a missed check marks the holder to the killer / killer hand-repair speed multiplier / icon glow / reach to a hook
-    PK_BOND_EVERY_MS: 7000, PK_BOND_SHOW_MS: 1500, PK_BOND_WARN_MS: 1000,   // Reforming: ONE cooldown after each use (starts ready) / icon glow after using it. Bonded: holder and killer reveal each other every PK_BOND_EVERY_MS for PK_BOND_SHOW_MS; the icon glows from PK_BOND_WARN_MS before the reveal until it ends
+  PK_LL_BLIND_MS: 1200, PK_LL_AB_MS: 1000, PK_LL_GLOW_MS: 3000, PK_REACT_MULT: 2, PK_REACT_MS: 350, PK_POT_CAP: 25, PK_POT_IDLE_MS: 3000, PK_POT_HI: 75, PK_POT_BONUS: .1, PK_REFORM_CD_MS: 30000, PK_REFORM_GLOW_MS: 3000, PK_SAB_CD_MS: 30000, PK_SAB_DIS_MS: 20000, PK_SAB_MARK_MS: 3000, PK_SAB_KMULT: 3, PK_SAB_GLOW_MS: 3000, PK_SAB_R: 96,   // Sabotage: holder cooldown after a success (ready from the start) / how long a sabotaged hook stays off / how long a missed check marks the holder to the killer / killer hand-repair speed multiplier / icon glow / reach to a hook
+    PK_BOND_EVERY_MS: 7000, PK_BOND_SURV_MS: 1500, PK_BOND_KILL_MS: 1000, PK_BOND_GAP_MS: 3000, PK_BOND_WARN_MS: 1000,   // Reforming: ONE cooldown after each use (starts ready) / icon glow after using it. Bonded (alternating, never at the same time): first wait PK_BOND_EVERY_MS, then the HOLDER sees the killer for PK_BOND_SURV_MS, PK_BOND_GAP_MS of pause, then the KILLER sees the holder for PK_BOND_KILL_MS, PK_BOND_GAP_MS of pause, and round again; the icon glows from PK_BOND_WARN_MS before each reveal until it ends
     // Last Light: blind time (ms) / ability-disable time of its Holy Light (ms) / icon glow after it fires; Reaction: speed multiplier and duration (ms) after leaving a generator / an unhook or using the block / break button; Potential: the bar's size, as % of one generator (dumped on the generator the moment it is full) / the bar is emptied after this long without repairing / a generator at or above this % takes the holder's repair directly, and the holder banks BONUS (10%) of that repair on top
   PK_TK_MULT: 2.04, PK_UNDYING_FIRST_MS: 1000, PK_UNDYING_STEP_MS: 4000,   // Telekinetic: repair / unhook reach x this (1.7 + 20% = 2.04); Undying: downed time the first time (ms), plus this much more each further time (capped at DOWN_RECOVER_MS)
   PK_OFFER_N: 2, PK_OFFER_CHANCE: .5, PK_TWIN_REP: 1.15, PK_TWIN_VIS: 1.2, PK_TWIN_R: 0, /* Long Last Twin: repair speed x / vision x while the twins are close; PK_TWIN_R = how close (0 = Telekinetic's reach, GEN_R x PK_TK_MULT) */   // perks offered to each survivor / default chance that a maxHolders perk shows up in a match at all (a perk can set its own offerChance)
@@ -813,7 +813,7 @@ const PERKS = [
   { id: 'banesberry', name: 'Banesberry', type: 'special', desc: "Find hidden berries that grant random effects.", implemented: true },
   { id: 'reforming', name: 'Reforming', type: 'special', desc: "Reset a broken barricade so it can be used again.", implemented: true },
   { id: 'longlasttwin', name: 'Long Last Twin', type: 'special', desc: "Linked to a random teammate: you share every hit, and you both repair faster and see farther while close together.", implemented: true, maxHolders: 1, offerChance: .5 },
-  { id: 'bonded', name: 'Bonded', type: 'special', desc: "Periodically reveals your location and the killer's location to each other.", implemented: true },
+  { id: 'bonded', name: 'Bonded', type: 'special', desc: "Periodically shows you the killer's location, then shows the killer yours, one after the other.", implemented: true },
   { id: 'demonicdeal', name: 'Demonic Deal', type: 'special', desc: "Enchant a totem to gain better repairs, and make your generator unkickable. Failing to enchant will be fatal.", implemented: true },
   { id: 'magicianshat', name: "Magician's Hat", type: 'item', item: 'hat', desc: "Start with Magician's Hat; it can appear in drops. Increases team item drop rates.", implemented: true },
   { id: 'blink', name: 'Blink', type: 'item', item: 'teleport', desc: "Start with Blink; it can appear in drops. Increases team item drop rates.", implemented: true },
@@ -2180,7 +2180,7 @@ function perkFinalize() {   // host, select is over: everyone gets exactly one p
 const perkItemsHeld = () => Object.keys(S.perk.fin).map(id => perkById(S.perk.fin[id])).filter(pk => pk && pk.type === 'item' && pk.item);   // one entry per holder (two holders of the same perk count twice for the frequency)
 function pkStartItems(now) {   // host, the hunt begins: a survivor who chose an item perk starts with that item (full charges, same as picking one up)
   if (!S.perk.on) { for (const p of HP.values()) p.twin = 0; return; }
-  for (const p of HP.values()) { p.bondAt = 0; p.bondW = 0; p.rfAt = 0; p.sbAt = 0; p.sb = false; p.sbBlk = false; p.sbSC = 0; p.sbr = false; p.bbAt = 0; p.bbOn = 0; p.bbW = []; p.bbNext = 0; p.bbSync = 0; p.bbRep = 0; p.jitEnd = 0; p.bbKind = ''; p.bbUsed = null; p.bbFrog = 0; p.bbVisEnd = 0; }   // Bonded: the cycle starts with the hunt; Reforming: starts fully charged
+  for (const p of HP.values()) { p.bondAt = 0; p.bondW = 0; p.bondPh = 0; p.rfAt = 0; p.sbAt = 0; p.sb = false; p.sbBlk = false; p.sbSC = 0; p.sbr = false; p.bbAt = 0; p.bbOn = 0; p.bbW = []; p.bbNext = 0; p.bbSync = 0; p.bbRep = 0; p.jitEnd = 0; p.bbKind = ''; p.bbUsed = null; p.bbFrog = 0; p.bbVisEnd = 0; }   // Bonded: the cycle starts with the hunt; Reforming: starts fully charged
   try { twinSetup(); } catch (e) { console.warn('[twin]', e); }   // Long Last Twin: pick the partner
   for (const p of HP.values()) { if (p.role !== 'survivor' || !p.on || p.item) continue; const pk = perkById(perkOf(p.id)); if (!pk || pk.type !== 'item' || !pk.item) continue;
     p.item = pk.item; p.ch = CFG.ITEM_CHARGES[pk.item] || 1; p.itemAt = now; sendItem(p); }
@@ -2640,18 +2640,20 @@ function pkLastLight(v, kid) {   // LAST LIGHT (host): the existing Holy Light f
   if (!hasPerk(v.id, 'lastlight') || kid < 0) return;
   evSend({ k: 'bang', x: v.x, y: v.y, by: v.id, r: 0, only: kid, ms: CFG.PK_LL_BLIND_MS, ab: CFG.PK_LL_AB_MS }); sxSend(v.id, 'llglow', CFG.PK_LL_GLOW_MS);
 }
-function bondStep(now) {   // BONDED (host, every tick of the hunt): every PK_BOND_EVERY_MS the holder and the killer see where the other is for PK_BOND_SHOW_MS (event 'bond'); the holder's icon glows from PK_BOND_WARN_MS before it until it ends
+function bondStep(now) {   // BONDED (host, every tick of the hunt): the reveals ALTERNATE. Phase 0: the holder sees the killer for PK_BOND_SURV_MS, then a PK_BOND_GAP_MS pause; phase 1: the killer sees the holder for PK_BOND_KILL_MS, then a PK_BOND_GAP_MS pause; then phase 0 again (event 'bond'); the holder's icon glows from PK_BOND_WARN_MS before each reveal until it ends
   if (!S.perk.on) return;
   let K = null; for (const q of HP.values()) if (q.role === 'killer' && q.on) { K = q; break; }
   for (const p of HP.values()) {
     if (p.role !== 'survivor' || !p.on || !hasPerk(p.id, 'bonded')) continue;
-    if (p.st === 'dead' || p.st === 'sent') { p.bondAt = 0; p.bondW = 0; continue; }
-    if (!p.bondAt) p.bondAt = now + CFG.PK_BOND_EVERY_MS;
-    if (!p.bondW && now >= p.bondAt - CFG.PK_BOND_WARN_MS) { p.bondW = 1; sxSend(p.id, 'bondg', CFG.PK_BOND_WARN_MS + CFG.PK_BOND_SHOW_MS); }
+    if (p.st === 'dead' || p.st === 'sent') { p.bondAt = 0; p.bondW = 0; p.bondPh = 0; continue; }
+    if (!p.bondAt) { p.bondAt = now + CFG.PK_BOND_EVERY_MS; p.bondPh = 0; }
+    const ph = p.bondPh ? 1 : 0, ms = ph ? CFG.PK_BOND_KILL_MS : CFG.PK_BOND_SURV_MS;
+    if (!p.bondW && now >= p.bondAt - CFG.PK_BOND_WARN_MS) { p.bondW = 1; sxSend(p.id, 'bondg', CFG.PK_BOND_WARN_MS + ms); }
     if (now < p.bondAt) continue;
-    p.bondW = 0; p.bondAt = now + CFG.PK_BOND_EVERY_MS; if (!K) continue;
+    p.bondW = 0; p.bondAt = now + ms + CFG.PK_BOND_GAP_MS; p.bondPh = ph ? 0 : 1; if (!K) continue;
     const kHid = (isK2(K.id) && K2.tv >= 0) || (isK1(K.id) && K1.inv > now);   // a killer who is inside a TV / invisible stays hidden from the holder; a hat-wearer stays hidden from the killer
-    evSend({ k: 'bond', id: p.id, kid: K.id, ms: CFG.PK_BOND_SHOW_MS, sh: hatHid(p, now) ? 0 : 1, sk: kHid ? 0 : 1 });
+    if (ph === 0) evSend({ k: 'bond', id: p.id, kid: K.id, ms, sh: 0, sk: kHid ? 0 : 1 });   // the holder sees the killer
+    else evSend({ k: 'bond', id: p.id, kid: K.id, ms, sh: hatHid(p, now) ? 0 : 1, sk: 0 });   // the killer sees the holder
   }
 }
 /* ---- LONG LAST TWIN (special perk, maxHolders 1): at the start of the hunt the holder is linked to ONE random other survivor (mutual: p.twin on both). Every hit on one twin is also dealt to the other with the normal hit logic (hitSurvivor); it never chains past the pair, and is skipped if the partner is downed / hooked / carried / dead. Hooks are not shared. While the twins are within twinR() of each other both repair faster (PK_TWIN_REP, host: generator loop) and see farther (PK_TWIN_VIS, client: stepMono). Clients learn the pair through the 'tw' world list and draw a thin pixel line (drawTwinLink). ---- */
@@ -5046,10 +5048,10 @@ function drawK3Glints(me, vw, vh, now, role) {
        KNIFE = a normal killer.
        RIFLE = ambient circle unchanged, flashlight cone only K7_ANGLE degrees but K7_RANGE x longer (that is also the bullet's range). ATTACK fires a hitscan bullet
                (like Freaky Nikki's gun): it only hits a survivor inside the narrow cone with a clear line. Every shot costs 1 of K7_BULLETS, has a 0.5 s cooldown and slows him by 50% for 1 s (hit or miss).
-   - HEALTH BAR: every survivor has a K7_HP bar (shown under THEIR minimap, nobody else's). A bullet that hits removes K7_DMG (30%; four bullets = a hit) and also reveals the survivor to the killer (event 'bond'), slows them 15% per stacked bullet and, from the 2nd bullet, makes them bleed (k7Wound; 2 s reveal per bullet). At 0 the survivor takes a NORMAL hit
-       (healthy -> injured, injured -> downed), the bar goes back to 100% and he laughs / is slowed like after a swing. Any real hit refills the bar too. No passive regen (only 10 s in a locker heals 50%).
+   - HEALTH BAR: every survivor has a K7_HP bar (shown under THEIR minimap, nobody else's). A bullet that hits removes K7_DMG (40%; three bullets = a hit) and also reveals the survivor to the killer (event 'bond'), slows them 15% per stacked bullet and, from the 2nd bullet, makes them bleed (k7Wound; 2 s reveal per bullet). At 0 the survivor takes a NORMAL hit
+       (healthy -> injured, injured -> downed), the bar goes back to 100% and he laughs / is slowed like after a swing. Any real hit refills the bar too. No passive regen (only 4 s in a locker heals 50%).
    - LOCKERS: when he is picked, K7_LK_PAIRS pairs (10 lockers, the two of a pair always side by side) are placed against the walls. The killer opens one (OPEN) = his bullets go back to
-       K7_BULLETS. A survivor can HIDE in a free one (invisible, cannot move, EXIT button): every second inside heals K7_HEAL_RATE (5%) of the bar, so 10 s = 50%. If the killer opens an occupied locker the
+       K7_BULLETS. A survivor can HIDE in a free one (invisible, cannot move, EXIT button): every second inside heals K7_HEAL_RATE (12.5%) of the bar, so 4 s = 50%. If the killer opens an occupied locker the
        survivor is thrown out and slowed 70% for K7_KICK_MS.
 
    WHERE EVERYTHING IS (search for the names)
@@ -5062,7 +5064,7 @@ function drawK3Glints(me, vw, vh, now, role) {
       - buttons: ctxFor (HIDE / EXIT / OPEN), abilityPress, updateControls (ability + attack labels), CTX_LABEL
       - drawing: killerBmp -> guardBmp, drawKiller (rifle flag), atkAnim, drawSlashSkin, drawItemsWorld -> drawK7World, draw loop -> drawK7Over, INFO_KILLERS (guide)
    ################################################################################################ */
-const K7_TERROR = .6, K7_ANGLE = 8, K7_RANGE = 1.7, K7_BULLETS = 8, K7_HP = 100, K7_DMG = 30, K7_HEAL_RATE = 5, K7_W_SLOW = .15, K7_W_MS = 2000, K7_BLEED_MS = 2000, K7_SW_MS = 500, K7_SHOT_MS = 500, K7_SHOT_SLOW = .5, K7_SLOW_MS = 1000, K7_OPEN_ANIM = 650;   // terror (distance divisor) / rifle cone (degrees) / rifle beam + bullet range (x) / magazine / health bar (percent) / health one bullet takes / swap time / shot cooldown / slow multiplier (50% slower) / how long the shot slow lasts / locker-open animation length
+const K7_TERROR = .6, K7_ANGLE = 8, K7_RANGE = 1.7, K7_BULLETS = 8, K7_HP = 100, K7_DMG = 40, K7_HEAL_RATE = 12.5, K7_W_SLOW = .15, K7_W_MS = 2000, K7_BLEED_MS = 2000, K7_SW_MS = 500, K7_SHOT_MS = 500, K7_SHOT_SLOW = .5, K7_SLOW_MS = 1000, K7_OPEN_ANIM = 650;   // terror (distance divisor) / rifle cone (degrees) / rifle beam + bullet range (x) / magazine / health bar (percent) / health one bullet takes / swap time / shot cooldown / slow multiplier (50% slower) / how long the shot slow lasts / locker-open animation length
 const K7_LK_PAIRS = 5, K7_LK_W = 60, K7_LK_D = 40, K7_ENTER_ANIM = 750, K7_LK_R = 70, K7_KICK_SLOW = .3, K7_KICK_MS = 1500, K7_OPEN_CD = 700, K7_SEND_MS = 400;   // locker pairs / one locker's width along the wall / depth / interaction reach / kicked-out slow / its length / killer's locker cooldown / resend gap
 function k7Empty() { return { on: false, init: false, form: 0, swEnd: 0, bul: K7_BULLETS, L: [], h: {}, w: {}, dirty: false, sendAt: 0 }; }   // form: 0 knife, 1 rifle; L = lockers [{x, y, nx, ny, occ}] (nx,ny = the way the door faces); h = hearts per survivor id
 let K7 = k7Empty();
@@ -5121,7 +5123,7 @@ function k7Fire(K, now) {   // rifle: the attack button fires one hitscan bullet
     const da = Math.abs(angDiff(Math.atan2(dy, dx), f)); if (da > HA + Math.atan2(CFG.RADIUS * .6, Math.max(d, 1))) continue; if (!losClear(K.x, K.y, v.x, v.y)) continue;
     const sc = da + d / 4000; if (sc < bs) { bs = sc; best = v; } }
   let ex = K.x + Math.cos(f) * R, ey = K.y + Math.sin(f) * R, down = false, left = 0;
-  if (best) { ex = best.x; ey = best.y; const hv = K7.h[best.id] == null ? K7_HP : K7.h[best.id], nh = hv - K7_DMG; if (nh <= 0) { down = true; hitSurvivor(best, now); } else { K7.h[best.id] = nh; left = nh; k7Wound(best, now); } }   // each bullet takes K7_DMG (30%) of the bar; an empty bar = a normal hit (healthy -> injured, injured -> down), the bar goes back to 100% and he gets the normal hit cooldown + slow
+  if (best) { ex = best.x; ey = best.y; const hv = K7.h[best.id] == null ? K7_HP : K7.h[best.id], nh = hv - K7_DMG; if (nh <= 0) { down = true; hitSurvivor(best, now); } else { K7.h[best.id] = nh; left = nh; k7Wound(best, now); } }   // each bullet takes K7_DMG (40%) of the bar; an empty bar = a normal hit (healthy -> injured, injured -> down), the bar goes back to 100% and he gets the normal hit cooldown + slow
   else for (let s = 20; s <= R; s += 20) { const x = K.x + Math.cos(f) * s, y = K.y + Math.sin(f) * s; if (circleHits(x, y, 2)) { ex = x; ey = y; break; } }
   const ms = down ? CFG.ATTACK_HIT_CD_MS : K7_SHOT_MS; K.cd = now + ms; notifyCd(K, ms);
   addMod(K, 'attackSlow', down ? (EG.final ? CFG.MONSTER_SLOW_MULT : EG.solo ? soloSlowMult(now) : CFG.ATTACK_SLOW_MULT) : (EG.final ? CFG.MONSTER_SLOW_MULT : K7_SHOT_SLOW), down ? ms : K7_SLOW_MS, now);   // every shot (hit or miss) has a 0.5 s cooldown but slows him 50% for 1 s; the bullet that lands a real hit slows him like a landed swing
@@ -6099,8 +6101,8 @@ const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite
   [7, [
     ['Passive', 'Quiet steps', 'His terror radius is 40% shorter, so you hear the heartbeat later.'],
     ['Ability', 'Knife / Rifle', 'Swaps between his knife (a normal killer) and a rifle. With the rifle his flashlight narrows to a thin 8 degree beam, but he sees 70% further and that is how far his bullets fly. He holds 8 bullets (counted under the minimap), shots have a half second cooldown, and every shot slows him by half for a second, hit or miss.', [[7, false, 0], [7, false, 1], [7, true, 0]]],
-    ['Ability', 'Health bar', 'Every survivor has a health bar under their minimap. A bullet takes 30% of it, and four bullets empty it. Each bullet that lands also reveals the survivor to the killer and slows them 15% for as long as the reveal lasts (2s, +2s per extra bullet, +15% slow per extra bullet); from the second bullet they also bleed for 2s. The killer sees the bar over any survivor below 100%. When it is empty it counts as a normal hit (injured, then downed), the bar refills to 100%, and he gets the normal hit cooldown and slow. It only comes back by hiding in a locker.'],
-    ['Ability', 'Lockers', 'Ten lockers stand along the walls in side by side pairs. Opening one plays a short door animation and reloads his rifle. Survivors can hide in one, and the health bar slowly refills while they stay inside (5% per second). If he opens an occupied locker the survivor is thrown out and slowed.']]]
+    ['Ability', 'Health bar', 'Every survivor has a health bar under their minimap. A bullet takes 40% of it, and three bullets empty it. Each bullet that lands also reveals the survivor to the killer and slows them 15% for as long as the reveal lasts (2s, +2s per extra bullet, +15% slow per extra bullet); from the second bullet they also bleed for 2s. The killer sees the bar over any survivor below 100%. When it is empty it counts as a normal hit (injured, then downed), the bar refills to 100%, and he gets the normal hit cooldown and slow. It only comes back by hiding in a locker.'],
+    ['Ability', 'Lockers', 'Ten lockers stand along the walls in side by side pairs. Opening one plays a short door animation and reloads his rifle. Survivors can hide in one, and the health bar slowly refills while they stay inside (12.5% per second). If he opens an occupied locker the survivor is thrown out and slowed.']]]
 ];
 function objPic(kind) {   // small pictures for the Objects tab, drawn with the game's own sprite code (nothing here touches a running round)
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
@@ -7342,6 +7344,7 @@ function startPendingSwing() {   // the local killer pressed ATTACK and it is al
   const now = performance.now();
   if (S.phase !== 'hunt' || myRole() !== 'killer' || myState() === 'dead' || now < S.cdEnd) return;
   if (iCarry()) return;   // carrying: attack is disabled
+  if (isK7(S.me) && k7Gun()) return;   // killer_7 in rifle form: the attack fires a bullet, so no knife slash (and no whoosh)
   for (const e of FX) if (e.type === 'slash' && e.pending && now - e.t0 <= CFG.PENDING_SWING_MS) return;   // one swing at a time
   const f = interpFace();
   fxAdd({ type: 'slash', k: S.me, dir: nextDir(S.me), ang: f !== null ? f : lastFace, hit: false, pending: true, sfx: true, t0: now, end: now + CFG.PENDING_SWING_MS });
@@ -9750,7 +9753,7 @@ function mmFrame(now, V, me) { if(inUD(me[0],me[1])){$('mm').classList.add('hidd
     for (let j = 0; j < 2; j++) { const ph = (age / 1100 + j * .5) % 1; g.strokeStyle = `rgba(${rgb},${((1 - ph) * .9 * fd).toFixed(3)})`; g.lineWidth = Math.max(1.2, 1.5 * dpr); g.beginPath(); g.arc(x, y, r + ph * Math.max(7, 9 * dpr), 0, TAU); g.stroke(); }   // two ripples, half a cycle apart
     g.fillStyle = `rgba(${rgb},${fd.toFixed(3)})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.strokeStyle = `rgba(255,255,255,${fd.toFixed(3)})`; g.lineWidth = Math.max(1, dpr); g.stroke(); }
   if (myRole() === 'killer' && S.wo.k0) for (const q of S.wo.k0.pg) if (now < q.end) { const pq = posOf(q.id) || [q.x, q.y]; g.fillStyle = '#ff3b3b'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(2.8, 3.2 * dpr), 0, TAU); g.fill(); g.stroke(); }   // IR scanner pings
-  if (S.phase === 'hunt' && BOND.length) { const V = pickView(); for (const b of BOND) { if (now >= b.end) continue; const pq = bondTarget(V, b); if (!pq) continue; const pu = .5 + .5 * Math.sin(now / 120); g.fillStyle = '#ff8fd8'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(3, 3.4 * dpr) * (1 + .25 * pu), 0, TAU); g.fill(); g.stroke(); } }   // Bonded: the other side's dot for PK_BOND_SHOW_MS
+  if (S.phase === 'hunt' && BOND.length) { const V = pickView(); for (const b of BOND) { if (now >= b.end) continue; const pq = bondTarget(V, b); if (!pq) continue; const pu = .5 + .5 * Math.sin(now / 120); g.fillStyle = '#ff8fd8'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(3, 3.4 * dpr) * (1 + .25 * pu), 0, TAU); g.fill(); g.stroke(); } }   // Bonded: the other side's dot for as long as the reveal lasts
   if (myRole() === 'killer' && S.wo.k5 && S.wo.k5.pg) for (const q of S.wo.k5.pg) if (now < q.end) { const pq = posOf(q.id); if (!pq) continue; g.fillStyle = '#ff3b30'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(2.8, 3.2 * dpr), 0, TAU); g.fill(); g.stroke(); }   // killer_5: survivors pinged by a full condemn bar
   { const X = S.wo.k3x; if (X && X.lid >= 0 && now < X.le && S.phase === 'hunt') { const kid = killerId(), pq = myRole() === 'killer' ? posOf(X.lid) : S.me === X.lid && kid >= 0 ? posOf(kid) : null; if (pq) { const pu = .5 + .5 * Math.sin(now / 200); g.fillStyle = '#ff8a1f'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(pq[0] * k, pq[1] * k, Math.max(3, 3.4 * dpr) * (1 + .25 * pu), 0, TAU); g.fill(); g.stroke(); } } }   // "bind a soul": the chosen survivor <-> her
   const dm = S.map.doors || [];   // doorways: dim brown = can still be barricaded, bright = barricaded; broken ones disappear
@@ -9915,7 +9918,7 @@ function drawTwinLink(now) {   // Long Last Twin: a thin pixel line between the 
   for (let i = 0; i <= n; i++) { if (!near && i % 2) continue; const t = 14 + len * i / n; ctx.fillRect(Math.round((a[0] + ux * t) / 2) * 2 - 1, Math.round((a[1] + uy * t) / 2) * 2 - 1, 2, 2); }
   ctx.restore();
 }
-function drawBondPings(me, k, W, H, now) {   // Bonded: the same pin marker as the monster-form sight, for PK_BOND_SHOW_MS
+function drawBondPings(me, k, W, H, now) {   // Bonded: the same pin marker as the monster-form sight, for as long as the reveal lasts
   if (S.phase !== 'hunt' || !BOND.length) return; const V = pickView(), bx = pinBox(me, k, W, H); ctx.save();
   for (const b of BOND) { if (now >= b.end) continue; const q = bondTarget(V, b); if (q) pinAt(me, bx, q, b.all ? '#ff5a63' : '#ff8fd8', 48, now); }
   ctx.restore();

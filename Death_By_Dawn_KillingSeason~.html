@@ -145,7 +145,7 @@ small{opacity:.6}
 #selCards{--cols:4;--gap:10px;flex:1 1 auto;min-height:0;width:min(100%,1080px);display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:var(--gap);padding:8px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 #selCards.k{--cols:3}
 #selCards>.sc{flex:0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));max-width:190px}
-@media (min-width:900px){#selCards:not(.k){--cols:8}#selCards.k{--cols:5}}
+@media (min-width:900px){#selCards:not(.k){--cols:9}#selCards.k{--cols:5}}
 @media (orientation:portrait) and (max-width:560px){#selCards{--cols:3;--gap:8px}#selCards.k{--cols:2}}
 .sc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;min-height:96px;background:rgba(5,7,22,.82);border:2px solid #2b3584;border-radius:4px;box-shadow:0 0 0 2px #04051a,0 0 0 4px #6e1119;opacity:.62;filter:saturate(.6);cursor:pointer;touch-action:pan-y;transition:opacity .15s,filter .15s,transform .06s}
 .sc.on{opacity:1;filter:none;border-color:var(--cc);box-shadow:0 0 0 2px #04051a,0 0 0 4px var(--cc),0 0 22px var(--cc)}
@@ -644,9 +644,9 @@ const CFG = {
   SELECT_MS: 15000,                    // cosmetic character select (ends early when everyone has locked in)
   // ---- survivor perks (host setting "Survivor perks"; every number here is a starting guess, tune freely) ----
   PK_KILLER_MS: 20000, PK_CHAR_MS: 10000, PK_PICK_MS: 10000,   // perks ON, pre-match: the killer has PK_KILLER_MS for the character; survivors have PK_CHAR_MS for the character, then PK_PICK_MS for the perk (parallel, they end together)
-  PK_LL_BLIND_MS: 1200, PK_LL_AB_MS: 1000, PK_LL_GLOW_MS: 3000, PK_REACT_MULT: 2, PK_REACT_MS: 350, PK_POT_CAP: 25, PK_POT_IDLE_MS: 3000, PK_POT_HI: 75, PK_POT_BONUS: .1, PK_REFORM_CD_MS: 30000, PK_REFORM_GLOW_MS: 3000, PK_SAB_CD_MS: 30000, PK_SAB_DIS_MS: 20000, PK_SAB_MARK_MS: 3000, PK_SAB_KMULT: 3, PK_SAB_GLOW_MS: 3000, PK_SAB_R: 96,   // Sabotage: holder cooldown after a success (ready from the start) / how long a sabotaged hook stays off / how long a missed check marks the holder to the killer / killer hand-repair speed multiplier / icon glow / reach to a hook
+  PK_LL_BLIND_MS: 1500, PK_LL_AB_MS: 3000, PK_LL_GLOW_MS: 3000, PK_LL_VIS: 1.15, PK_REACT_MULT: 2, PK_REACT_MS: 350, PK_POT_CAP: 25, PK_POT_HI: 75, PK_POT_BONUS: .1, PK_REFORM_CD_MS: 30000, PK_REFORM_GLOW_MS: 3000, PK_SAB_CD_MS: 30000, PK_SAB_DIS_MS: 20000, PK_SAB_MARK_MS: 3000, PK_SAB_KMULT: 3, PK_SAB_GLOW_MS: 3000, PK_SAB_R: 96,   // Sabotage: holder cooldown after a success (ready from the start) / how long a sabotaged hook stays off / how long a missed check marks the holder to the killer / killer hand-repair speed multiplier / icon glow / reach to a hook
     PK_BOND_EVERY_MS: 7000, PK_BOND_SURV_MS: 1500, PK_BOND_KILL_MS: 1000, PK_BOND_GAP_MS: 3000, PK_BOND_WARN_MS: 1000,   // Reforming: ONE cooldown after each use (starts ready) / icon glow after using it. Bonded (alternating, never at the same time): first wait PK_BOND_EVERY_MS, then the HOLDER sees the killer for PK_BOND_SURV_MS, PK_BOND_GAP_MS of pause, then the KILLER sees the holder for PK_BOND_KILL_MS, PK_BOND_GAP_MS of pause, and round again; the icon glows from PK_BOND_WARN_MS before each reveal until it ends
-    // Last Light: blind time (ms) / ability-disable time of its Holy Light (ms) / icon glow after it fires; Reaction: speed multiplier and duration (ms) after leaving a generator / an unhook or using the block / break button; Potential: the bar's size, as % of one generator (dumped on the generator the moment it is full) / the bar is emptied after this long without repairing / a generator at or above this % takes the holder's repair directly, and the holder banks BONUS (10%) of that repair on top
+    // Last Light: blind time (ms) / ability-lock time (ms) of its thrown Holy Light / icon glow after it is thrown (ms) / the holder's ambient vision multiplier (+15%); Reaction: speed multiplier and duration (ms) after leaving a generator / an unhook or using the block / break button; Potential: the bar's size, as % of one generator (dumped on the generator the moment it is full) / a generator at or above this % takes the holder's repair directly, and the holder banks BONUS (10%) of that repair on top
   PK_TK_MULT: 2.04, PK_UNDYING_FIRST_MS: 1000, PK_UNDYING_STEP_MS: 4000,   // Telekinetic: repair / unhook reach x this (1.7 + 20% = 2.04); Undying: downed time the first time (ms), plus this much more each further time (capped at DOWN_RECOVER_MS)
   PK_OFFER_N: 2, PK_OFFER_CHANCE: .5, PK_TWIN_REP: 1.15, PK_TWIN_VIS: 1.2, PK_TWIN_R: 0, /* Long Last Twin: repair speed x / vision x while the twins are close; PK_TWIN_R = how close (0 = Telekinetic's reach, GEN_R x PK_TK_MULT) */   // perks offered to each survivor / default chance that a maxHolders perk shows up in a match at all (a perk can set its own offerChance)
   PK_GEN_MULT: 1.3, PK_HOOK_MS: 40000,   // survivor perks ON (global): generators need this much more repair work (x1.3 = 30% more) / time until a hooked survivor dies (ms; 40 s = same as without perks)
@@ -662,7 +662,7 @@ const CFG = {
   SURV_VIEW_R: 312,                    // survivor light radius
   FLASH_RANGE: 374, FLASH_ANGLE: 54,   // killer flashlight length (units) and full cone angle (degrees)
   HOOK_SEE_R: 62,                       // the killer always sees the hooks and anyone standing right next to one (small circle)
-  KILLER_AMBIENT_R: 140,                // small light circle around the killer
+  KILLER_AMBIENT_R: 126,                // small light circle around the killer (was 140, now 10% smaller for every killer)
   BEAM_GLOW: 0,                        // strength of the killer's beam as seen by survivors (0..1); 0 = survivors can't see the flashlight
   MASK_SCALE: 0.5,                     // darkness mask resolution relative to the screen (lower = faster)
   RAYS_CIRCLE: 96, RAYS_CONE: 48,      // evenly spaced rays per visibility polygon (on top of the corner rays)
@@ -807,7 +807,7 @@ const PERKS = [
   { id: 'telekinetic', name: 'Telekinetic', type: 'passive', desc: "Repair generators and unhook survivors from much farther away, but only while standing still.", implemented: true },
   { id: 'undying', name: 'Undying', type: 'passive', desc: "Recover from being downed faster; each subsequent recovery takes longer.", implemented: true },
   { id: 'potential', name: 'Potential', type: 'passive', desc: "Store generator fixing progress to prevent loss from kicks.", implemented: true },
-  { id: 'lastlight', name: 'Last Light', type: 'passive', desc: "Throw a flashbang whenever they hit or hook you.", implemented: true },
+  { id: 'lastlight', name: 'Last Light', type: 'passive', desc: "When hit or hooked, you throw a Holy Light at the killer. You also see further.", implemented: true },
   { id: 'reaction', name: 'Reaction', type: 'passive', desc: "Gain a short speed boost after performing actions.", implemented: true },
   { id: 'sabotage', name: 'Sabotage', type: 'special', desc: "Interact with hooks to disable them on a cooldown.", implemented: true },
   { id: 'banesberry', name: 'Banesberry', type: 'special', desc: "Find hidden berries that grant random effects.", implemented: true },
@@ -1911,7 +1911,7 @@ function botK6(p, B, now, L, tgt, down) {   // returns true when it took over th
   return false;
 }
 
-/* ---------- killer_7 (Game Guard) bot: knife up close, swaps to the RIFLE when a survivor is at range, stands still to aim and shoots, runs to a locker to reload, and opens a locker a survivor hides in ---------- */
+/* ---------- killer_7 (Participant) bot: knife up close, swaps to the RIFLE when a survivor is at range, stands still to aim and shoots, runs to a locker to reload, and opens a locker a survivor hides in ---------- */
 function botK7Locker(p, B) {   // walk to the nearest locker and open it (reload + kicks out anyone inside)
   let bi = -1, bd = 1e9; for (let i = 0; i < K7.L.length; i++) { const d = Math.hypot(K7.L[i].x - p.x, K7.L[i].y - p.y); if (d < bd) { bd = d; bi = i; } }
   if (bi < 0) return false; return botK7Open(p, B, bi);
@@ -2063,7 +2063,7 @@ const canMove = p => (S.phase === 'hunt' && !(p.role === 'killer' && K4.lg)) || 
 /* ---- CHARACTER SELECT (cosmetic, host-authoritative). S.pick[id] = { c, locked } on the host and on every client; an id with no entry is implicitly { c: id % CHARS.length, locked: false }.
    The final choice is written to p.ch (roster 'ch') when select ends. Wire: c->h {t:'pick',c} {t:'lock'}; h->all {t:'ch',id,c,locked}; late joiners get pk:[[id,c,locked]] in welcome/start. ---- */
 const dfltCh = id => ((id % CHARS.length) + CHARS.length) % CHARS.length;
-const KILLERS = [{ name: 'Jigsaw', flavor: 'Find them. Hang them. Before dawn.', col: '#ff4f57' }, { name: 'The Banshee', flavor: 'You will hear her before you see her.', col: '#3affd0' }, { name: 'The Demogorgon', flavor: 'It opens. It hungers. It always finds you.', col: '#d1454f' }, { name: 'Freaky Nikki', flavor: 'She quit hiding it. Smile back.', col: '#e0264a' }, { name: 'Huggy Wuggy', flavor: 'Come here. Give me a big, big hug.', col: '#2f6bff' }, { name: 'The Boiled One', flavor: 'Skin like a scalded wound. It never stops screaming.', col: '#ff3b30' }, { name: 'The Skinwalker', flavor: 'It knows your voice. It never needed a face.', col: '#e9e6dc' }, { name: 'Game Guard', flavor: 'Red light. Green light. Last light.', col: '#ff2f7a' }];   // cosmetic only: same stats
+const KILLERS = [{ name: 'Jigsaw', flavor: 'Find them. Hang them. Before dawn.', col: '#ff4f57' }, { name: 'The Banshee', flavor: 'You will hear her before you see her.', col: '#3affd0' }, { name: 'The Demogorgon', flavor: 'It opens. It hungers. It always finds you.', col: '#d1454f' }, { name: 'Freaky Nikki', flavor: 'She quit hiding it. Smile back.', col: '#e0264a' }, { name: 'Huggy Wuggy', flavor: 'Come here. Give me a big, big hug.', col: '#2f6bff' }, { name: 'The Boiled One', flavor: 'Skin like a scalded wound. It never stops screaming.', col: '#ff3b30' }, { name: 'The Skinwalker', flavor: 'It knows your voice. It never needed a face.', col: '#e9e6dc' }, { name: 'Participant', flavor: 'Didn\'t hear the announcement yet?', col: '#2ee6c5' }];   // cosmetic only: same stats
 let testKiller = -1;   // test room, you as survivor: which killer the bot plays (-1 = random, else an index into KILLERS)
 const isKiller = id => { const q = S.players.find(x => x.id === id); return !!q && q.role === 'killer'; };
 const pickOf = id => S.pick[id] || { c: isKiller(id) ? 0 : dfltCh(id), locked: false };
@@ -2567,7 +2567,7 @@ function botGen(p, dt, now) {   // debug (autogen): this bot repairs a random op
 }
 const POT = { sig: '', at: 0 };
 function potStep(now) {   // host: tell everyone each holder's bar (0..1) when it changes (throttled), so the bar above their head is visible to all
-  if (!S.perk.on) return; for (const q of HP.values()) if (q.pot > 0 && now - (q.potAt || 0) > CFG.PK_POT_IDLE_MS) q.pot = 0;   // 3 s without repairing a generator: the bar is gone
+  if (!S.perk.on) return;   // (the banked bar never fades: it stays until it fills and lands on a generator)
   const l = []; for (const q of HP.values()) if (q.pot > 0) l.push([q.id, Math.round(q.pot / CFG.PK_POT_CAP * 50) / 50]);
   const sig = l.map(e => e[0] + ':' + e[1]).join(','); if (!((sig !== POT.sig && now - POT.at >= 120) || (sig && now - POT.at > 3000))) return;
   POT.sig = sig; POT.at = now; const m = { t: 'pot', v: l }; T.broadcast(m); applyPot(m);
@@ -2636,9 +2636,14 @@ function stList(now) {   // compact status of everyone, for welcome/start (recon
     if (e.s === 'carried') e.by = p.carriedBy;
     return e; });
 }
-function pkLastLight(v, kid) {   // LAST LIGHT (host): the existing Holy Light flash (a hit phantom's): blinds that killer briefly + disables his ability for PK_LL_AB_MS. No cooldown
+function pkLastLight(v, kid) {   // LAST LIGHT (host): the survivor really THROWS a Holy Light (the flashbang item) at the killer: same toss, same arm time as the item, but a fixed PK_LL_BLIND_MS blind and PK_LL_AB_MS ability lock. No cooldown
   if (!hasPerk(v.id, 'lastlight') || kid < 0) return;
-  evSend({ k: 'bang', x: v.x, y: v.y, by: v.id, r: 0, only: kid, ms: CFG.PK_LL_BLIND_MS, ab: CFG.PK_LL_AB_MS }); sxSend(v.id, 'llglow', CFG.PK_LL_GLOW_MS);
+  const K = HP.get(kid); let dx = K ? K.x - v.x : 0, dy = K ? K.y - v.y : 1; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+  let q = [v.x, v.y]; const reach = Math.min(CFG.THROW_DIST, dl); for (let s2 = 10; s2 <= reach; s2 += 10) { const x = v.x + dx * s2, y = v.y + dy * s2; if (circleHits(x, y, 10)) break; q = [x, y]; }   // lands on the killer (or as far as the throw reaches), stopping at walls
+  const ti = ITEMS.findIndex(x => x.id === 'flashbang');
+  evSend({ k: 'toss', x0: v.x, y0: v.y, x1: q[0], y1: q[1], ti });
+  FBG.push({ id: ITN++, x: q[0], y: q[1], owner: v.id, r: 0, ll: 1, arm: performance.now() + CFG.FB_ARM_MS }); woSend('fb');   // ll: Last Light's flash uses its own fixed blind + ability lock (see detonate)
+  sxSend(v.id, 'llglow', CFG.PK_LL_GLOW_MS);
 }
 function bondStep(now) {   // BONDED (host, every tick of the hunt): the reveals ALTERNATE. Phase 0: the holder sees the killer for PK_BOND_SURV_MS, then a PK_BOND_GAP_MS pause; phase 1: the killer sees the holder for PK_BOND_KILL_MS, then a PK_BOND_GAP_MS pause; then phase 0 again (event 'bond'); the holder's icon glows from PK_BOND_WARN_MS before each reveal until it ends
   if (!S.perk.on) return;
@@ -3802,7 +3807,7 @@ function abilityPress() { if (!abilitiesOn()) return; if (isK0(S.me) && S.wo.k0)
        level 1   10% slower, fake red eyes (every 5-7 s) + fake heartbeat (every 9-15 s).
        ALL LEVELS (0-3): the top-bar survivor info shows "?" for everyone.
        level 2   15% slower, vision radius x0.7, eyes every 3-5 s, heartbeat every 5.5-9 s, a fake killer sprite every 20 s (2 s).
-       level 3   (100%) 20% slower, vision x0.5, a fake killer sprite every 15 s (3 s; at least one per breakdown), very frequent hallucinations + whispers + red vignette + glitch bars + choppy frame rate, for K1_BREAK_MS (8 s).
+       level 3   (100%) 20% slower, vision x0.4 (60% less), a fake killer sprite every 15 s (3 s; at least one per breakdown), very frequent hallucinations + whispers + red vignette + glitch bars + choppy frame rate, for K1_BREAK_MS (8 s).
                  Then the meter empties to 0 and cannot fill for K1_IMM_MS (10 s). The fear bar label shows FEAR / PANIC / CALM.
        host: k1Slow (speed factor, used by the generator repair, and the real unhook), k1Peak / k1Locked / k1Step (breakdown + immunity).
        client: k1Lvl, k1VisStep, k1FakeHb, drawK1Hallu, plus 3 small hooks in draw() (vision scale, choppy frames, fake heartbeat) and refreshStatus ('?').
@@ -3829,7 +3834,7 @@ const K1_INV_MS = 15000, K1_REVEAL_CD = 2000, K1_REVEAL_SLOW = .5, K1_BOOST_SPD 
 const K1_GUARD_MS = 15000, K1_GUARD_CD = 35000, K1_GUARD_REACH = 130, K1_GUARD_ROAM = 140, K1_GUARD_SPD = CFG.KILLER_SPEED * .5;   // GUARD: how long the clone stands guard (ms) / cooldown (ms, from the moment it is placed) / how close to a generator or hook she must be / how far the clone strays from its post / its walking speed
 const K1_HALLU_FREQ = 1.5;   // fear hallucinations (fake red eyes, fake heartbeat, fake killer sprite) happen this much more often at every level: every gap between them is divided by this (1.5 = 50% more frequent)
 const K1_SEND_MS = 250, K1_TIERS = [0, 32.5, 65.5, 99.5];   // fear values are sent at most 4x a second (clients smooth them) / start of effect levels 0..3 (= 0-32%, 33-65%, 66-99%, 100%; the .5 matches the rounded % on the bar)
-const K1_SLOW = [.05, .10, .15, .20], K1_VIS = [1, .9, .7, .3];   // EFFECTS by level: generator repair + unhook are this much slower / survivor vision radius multiplier
+const K1_SLOW = [.05, .10, .15, .20], K1_VIS = [1, .9, .7, .4];   // EFFECTS by level: generator repair + unhook are this much slower / survivor vision radius multiplier
 const K1_BREAK_MS = 8000, K1_IMM_MS = 10000;   // at 100%: the breakdown lasts this long (level 3 effects), then the meter empties and cannot fill for the immunity time
 function k1Empty() { return { inv: 0, on: false, brk: {}, imm: {}, init: false, wailAt: 0, gdAt: 0, boostAt: 0, f: {}, near: {}, clones: [], n: 1, sendAt: 0, dirty: false }; }
 let K1 = k1Empty();
@@ -3940,7 +3945,7 @@ const K1_TCOL = ['#3affd0', '#9ad84a', '#ffb03a', '#ff3d6e'];
 function k1Lvl(id, now) {   // effect level 0..3 of a survivor (client): 3 only during the 8 s breakdown
   const J = S.wo.k1; if (!J) return 0; const b = J.br && J.br[id]; if (b && b.b > now) return 3; const v = k1Fear(id); return v >= K1_TIERS[2] ? 2 : v >= K1_TIERS[1] ? 1 : 0;
 }
-function k1VisStep(now, dt, role, vId, ph) {   // my vision radius scale (eased): -10% at level 2, -20% during the breakdown
+function k1VisStep(now, dt, role, vId, ph) {   // my vision radius scale (eased): -10% at level 1, -30% at level 2, -60% during the breakdown
   const tgt = role === 'survivor' && ph === 'hunt' && vId === S.me && S.wo.k1 ? K1_VIS[k1Lvl(vId, now)] : 1;
   K1C.visS += (tgt - K1C.visS) * Math.min(1, dt * 3); if (Math.abs(tgt - K1C.visS) < .002) K1C.visS = tgt;
 }
@@ -5043,7 +5048,7 @@ function drawK3Glints(me, vw, vh, now, role) {
    ################################################################################################
 
    WHAT HE DOES
-   - PASSIVE: his terror radius is 40% shorter (k1MinDist divides his distance by K7_TERROR).
+   - PASSIVE: none any more: his terror radius is the same as every other killer's (K7_TERROR = 1; k1MinDist divides his distance by it, so 1 = no change).
    - ABILITY BUTTON (or Q / Left Shift): swap KNIFE <-> RIFLE (K7_SW_MS = 0.5 s, the attack button is on cooldown meanwhile).
        KNIFE = a normal killer.
        RIFLE = ambient circle unchanged, flashlight cone only K7_ANGLE degrees but K7_RANGE x longer (that is also the bullet's range). ATTACK fires a hitscan bullet
@@ -5064,8 +5069,8 @@ function drawK3Glints(me, vw, vh, now, role) {
       - buttons: ctxFor (HIDE / EXIT / OPEN), abilityPress, updateControls (ability + attack labels), CTX_LABEL
       - drawing: killerBmp -> guardBmp, drawKiller (rifle flag), atkAnim, drawSlashSkin, drawItemsWorld -> drawK7World, draw loop -> drawK7Over, INFO_KILLERS (guide)
    ################################################################################################ */
-const K7_TERROR = .6, K7_ANGLE = 8, K7_RANGE = 1.7, K7_BULLETS = 8, K7_HP = 100, K7_DMG = 40, K7_HEAL_RATE = 12.5, K7_W_SLOW = .15, K7_W_MS = 2000, K7_BLEED_MS = 2000, K7_SW_MS = 500, K7_SHOT_MS = 500, K7_SHOT_SLOW = .5, K7_SLOW_MS = 1000, K7_OPEN_ANIM = 650;   // terror (distance divisor) / rifle cone (degrees) / rifle beam + bullet range (x) / magazine / health bar (percent) / health one bullet takes / swap time / shot cooldown / slow multiplier (50% slower) / how long the shot slow lasts / locker-open animation length
-const K7_LK_PAIRS = 5, K7_LK_W = 60, K7_LK_D = 40, K7_ENTER_ANIM = 750, K7_LK_R = 70, K7_KICK_SLOW = .3, K7_KICK_MS = 1500, K7_OPEN_CD = 700, K7_SEND_MS = 400;   // locker pairs / one locker's width along the wall / depth / interaction reach / kicked-out slow / its length / killer's locker cooldown / resend gap
+const K7_TERROR = 1, K7_ANGLE = 8, K7_RANGE = 1.7, K7_BULLETS = 8, K7_HP = 100, K7_DMG = 40, K7_HEAL_RATE = 12.5, K7_W_SLOW = .15, K7_W_MS = 2000, K7_BLEED_MS = 2000, K7_SW_MS = 500, K7_SHOT_MS = 500, K7_SHOT_SLOW = .5, K7_SLOW_MS = 1000, K7_OPEN_ANIM = 325;   // terror (distance divisor) / rifle cone (degrees) / rifle beam + bullet range (x) / magazine / health bar (percent) / health one bullet takes / swap time / shot cooldown / slow multiplier (50% slower) / how long the shot slow lasts / locker-open animation length
+const K7_LK_PAIRS = 5, K7_LK_W = 60, K7_LK_D = 40, K7_ENTER_ANIM = 375, K7_LK_R = 70, K7_KICK_SLOW = .3, K7_KICK_MS = 1500, K7_OPEN_CD = 700, K7_SEND_MS = 400;   // locker pairs / one locker's width along the wall / depth / interaction reach / kicked-out slow / its length / killer's locker cooldown / resend gap
 function k7Empty() { return { on: false, init: false, form: 0, swEnd: 0, bul: K7_BULLETS, L: [], h: {}, w: {}, dirty: false, sendAt: 0 }; }   // form: 0 knife, 1 rifle; L = lockers [{x, y, nx, ny, occ}] (nx,ny = the way the door faces); h = hearts per survivor id
 let K7 = k7Empty();
 const isK7 = id => kAbIdx(id) === 7;   // killer_7 = the eighth KILLERS entry; its ability code never mentions the character's name
@@ -5167,40 +5172,58 @@ function k7Apply(a, now) {
   const w = {}; for (const e of a[5] || []) w[e[0]] = { rev: now + e[1], bl: now + e[2], n: e[3] };
   S.wo.k7 = { form: a[0], bul: a[1], swEnd: now + a[2], L, h, hid, w };
 }
-const k7Bleed = (id, now) => { const J = S.wo && S.wo.k7, w = J && J.w && J.w[id]; return !!w && now < w.bl; };   // this survivor is bleeding from a Game Guard bullet (blood trail)
+const k7Bleed = (id, now) => { const J = S.wo && S.wo.k7, w = J && J.w && J.w[id]; return !!w && now < w.bl; };   // this survivor is bleeding from a Participant bullet (blood trail)
 const k7Hid = id => !!(S.wo && S.wo.k7 && S.wo.k7.hid && S.wo.k7.hid[id]);   // this survivor is inside a locker (invisible to everyone, like the Magician's Hat)
 function k7NearC(mp, free) { const J = S.wo.k7; if (!J) return -1; let bi = -1, bd = K7_LK_R + CFG.ACT_SLACK; for (let i = 0; i < J.L.length; i++) { const l = J.L[i]; if (free && l.occ >= 0) continue; const d = Math.hypot(l.x - mp[0], l.y - mp[1]); if (d <= bd && losClear(mp[0], mp[1], l.x + l.nx * (K7_LK_D / 2 + 6), l.y + l.ny * (K7_LK_D / 2 + 6))) { bd = d; bi = i; } } return bi; }   // same clear-line rule as the host's k7Near, so HIDE / OPEN only show when they will work
 const K7_ART = {
   rifle: r => { r(1, 9, 4, 4, '#5a3b24'); r(1, 9, 4, 1, '#7a5636'); r(5, 8, 7, 3, '#2a2d36'); r(5, 8, 7, 1, '#4d5260'); r(12, 8, 4, 2, '#2a2d36'); r(12, 8, 4, 1, '#4d5260'); r(7, 11, 2, 3, '#2a2d36'); r(5, 6, 3, 2, '#4d5260'); r(2, 13, 6, 1, '#15151d'); },
-  knife: r => { for (let i = 0; i < 8; i++) { r(5 + i, 9 - i, 2, 2, i > 5 ? '#f2f5fb' : '#c3cad8'); } r(3, 11, 3, 3, '#17171f'); r(5, 9, 3, 1, '#8a8f9c'); r(4, 10, 1, 1, '#ff2f7a'); }
+  knife: r => { for (let i = 0; i < 8; i++) { r(5 + i, 9 - i, 2, 2, i > 5 ? '#f2f5fb' : '#c3cad8'); } r(3, 11, 3, 3, '#17171f'); r(5, 9, 3, 1, '#8a8f9c'); r(4, 10, 1, 1, '#2ee6c5'); }
 };
 const k7Spr = k => cachedSpr('k7' + k, () => outlined(pxc(16, 16, K7_ART[k])));
 const K7_URL = {}; function k7Icon(k) { return K7_URL[k] || (K7_URL[k] = k7Spr(k).toDataURL()); }
-function guardBmp(pose, f, lau, mon, gun) {   // Game Guard: pink hooded jumpsuit, black mesh mask with a white triangle, black belt / gloves / boots; knife in his hand, or a rifle held across his chest. Monster form: blood-red suit, red triangle + glowing slits. Same 26x32 frame
+function guardBmp(pose, f, lau, mon, gun) {   // Participant (a Purge night-hunter, Statue of Liberty look): spiked teal crown, dark mask with glowing neon X eyes + stitched grin, long dark hair, teal draped dress, bare arms + sandals; knife in her hand, or a rifle held across her chest. Monster form: blood-red crown + dress, red neon. Same 26x32 frame
   return cachedSpr(`gg${pose}${f}${lau ? 1 : 0}${mon ? 1 : 0}${gun ? 1 : 0}`, () => outlined(pxc(26, 32, r0 => {
     const ox = 2, oy = 4, r = (x, y, w, h, c) => r0(x + ox, y + oy, w, h, c);
-    const P = mon ? '#8d1230' : '#e8246b', PD = mon ? '#560a1f' : '#a3134a', PH = mon ? '#c23258' : '#ff5c93', BLK = '#0a0a0f', BLK2 = '#222230', GLV = '#0b0b10', BOOT = '#101015', BOOTH = '#2b2b38', TRI = lau || mon ? '#ff2f45' : '#f4f4f4', RED = '#ff1f3a', STEEL = '#c3cad8', EDGE = '#f2f5fb', HND = '#17171f', GUN = '#262932', GUNH = '#4d5260', STOCK = '#4a3424', BLOOD = '#a3121c';
+    const DR = mon ? '#8d1230' : '#27a38e', DRD = mon ? '#560a1f' : '#17695d', DRH = mon ? '#c23258' : '#5fdcc2';   // dress (teal / blood red)
+    const CR = mon ? '#9a1634' : '#2fb39f', CRD = mon ? '#5a0b20' : '#1b7c6e', CRH = mon ? '#d24a68' : '#74efd6';   // crown
+    const SKIN = mon ? '#c9b8b8' : '#e2b69c', SKD = mon ? '#9a8587' : '#b98068', MSK = mon ? '#2a1418' : '#1c383e', MSKD = mon ? '#170a0d' : '#10252a';
+    const NEON = lau || mon ? '#ff3a4a' : '#8dfff0', NEOD = lau || mon ? '#8a1a26' : '#1f9a8a';
+    const HR = '#2b1d1c', HRH = '#4a3535', BLK2 = '#222230', SAND = '#3a2a24', HND = '#17171f';
+    const GUN = '#262932', GUNH = '#4d5260', STOCK = '#4a3424', STEEL = '#c3cad8', EDGE = '#f2f5fb', BLOOD = '#a3121c', ARM = SKIN, ARMD = SKD, GLV = SKIN;
     const sw = pose === 'swing' && !gun, run = pose === 'run', [lL, lR, aL, aR, by] = run ? KRUN[f & 3] : [0, 0, 0, 0, pose === 'swing' ? 0 : f & 1], bx = run || (pose === 'swing' && f) ? 1 : 0;
-    const leg = (x, lift, out) => { const o = lift ? out : 0; r(x + o + bx, 22, 3, 4 - lift, P); r(x + o + bx, 22, 1, 4 - lift, PH); r(x + o + bx, 25 - lift, 3, 1, PD); r(x - 1 + o + bx, 26 - lift, 4, 2, BOOT); r(x - 1 + o + bx, 26 - lift, 4, 1, BOOTH); };
-    r(2 + bx, 13 + by + aL, 3, 7, PD); r(2 + bx, 19 + by + aL, 3, 2, GLV);   // far arm
+    const leg = (x, lift, out) => { const o = lift ? out : 0, lx = x + o + bx; r(lx, 22, 3, 4 - lift, DR); r(lx, 22, 1, 4 - lift, DRH); r(lx + 2, 22, 1, 4 - lift, DRD); r(lx, 25 - lift, 3, 1, DRD); r(x - 1 + o + bx, 26 - lift, 4, 2, SKIN); r(x - 1 + o + bx, 27 - lift, 4, 1, SAND); };   // long dress legs, bare feet in sandals
+    r(2 + bx, 13 + by + aL, 3, 7, ARM); r(2 + bx, 13 + by + aL, 1, 7, ARMD); r(2 + bx, 19 + by + aL, 3, 2, GLV);   // far arm (bare)
     leg(6, lL, -1); leg(11, lR, 1);
-    r(5 + bx, 12 + by, 10, 3, P); r(5 + bx, 12 + by, 10, 1, PH); r(5 + bx, 15 + by, 10, 7 - by, P); r(5 + bx, 15 + by, 1, 7 - by, PD); r(14 + bx, 15 + by, 1, 7 - by, PD);   // jumpsuit torso
-    r(10 + bx, 13 + by, 1, 6 - by, BLK); r(5 + bx, 19, 10, 2, BLK); r(5 + bx, 19, 10, 1, BLK2); r(9 + bx, 19, 2, 2, '#8a8f9c');   // zipper + black belt with a buckle
-    r(12 + bx, 15 + by, 2, 2, PD); r(13 + bx, 15 + by, 1, 1, '#d8b04a');   // chest pocket
-    if (mon) { r(5 + bx, 21, 1, 1, PD); r(8 + bx, 22, 2, 1, PD); r(13 + bx, 21, 2, 1, PD); }   // torn hem
-    // hood + mesh mask
-    r(5 + bx, by, 10, 3, P); r(4 + bx, 2 + by, 12, 10, P); r(6 + bx, by, 4, 1, PH); r(4 + bx, 2 + by, 1, 10, PD); r(15 + bx, 2 + by, 1, 10, PD);
-    r(6 + bx, 3 + by, 8, 8, BLK); r(7 + bx, 2 + by, 6, 1, BLK); r(7 + bx, 11 + by, 6, 1, BLK);
-    for (let yy = 4; yy <= 10; yy += 2) for (let xx = 7; xx <= 12; xx += 2) r(xx + bx + ((yy >> 1) & 1 ? 1 : 0) - ((yy >> 1) & 1 && xx === 12 ? 2 : 0), yy + by, 1, 1, BLK2);
-    r(9 + bx, 3 + by, 2, 1, TRI); r(8 + bx, 4 + by, 1, 1, TRI); r(11 + bx, 4 + by, 1, 1, TRI); r(8 + bx, 5 + by, 1, 1, TRI); r(11 + bx, 5 + by, 1, 1, TRI); r(7 + bx, 6 + by, 1, 1, TRI); r(12 + bx, 6 + by, 1, 1, TRI); r(7 + bx, 7 + by, 1, 1, TRI); r(12 + bx, 7 + by, 1, 1, TRI); r(6 + bx, 8 + by, 8, 1, TRI);   // the triangle (hollow, flat base)
-    if (mon) { r(8 + bx, 10 + by, 1, 1, RED); r(11 + bx, 10 + by, 1, 1, RED); }
+    // long dark hair falling behind the shoulders
+    r(4 + bx, 10 + by, 2, 9 - by, HR); r(14 + bx, 10 + by, 2, 9 - by, HR); r(4 + bx, 12 + by, 1, 5, HRH); r(15 + bx, 14 + by, 1, 4, HRH);
+    // draped dress: V neckline, folds, waist knot
+    r(5 + bx, 12 + by, 10, 3, DR); r(5 + bx, 12 + by, 10, 1, DRH); r(5 + bx, 15 + by, 10, 7 - by, DR); r(5 + bx, 15 + by, 1, 7 - by, DRD); r(14 + bx, 15 + by, 1, 7 - by, DRD);
+    r(8 + bx, 12 + by, 4, 1, SKIN); r(9 + bx, 13 + by, 2, 1, SKIN); r(9 + bx, 14 + by, 1, 1, SKD);   // V neck
+    r(6 + bx, 14 + by, 2, 1, DRH); r(12 + bx, 14 + by, 2, 1, DRH); r(7 + bx, 16 + by, 1, 5 - by, DRD); r(11 + bx, 16 + by, 1, 5 - by, DRD); r(9 + bx, 17 + by, 2, 1, DRH);   // drape folds + waist knot
+    r(5 + bx, 20, 10, 3, DR); r(5 + bx, 20, 1, 3, DRD); r(14 + bx, 20, 1, 3, DRD); r(8 + bx, 21, 1, 2, DRD); r(12 + bx, 21, 1, 2, DRD); r(5 + bx, 22, 10, 1, DRD);   // skirt
+    if (mon) { r(5 + bx, 21, 1, 1, DRD); r(9 + bx, 22, 2, 1, MSKD); r(13 + bx, 21, 2, 1, DRD); }   // torn hem
+    // head: dark face-mask framed by hair, crown on top
+    r(4 + bx, 2 + by, 12, 9, HR); r(5 + bx, 11 + by, 10, 1, HR); r(4 + bx, 3 + by, 1, 6, HRH);   // hair around the face
+    r(6 + bx, 2 + by, 8, 9, MSK); r(6 + bx, 2 + by, 8, 1, MSKD); r(6 + bx, 10 + by, 8, 1, MSKD); r(6 + bx, 2 + by, 1, 9, MSKD); r(13 + bx, 2 + by, 1, 9, MSKD); r(9 + bx, 6 + by, 2, 2, MSKD);   // mask + nose shadow
+    r(8 + bx, 11 + by, 4, 1, SKIN);   // chin / neck
+    // neon X eyes + stitched grin (red when she hunts)
+    for (const [x, y] of [[6, 4], [8, 4], [7, 5], [6, 6], [8, 6], [11, 4], [13, 4], [12, 5], [11, 6], [13, 6]]) r(x + bx, y + by, 1, 1, NEON);
+    r(7 + bx, 5 + by, 1, 1, NEOD === '' ? NEON : NEON); r(12 + bx, 5 + by, 1, 1, NEON);
+    r(7 + bx, 9 + by, 6, 1, NEON); for (let x = 8; x <= 12; x += 2) { r(x + bx, 8 + by, 1, 1, NEOD); r(x + bx, 10 + by, 1, 1, NEOD); }
+    r(6 + bx, 8 + by, 1, 1, NEOD); r(13 + bx, 8 + by, 1, 1, NEOD);   // grin corners
+    // crown: band with arch windows + seven rays
+    r(5 + bx, 0 + by, 10, 2, CR); r(5 + bx, by, 10, 1, CRH); r(5 + bx, 1 + by, 1, 1, CRD); r(14 + bx, 1 + by, 1, 1, CRD);
+    for (let x = 6; x <= 12; x += 2) r(x + bx, 1 + by, 1, 1, CRD);   // arch windows
+    r(9 + bx, -4 + by, 2, 4, CR); r(9 + bx, -4 + by, 1, 4, CRH); r(7 + bx, -3 + by, 1, 3, CR); r(12 + bx, -3 + by, 1, 3, CRD); r(7 + bx, -3 + by, 1, 1, CRH);
+    r(5 + bx, -2 + by, 1, 2, CR); r(14 + bx, -2 + by, 1, 2, CRD); r(3 + bx, -1 + by, 2, 1, CR); r(15 + bx, -1 + by, 2, 1, CRD); r(3 + bx, by, 2, 1, CRD); r(15 + bx, by, 2, 1, CRD);
+    r(5 + bx, 2 + by, 1, 1, NEOD); r(14 + bx, 2 + by, 1, 1, NEOD);   // faint neon glow where the mask meets the crown
     if (gun) {   // rifle held across the chest (strap over the shoulder)
       for (let i = 0; i < 7; i++) r(6 + i + bx, 13 + i + by, 1, 1, BLK2);
       r(8 + bx, 17 + by, 5, 3, STOCK); r(8 + bx, 17 + by, 5, 1, '#6e4d33'); r(13 + bx, 16 + by, 8, 3, GUN); r(13 + bx, 16 + by, 8, 1, GUNH); r(15 + bx, 19 + by, 2, 3, GUN); r(21 + bx, 16 + by, 3, 2, GUN); r(21 + bx, 16 + by, 3, 1, GUNH); r(17 + bx, 14 + by, 3, 2, GUNH);
-      r(13 + bx, 14 + by, 3, 4, PD); r(14 + bx, 18 + by, 2, 2, GLV); r(19 + bx, 17 + by, 2, 2, GLV);
-    } else if (sw && f === 0) { r(15 + bx, 7, 2, 6, PD); r(15 + bx, 5, 3, 2, GLV); r(16 + bx, 1, 1, 4, HND); r(15 + bx, -3, 4, 5, STEEL); r(18 + bx, -3, 1, 5, EDGE); }   // wind-up: knife overhead
-    else if (sw) { r(15 + bx, 13, 4, 3, PD); r(19 + bx, 13, 2, 3, GLV); r(20 + bx, 9, 3, 10, STEEL); r(22 + bx, 9, 1, 10, EDGE); if (mon) r(21 + bx, 14, 1, 4, BLOOD); }   // strike: blade forward
-    else { r(15 + bx, 13 + by + aR, 2, 7, PD); r(15 + bx, 19 + by + aR, 3, 2, GLV); r(16 + bx, 21 + by + aR, 1, 2, HND); r(16 + bx, 23 + aR, 3, 4, STEEL); r(18 + bx, 23 + aR, 1, 4, EDGE); if (mon) r(17 + bx, 24 + aR, 1, 2, BLOOD); }   // knife hanging at his side
+      r(13 + bx, 14 + by, 3, 4, ARM); r(14 + bx, 18 + by, 2, 2, GLV); r(19 + bx, 17 + by, 2, 2, GLV);
+    } else if (sw && f === 0) { r(15 + bx, 7, 2, 6, ARM); r(15 + bx, 5, 3, 2, GLV); r(16 + bx, 1, 1, 4, HND); r(15 + bx, -3, 4, 5, STEEL); r(18 + bx, -3, 1, 5, EDGE); }   // wind-up: knife overhead
+    else if (sw) { r(15 + bx, 13, 4, 3, ARM); r(19 + bx, 13, 2, 3, GLV); r(20 + bx, 9, 3, 10, STEEL); r(22 + bx, 9, 1, 10, EDGE); if (mon) r(21 + bx, 14, 1, 4, BLOOD); }   // strike: blade forward
+    else { r(15 + bx, 13 + by + aR, 2, 7, ARM); r(16 + bx, 13 + by + aR, 1, 7, ARMD); r(15 + bx, 19 + by + aR, 3, 2, GLV); r(16 + bx, 21 + by + aR, 1, 2, HND); r(16 + bx, 23 + aR, 3, 4, STEEL); r(18 + bx, 23 + aR, 1, 4, EDGE); if (mon) r(17 + bx, 24 + aR, 1, 2, BLOOD); }   // knife hanging at her side
   })));
 }
 function drawK7World(on, now, role) {   // the lockers (under the darkness: only where light reaches)
@@ -5220,7 +5243,7 @@ function drawK7World(on, now, role) {   // the lockers (under the darkness: only
     const sp = hz ? Math.round(w / 6) : Math.round(h / 6);   // vent slot spacing
     if (oa > 0) {   // opening: the dark inside shows, and the door swings away from its hinge (left / top edge)
       ctx.fillStyle = '#07090c'; ctx.fillRect(d[0], d[1], d[2], d[3]);
-      ctx.fillStyle = `rgba(255,47,122,${(.25 + .45 * oa).toFixed(2)})`;
+      ctx.fillStyle = `rgba(46,230,197,${(.25 + .45 * oa).toFixed(2)})`;
       if (!en) { if (hz) { for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 4 + i * sp, d[1] + 3, 3, 5); } else { for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 3, d[1] + 4 + i * sp, 5, 3); } }
       const sw = 1 - .82 * oa; ctx.fillStyle = '#6f7f8d';
       if (hz) { ctx.fillRect(d[0], d[1], Math.max(2, Math.round(d[2] * sw)), d[3]); ctx.fillStyle = '#8fa0ae'; ctx.fillRect(d[0], d[1], Math.max(2, Math.round(d[2] * sw)), 1); }
@@ -5229,7 +5252,7 @@ function drawK7World(on, now, role) {   // the lockers (under the darkness: only
     }
     ctx.fillStyle = '#6f7f8d'; ctx.fillRect(d[0], d[1], d[2], d[3]); ctx.fillStyle = '#8fa0ae'; if (hz) ctx.fillRect(d[0], l.ny < 0 ? d[1] : d[1] + d[3] - 1, d[2], 1); else ctx.fillRect(l.nx < 0 ? d[0] : d[0] + d[2] - 1, d[1], 1, d[3]);
     ctx.fillStyle = '#1d242c'; if (hz) for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 5 + i * sp, d[1] + 3, 4, Math.max(5, DW - 6)); else for (let i = 0; i < 3; i++) ctx.fillRect(d[0] + 3, d[1] + 5 + i * sp, Math.max(5, DW - 6), 4);
-    ctx.fillStyle = '#ff2f7a'; if (hz) ctx.fillRect(d[0] + d[2] - 6, d[1] + Math.round(DW / 2) - 1, 3, 4); else ctx.fillRect(d[0] + Math.round(DW / 2) - 1, d[1] + d[3] - 6, 4, 3);
+    ctx.fillStyle = '#2ee6c5'; if (hz) ctx.fillRect(d[0] + d[2] - 6, d[1] + Math.round(DW / 2) - 1, 3, 4); else ctx.fillRect(d[0] + Math.round(DW / 2) - 1, d[1] + d[3] - 6, 4, 3);
   }
 }
 const DDO = {};   // player id -> end time of the red ritual oval under them (Demonic Deal went dark)
@@ -5251,8 +5274,8 @@ function drawK7Over(me, k, W, H, now) {   // above the darkness: bullet tracers 
   const F = K7C.fx; for (let i = F.length - 1; i >= 0; i--) if (now >= F[i].end) F.splice(i, 1);
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const e of F) { const u = Math.min(1, (now - e.t0) / (e.end - e.t0)), a = 1 - u;
-    ctx.strokeStyle = `rgba(255,47,122,${a.toFixed(3)})`; ctx.lineWidth = 3 * a + 1; ctx.beginPath(); ctx.moveTo(e.x0, e.y0); ctx.lineTo(e.x1, e.y1); ctx.stroke(); ctx.strokeStyle = `rgba(255,236,242,${a.toFixed(3)})`; ctx.lineWidth = 1; ctx.stroke();
-    ctx.fillStyle = `rgba(255,190,120,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x0, e.y0, 14 * a + 3, 0, TAU); ctx.fill(); ctx.fillStyle = e.hit ? `rgba(255,47,70,${a.toFixed(3)})` : `rgba(255,200,160,${(a * .6).toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x1, e.y1, (e.hit ? 18 : 8) * a + 3, 0, TAU); ctx.fill(); }
+    ctx.strokeStyle = `rgba(46,230,197,${a.toFixed(3)})`; ctx.lineWidth = 3 * a + 1; ctx.beginPath(); ctx.moveTo(e.x0, e.y0); ctx.lineTo(e.x1, e.y1); ctx.stroke(); ctx.strokeStyle = `rgba(230,255,250,${a.toFixed(3)})`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = `rgba(255,200,140,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x0, e.y0, 14 * a + 3, 0, TAU); ctx.fill(); ctx.fillStyle = e.hit ? `rgba(255,47,70,${a.toFixed(3)})` : `rgba(255,200,160,${(a * .6).toFixed(3)})`; ctx.beginPath(); ctx.arc(e.x1, e.y1, (e.hit ? 18 : 8) * a + 3, 0, TAU); ctx.fill(); }
   { ctx.save(); ctx.globalCompositeOperation = 'source-over'; const V0 = pickView(), J0 = S.wo.k7;   // the killer sees a small health bar over every survivor whose bar is below 100%
     if (J0 && S.phase === 'hunt' && V0.role === 'killer') for (const p of S.players) {
       if (p.role !== 'survivor') continue; const hv = J0.h[p.id]; if (hv == null || hv >= K7_HP) continue; const s0 = (S.st[p.id] || {}).s || 'healthy'; if (s0 !== 'healthy' && s0 !== 'injured') continue;
@@ -5291,7 +5314,7 @@ function k7Ui(now) {   // survivors: my hearts (top right of the minimap) + the 
   const hid = k7Hid(S.me); if (hid && !K7C.inAt) K7C.inAt = now; if (!hid) K7C.inAt = 0;
   if (hd) { hd.style.display = hid ? 'block' : 'none'; if (hid && K7C.hs !== 'h') { K7C.hs = 'h'; hd.firstChild.textContent = 'HIDING'; } }
 }
-function k7BulUi(now) {   // the Game Guard: his bullet count as little bullets right under the minimap
+function k7BulUi(now) {   // the Participant: his bullet count as little bullets right under the minimap
   const J = S.wo.k7, on = !!J && inGame && S.phase === 'hunt' && myRole() === 'killer' && isK7(S.me);
   let el = $('k7b'); if (!on) { if (el) el.style.display = 'none'; return; }
   k7Css(); if (!el) { el = document.createElement('div'); el.id = 'k7b'; document.body.appendChild(el); }
@@ -5756,7 +5779,7 @@ function useItem(p, now) {
   if (ok) { if ((p.ch | 0) > 1) { p.ch--; sendItem(p, true); } else { p.item = null; p.ch = 0; sendItem(p); } }   // multi-charge items (Snake Oil x2, Blink x3) keep the item until the last charge
 }
 function detonate(f, now) {   // the flash itself is decided on each client: whoever has the flashbang on their screen (except the thrower) is blinded
-  evSend({ k: 'bang', x: f.x, y: f.y, by: f.owner, r: f.r, ab: f.r ? 0 : CFG.FB_AB_MS });
+  evSend(f.ll ? { k: 'bang', x: f.x, y: f.y, by: f.owner, r: 0, ms: CFG.PK_LL_BLIND_MS, ab: CFG.PK_LL_AB_MS } : { k: 'bang', x: f.x, y: f.y, by: f.owner, r: f.r, ab: f.r ? 0 : CFG.FB_AB_MS });   // Last Light's Holy Light: 1.5 s blind + 3 s ability lock, wherever it lands
 }
 function hatStep(now, dtMs) {   // Magician's Hat: p.hatLeft is "hat time". It drains at x1, or x HAT_WORK_MULT in a tick where the wearer repaired a generator or was unhooking someone (p.hatWork is set by genStep / stepCombat, which run before this).
   // Clients tick ONE timer down (f.hatLeft, hat time) at the sent rate; every time the rate changes they are sent the hat time left.
@@ -6069,40 +6092,39 @@ const INFO_GUIDE = [
 
 const INFO_KILLERS = [   // [KILLERS index, [[kind, title, text, optional sprite list [[ki, mon, hv]...]], ...]]
   [0, [
-    ['Passive', 'Trap charges', 'Gains a trap every 20 seconds (up to 9 carried) and another one every time he lands a hit. He sees a little less than other killers, so he relies on his traps. At the start of the hunt he plants one IR Scanner for free.'],
-    ['Ability', 'Traps', 'The ability button shows how many traps he has (or the time until the next one). Tap it to open the full map and place them.'],
-    ['Ability', 'Trap', 'A permanent bear trap. Whoever steps on it is stopped dead for half a second, then slowed with the slow fading out over 4 seconds, the killer gets a short live ping on them, and a 50s reverse bear trap clamps on them. A teammate has to remove it or it goes off as a hit. Survivors can see it from a bit further away than before, and can disarm it for good from that same distance by holding DISARM for 1.5 seconds; letting go or walking away resets the progress.'],
-    ['Ability', 'IR Scanner', 'Planted once, free, at the start of the hunt. A slowly rotating beam. It pings survivors who move or repair inside it and slows their repairs.']]],
+    ['Passive', 'Trap charges', 'He earns traps over time and with every hit, and starts the hunt with a free IR Scanner. His sight is a bit weaker, so he leans on his traps.'],
+    ['Ability', 'Traps', 'Tap the ability button to open the map and place traps. The button shows how many he has left.'],
+    ['Ability', 'Trap', 'A bear trap that stops and slows whoever steps on it, pings them to the killer and clamps a reverse bear trap on them. A teammate has to remove it or it counts as a hit, and survivors can disarm the trap itself by holding DISARM.'],
+    ['Ability', 'IR Scanner', 'A rotating beam planted at the start of the hunt. It pings survivors who move or repair inside it and slows their repairs.']]],
   [1, [
-    ['Passive', 'Fear', 'Every survivor has a fear meter that fills while they are near her and drains once they get away. The higher it climbs, the slower they repair and unhook, the less they see, and the more they hallucinate: fake red eyes, fake heartbeats, even a fake killer. At full fear they panic, then get a short break from it.'],
-    ['Ability', 'Wail', 'She vanishes from sight for up to 15s. Her next ATTACK, or pressing the ability again, is not a swing: it reveals her with a wail that frightens everyone nearby. It hits nobody. For the next 2s she cannot attack and moves 50% slower, then she gets a 30% speed boost for 1.6s.'],
-    ['Ability', 'Guard', 'Next to a generator or a hook she posts a clone of her that prowls around it for 15s. It scares anyone who works close, with the red eyes and heartbeat of the real killer. It cannot hurt anybody.']]],
+    ['Passive', 'Fear', 'Survivors build up fear while near her and calm down once they get away. High fear slows repairs and unhooks, shrinks their vision and makes them hallucinate until they panic.'],
+    ['Ability', 'Wail', 'She turns invisible, then reveals herself with a wail that frightens everyone nearby but hurts nobody. Afterwards she is briefly slowed, then briefly sped up.'],
+    ['Ability', 'Guard', 'Next to a generator or a hook she posts a clone that prowls around it and scares anyone working close. It cannot hurt anybody.']]],
   [2, [
-    ['Passive', 'Prey', 'He can only hunt one survivor at a time, his prey. A new prey is chosen after the old one is hooked. Hooking sends the survivor into the Upside Down, where they must collect light bulbs before time runs out while Vecna hunts them.'],
-    ['Passive', 'Scent', 'The prey leaves glowing scents that only he can see. Every scent he walks over makes him a little faster and lets him see further. His hits also make survivors bleed for longer.'],
-    ['Ability', 'Swap', 'After a short windup, the survivor nearest to him becomes the new prey.'],
-    ['Ability', 'Rift Walk', 'Next to a portal the ability button becomes Rift Walk: he steps inside and vanishes, like venting in Among Us. Inside he cannot move, attack or be seen or hit, but he can slide to the next or previous portal with the two arrows. Press the button again to step out. A portal with an open maw means he is inside.']]],
+    ['Passive', 'Prey', 'He hunts one survivor at a time, his prey. Hooking the prey sends them into the Upside Down, where they must collect light bulbs before time runs out.'],
+    ['Passive', 'Scent', 'The prey leaves glowing scents that only he can see. Following them makes him faster and lets him see further, and his hits make survivors bleed longer.'],
+    ['Ability', 'Swap', 'After a short windup, the nearest survivor becomes his new prey.'],
+    ['Ability', 'Rift Walk', 'Next to a portal he can step inside and vanish, unseen and untouchable. He slides between portals and steps out wherever he likes; an open maw shows he is inside.']]],
   [3, [
-    ['Passive', 'Wish Willows', 'Hidden willows appear around the map that only she can see. She starts with one, and picking one up makes the rest vanish until the next wave. There is no marker, only a faint twinkle when she is close.'],
-    ['Ability', 'Wish', 'Spend a willow to choose one of three random wishes. A wish you have used leaves the pool until only two are left; then all eight return.'],
-    ['Ability', 'The wishes', 'Find love links her with a survivor and blinds them, and seals everyone\'s items. Win the game calls two other killers to help for a short while. You would die throws a survivor into the Upside Down. Network bad makes every survivor lag. Be there teleports her and turns her invisible. Stay forever makes generators disappear for a while. A gun lets her shoot survivors she can see. Frogs turns the survivors in a chosen area into frogs.']]],
+    ['Passive', 'Wish Willows', 'Hidden willows that only she can see appear around the map, with just a faint twinkle when she is close. Picking one up makes the rest vanish until the next wave.'],
+    ['Ability', 'Wish', 'She spends a willow to choose one of three random wishes. Wishes she has used leave the pool until it refills.'],
+    ['Ability', 'The wishes', 'Wishes can link her with a survivor, call other killers for help, throw someone into the Upside Down or lag everyone. Others teleport her, hide the generators, give her a gun or turn survivors into frogs.']]],
   [4, [
-    ['Passive', 'Blood Lust', 'Whenever he is near the blood trail of an injured survivor he gets a 10% speed boost and his lunge charges recover twice as fast. It lasts 2 s after he was last near a trail, and 3 s after he hits or hooks someone, and while it lasts he turns into his monster form and his terror radius goes silent.'],
-    ['Ability', 'Lunge', 'Tap the ability for a short dash, or hold it to charge a long lunge: he walks a little slower while charging, and the longer he holds the further he dashes. A lunge that is held for too long fires by itself. Survivors in the path are severely slowed for 3 s. He has three charges, and they come back one after another, 11 s each. He cannot charge or lunge while he is slowed by a swing, missed or landed. His attack button is just a normal swing.']]],
+    ['Passive', 'Blood Lust', 'Near an injured survivor\'s blood trail he gets faster and recovers his lunges quicker. He also turns into his monster form and his terror radius goes silent, until shortly after he leaves the trail.'],
+    ['Ability', 'Lunge', 'Tap for a short dash, or hold to charge a longer lunge that slows survivors in its path. Lunge charges come back one by one, and his normal attack is a plain swing.']]],
   [5, [
-    ['Passive', 'Thorns', 'Thorns burst out for 15 s around every hook with a survivor on it and around every generator it kicks. Survivors on thorns are slowed and repair and unhook slower. Thorns, shockwave hits and staying near condemned survivors all fill the condemn bar, and it only starts to drain after 8 s clear of all of them. At 30% a survivor is condemned: they glow, and their circle fills the bar of anyone close. A survivor who walks out of thorns leaves a thorn trail for 4 s that fills their own bar. Stay away from thorns and condemned survivors to get clean. A full bar pings them to it.'],
-    ['Ability', 'Trail', 'Switch a thorn trail on or off behind it. It drains its torment while he moves and slows it at first, then torment refills while it is off.'],
-    ['Ability', 'Thorns shockwave', 'After burning enough torment it glows red and its attack becomes a shockwave of thorns, with a path preview of its main flight while it is charged. It flies straight and splits into three when it hits a wall, leaving the same thorn trail as its own the whole way. Survivors it touches get 40% condemn bar.']]],
+    ['Passive', 'Thorns', 'Thorns burst out around hooked survivors and kicked generators, slowing anyone standing in them. Thorns and condemned survivors fill a condemn bar, and a full bar condemns you: you glow and spread it to anyone close. Stay clear of both to get clean.'],
+    ['Ability', 'Trail', 'Switch a thorn trail on or off behind it. The trail drains its torment while on, and the torment refills while it is off.'],
+    ['Ability', 'Thorns shockwave', 'With enough torment, its attack becomes a shockwave of thorns that splits when it hits a wall and leaves a thorn trail. Survivors it touches get a big chunk of condemn.']]],
   [6, [
-    ['Ability', 'Transform', 'Copies a random survivor, name and look. He leaves behind a pile of white cloth, the only clue. While disguised he moves like a survivor, shows no killer signs and can stay like that as long as he wants.'],
-    ['Ability', 'Scream', 'Attacking while disguised makes him scream, stunning nearby survivors briefly as he changes back.'],
-    ['Ability', 'Sabotage', 'While disguised he can fake an unhook, so the bar fills but nobody is freed, and he can slowly undo generator repairs.'],
-    ['Ability', 'Chaos', 'While disguised the ability turns into Chaos. For a while every survivor looks like the Skinwalker and everyone seems to carry the killer\'s terror. It ends when he lands a hit.']]],
+    ['Ability', 'Transform', 'He copies a random survivor, name and look, and leaves a pile of white cloth behind. While disguised he moves like a survivor and shows no killer signs, for as long as he wants.'],
+    ['Ability', 'Scream', 'Attacking while disguised makes him scream, stunning nearby survivors as he changes back.'],
+    ['Ability', 'Sabotage', 'While disguised he can fake an unhook and slowly undo generator repairs.'],
+    ['Ability', 'Chaos', 'While disguised, Chaos makes every survivor look like him and carry his terror, until he lands a hit.']]],
   [7, [
-    ['Passive', 'Quiet steps', 'His terror radius is 40% shorter, so you hear the heartbeat later.'],
-    ['Ability', 'Knife / Rifle', 'Swaps between his knife (a normal killer) and a rifle. With the rifle his flashlight narrows to a thin 8 degree beam, but he sees 70% further and that is how far his bullets fly. He holds 8 bullets (counted under the minimap), shots have a half second cooldown, and every shot slows him by half for a second, hit or miss.', [[7, false, 0], [7, false, 1], [7, true, 0]]],
-    ['Ability', 'Health bar', 'Every survivor has a health bar under their minimap. A bullet takes 40% of it, and three bullets empty it. Each bullet that lands also reveals the survivor to the killer and slows them 15% for as long as the reveal lasts (2s, +2s per extra bullet, +15% slow per extra bullet); from the second bullet they also bleed for 2s. The killer sees the bar over any survivor below 100%. When it is empty it counts as a normal hit (injured, then downed), the bar refills to 100%, and he gets the normal hit cooldown and slow. It only comes back by hiding in a locker.'],
-    ['Ability', 'Lockers', 'Ten lockers stand along the walls in side by side pairs. Opening one plays a short door animation and reloads his rifle. Survivors can hide in one, and the health bar slowly refills while they stay inside (12.5% per second). If he opens an occupied locker the survivor is thrown out and slowed.']]]
+    ['Ability', 'Knife / Rifle', 'She swaps between a knife and a rifle. The rifle narrows her flashlight but lets her see and shoot much further, with limited bullets shown under the minimap and a slowdown after every shot.', [[7, false, 0], [7, false, 1], [7, true, 0]]],
+    ['Ability', 'Health bar', 'Every survivor has a health bar. Bullets drain it, reveal and slow the target and make them bleed. When it empties it counts as a normal hit, and it only comes back by hiding in a locker.'],
+    ['Ability', 'Lockers', 'Lockers stand along the walls in pairs, and opening one reloads her rifle. Survivors can hide inside to heal, but if she opens their locker they are thrown out and slowed.']]]
 ];
 function objPic(kind) {   // small pictures for the Objects tab, drawn with the game's own sprite code (nothing here touches a running round)
   const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
@@ -6345,7 +6367,7 @@ function stepNmAudio(now, V) {   // while the nightmare is on me: every game sou
 }
 function stepMono(now, dt, V) {   // Nightmare Fuel: the side that is being exposed sees the world in black and white; eases in and out (about 0.5 s each way)
   const ne = S.wo.ne, on = !!ne && S.phase === 'hunt' && ((V.role === 'killer' && now < ne.k) || (V.role === 'survivor' && now < (ne.s[V.id] || 0))), tgt = on ? 1 : 0;
-  monoV += Math.max(-1, Math.min(1, tgt - monoV)) * Math.min(1, dt * 5); if (Math.abs(tgt - monoV) < .004) monoV = tgt; nmVis = (1 - (1 - (bbVisOn(V.id, now) ? BB.VIS : CFG.NM_VIS)) * monoV) * (S.phase === 'hunt' && V.role === 'survivor' && twinNearC(V.id) >= 0 ? CFG.PK_TWIN_VIS : 1); composeFilter();   // (Long Last Twin: +20% sight while the twins are close)
+  monoV += Math.max(-1, Math.min(1, tgt - monoV)) * Math.min(1, dt * 5); if (Math.abs(tgt - monoV) < .004) monoV = tgt; nmVis = (1 - (1 - (bbVisOn(V.id, now) ? BB.VIS : CFG.NM_VIS)) * monoV) * (S.phase === 'hunt' && V.role === 'survivor' && twinNearC(V.id) >= 0 ? CFG.PK_TWIN_VIS : 1) * (V.role === 'survivor' && hasPerk(V.id, 'lastlight') ? CFG.PK_LL_VIS : 1); composeFilter();   // (Long Last Twin: +20% sight while the twins are close; Last Light: +15% ambient vision all the time)
 }
 function refreshMenu() {
   const row = (id, label, val, on) => { $(id).innerHTML = '<span>' + label + '</span><i class="mv' + (on === undefined ? '' : on ? ' on' : ' off') + '">' + val + '</i>'; };
@@ -7458,8 +7480,8 @@ function drawSlashSkin(ki, e, kp, now) {
     if (span > .02) { arc(R - 16 * K, tail, lead, 'rgba(47,107,255,.35)', 40 * K, fade); arc(R - 16 * K, tail, lead, 'rgba(140,175,255,.6)', 18 * K, fade); }
     for (let j = 0; j < 4; j++) { const an = lead + (j - 1.5) * .08, [xa, ya] = pt(an, R - 34 * K), [xb, yb] = pt(an, R + 2 * K); ctx.globalAlpha = vis; ctx.strokeStyle = '#7a5200'; ctx.lineWidth = 10 * K; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke(); ctx.strokeStyle = '#ffc21a'; ctx.lineWidth = 7 * K; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke(); }
     if (prog > .3) for (let j = 0; j < 5; j++) { const [x, y] = pt(lead - j * .13, R * (.74 + (j % 3) * .08)), sz = (4 + 8 * cl((prog - .3) * 2.5)) * K; ctx.globalAlpha = 1 - prog; ctx.strokeStyle = j & 1 ? '#fff0a0' : '#ffe36a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - sz, y); ctx.lineTo(x + sz, y); ctx.moveTo(x, y - sz); ctx.lineTo(x, y + sz); ctx.moveTo(x - sz * .6, y - sz * .6); ctx.lineTo(x + sz * .6, y + sz * .6); ctx.moveTo(x - sz * .6, y + sz * .6); ctx.lineTo(x + sz * .6, y - sz * .6); ctx.stroke(); }
-  } else if (ki === 7) {   // GAME GUARD: a clean hot-pink knife cut
-    cres('255,47,122', '255,224,236', 40, 12);
+  } else if (ki === 7) {   // PARTICIPANT: a clean neon-teal knife cut
+    cres('46,230,197', '220,255,248', 40, 12);
   } else if (ki === 6) {   // SKINWALKER: a pale bone-white rake. Five long thin claw lines of uneven length trail the arc, snapping out one after another, with fine tooth-like shards flung off the tips
     cres('230,226,214', '255,253,246', 44, 13);
     for (let i = 0; i < 5; i++) { const l2 = lead - i * .045, t2 = tail + span * (.12 + i * .03), r = R - (4 + i * 11) * K - (i & 1) * 6 * K; if (l2 - t2 < .02) continue;
@@ -7586,7 +7608,7 @@ function drawMeterBars(now, me, vw, vh, role, vId) {
   const J5 = S.wo.k5, ce = J5 && J5.cond ? J5.cond.find(e => e[0] === S.me) : null;
   if (ce && ce[1] > 0) { f = Math.min(1, ce[1] / 100); col = ce[2] ? '#ff2a2a' : '#ff6a3d'; tick = K5_COND / 100; }   // condemn bar (white tick = where 'condemned' starts)
   else if (S.wo.k1 && k1Is()) { const v = k1Fear(S.me); if (v > .5) { f = Math.min(1, v / 100); col = K1_TCOL[k1Tier(v)]; } }   // fear meter (colour follows its tier)
-  if (!(f > 0) && S.wo.k7) {   // Game Guard: my health bar, shown under my feet while it is below 100%; when it is full again it fades away
+  if (!(f > 0) && S.wo.k7) {   // Participant: my health bar, shown under my feet while it is below 100%; when it is full again it fades away
     const hv = S.wo.k7.h[S.me] == null ? K7_HP : S.wo.k7.h[S.me];
     if (hv < K7_HP) { K7C.hfT = 0; K7C.hvL = hv; f = Math.max(.02, hv / K7_HP); col = hv > 60 ? '#4cd964' : hv > 30 ? '#ffb020' : '#ff3b3b'; }
     else { if (K7C.hvL != null && !K7C.hfT) { K7C.hfT = now; K7C.hvL = null; } if (K7C.hfT && now - K7C.hfT < 1200) { f = 1; col = '#4cd964'; kal = 1 - (now - K7C.hfT) / 1200; } }
@@ -7652,7 +7674,7 @@ function ringAt(x, y, r, col, lw, frac) { ctx.strokeStyle = col; ctx.lineWidth =
 
 /* ================= CHARACTER SPRITES =================
    Everything is procedural pixel art: each pose is painted once into a tiny canvas (rects only), given a 1px dark outline, cached,
-   and blitted with smoothing off, so it stays crisp at any zoom. Eight survivor designs loop by player id (id % CHARS.length); the killer has his own.
+   and blitted with smoothing off, so it stays crisp at any zoom. Nine survivor designs loop by player id (id % CHARS.length); the killer has his own.
    Poses: stand (2 frames), run (4), down (4 crawl + 2 breathing), hang (4 struggle + 2 limp), killer idle (2) / run (4) / swing (2). */
 const OUTLINE = '#0a0b14', PS = 2.4, PSK = 2.2;   // pixel scale in world units: survivors / killer
 const CHARS = [
@@ -7664,6 +7686,7 @@ const CHARS = [
   { name: 'Michael Afton', skin: '#e9b48e', hair: '#4a2f26', hair2: '#6e4a3a', top: '#33323f', top2: '#25242f', trim: '#c9252f', pants: '#2f4f8c', pants2: '#243f73', shoe: '#cfcad6', sole: '#4a4658', bare: true, band: '#2b2b3a', mask: '#c9252f', mask2: '#8f1722', teeth: '#f1ece2', col: '#c9252f', style: 'mike' },   // sleeveless charcoal tank, bare arms with studded wristbands, baggy blue jeans, grey-white sneakers, messy brown hair, red fox mask worn on the side of his head
   { name: 'Crewmate', skin: '#d8232a', hair: '#d8232a', hair2: '#d8232a', top: '#d8232a', top2: '#a8181f', trim: '#9fd0e6', pants: '#a8181f', shoe: '#a8181f', col: '#e0262d', style: 'crew' },   // Among Us crewmate: red bean suit, backpack, blue visor (own sprite, see the crewmate block)
   { name: 'Georgie', skin: '#f1cdb0', hair: '#6b4a32', hair2: '#8a6445', top: '#f0c22e', top2: '#c89a1e', cap: '#f0c22e', trim: '#d49a14', hl: '#f8dc72', btn: '#a87a14', pants: '#39465c', shoe: '#5d9b3a', sole: '#2f5a1f', col: '#f0c22e', sc: .92, style: 'hood' },   // IT's Georgie: yellow hooded raincoat (hood up, brown fringe), dark jeans, green rain boots; a bit smaller than the adults
+  { name: 'Grace', skin: '#f6d6c2', hair: '#e9d098', hair2: '#fbeec4', hairD: '#d3b676', top: '#f3ead8', top2: '#dccfb6', trim: '#7a4a2a', dress: '#f9f3e6', dress2: '#d9cdb4', dressH: '#fffdf6', lace: '#fffaf0', sheer: '#f4e2d2', blush: '#f5c0b0', lip: '#d4707a', eye: '#5b93b3', pants: '#f0cfb6', shoe: '#d6a948', sole: '#fbf7ee', col: '#f3e8d0', style: 'bride' },   // Grace: blonde updo, high-neck lace bodice + satin sash, layered tulle skirt, leather shell bandolier across the chest, bare legs, yellow high-top sneakers
 ];
 const KILLER_NAME = 'Jigsaw';
 const ownerId = id => { if (id >= 1000) { const d = S.wo.dc.find(c => c.id === id); if (d) return d.o; } return id; };   // a decoy (id >= 1000) wears its OWNER's character
@@ -7826,11 +7849,30 @@ function headParts(r, C, by, mood) {   // head, hair and face in a 16-wide grid 
     r(4, 3 + by, 8, 1, C.top2); r(4, 5 + by, 1, 4, C.top2); r(11, 5 + by, 1, 4, C.top2); r(3, 9 + by, 2, 1, C.top2); r(11, 9 + by, 2, 1, C.top2);
     r(5, 4 + by, 6, 1, C.hair); r(5, 5 + by, 2, 1, C.hair); r(8, 4 + by, 2, 1, C.hair2); r(6, 7 + by, 1, 1, '#e9a79a');
   }
+  else if (s === 'bride') {   // Grace: braided blonde crown (alternating light/dark pixels = plait), side-swept strands framing the face, loose wisps
+    const H = C.hair, H2 = C.hair2, HD = C.hairD;
+    r(5, by, 6, 1, H); r(7, by, 2, 1, H2); r(4, 1 + by, 8, 1, H); for (let x = 4; x < 12; x++) r(x, 1 + by, 1, 1, x & 1 ? H2 : H);
+    r(4, 2 + by, 8, 1, H); for (let x = 4; x < 12; x++) r(x, 2 + by, 1, 1, x & 1 ? H : HD);
+    r(4, 3 + by, 3, 1, H); r(10, 3 + by, 2, 1, H); r(6, 3 + by, 1, 1, H2); r(9, 3 + by, 1, 1, HD);
+    r(4, 4 + by, 1, 3, H); r(11, 4 + by, 1, 2, H); r(3, 2 + by, 1, 4, H2); r(3, 6 + by, 1, 2, H); r(12, 2 + by, 1, 4, H); r(12, 6 + by, 1, 1, HD); r(4, 7 + by, 1, 1, HD);
+  }   // (face details: brideFace below)
   else if (s === 'hat') { r(5, by, 6, 3, C.cap); r(3, 3 + by, 10, 1, C.cap); r(5, 2 + by, 6, 1, C.cuff); r(4, 4 + by, 1, 3, C.hair); r(11, 4 + by, 1, 3, C.hair); r(6, 3 + by, 3, 1, '#2f2f3c'); r(6, 8 + by, 4, 1, C.hair2); }
   else { r(3, 1 + by, 10, 4, C.hair); r(3, 5 + by, 2, 4, C.hair); r(11, 5 + by, 2, 3, C.hair); r(5, 4 + by, 6, 1, C.hair2); r(5, 2 + by, 1, 1, '#d33b3b'); }
   if (mood === 'x') { r(6, 6 + by, 2, 1, E); r(9, 6 + by, 2, 1, E); r(8, 8 + by, 2, 1, '#5a2a2a'); }
   else if (mood === 'o') { r(7, 5 + by, 1, 2, E); r(10, 5 + by, 1, 2, E); r(8, 7 + by, 2, 2, '#5a0f18'); }
   else { r(7, 5 + by, 1, 2, E); r(10, 5 + by, 1, 2, E); r(8, 7 + by, 2, 1, '#8a4a4a'); }   // eyes sit one pixel right of centre: the sprite looks the way it faces
+  if (s === 'bride') brideFace(r, C, by, mood);
+}
+function brideFace(r, C, by, mood) {   // Grace's prettier face: arched brows, lashes + blue eyes, rosy lips, blush, pearl earrings
+  const E = '#12121c';
+  r(6, (mood === 'o' ? 3 : 4) + by, 2, 1, C.hairD); r(9, (mood === 'o' ? 3 : 4) + by, 2, 1, C.hairD);
+  if (mood !== 'x') {
+    r(7, 5 + by, 1, 1, E); r(10, 5 + by, 1, 1, E); r(7, 6 + by, 1, 1, C.eye); r(10, 6 + by, 1, 1, C.eye);
+    r(6, 5 + by, 1, 1, '#5a4040'); r(11, 5 + by, 1, 1, '#5a4040');   // lash flicks on the outer corners (softer than the eye itself)
+  } else { r(6, 6 + by, 2, 1, E); r(9, 6 + by, 2, 1, E); r(6, 5 + by, 1, 1, E); r(11, 5 + by, 1, 1, E); }
+  if (mood === 'n') r(8, 7 + by, 2, 1, C.lip);
+  r(6, 7 + by, 1, 1, C.blush); r(11, 7 + by, 1, 1, C.blush);
+  r(4, 8 + by, 1, 1, '#fffdf5'); r(11, 8 + by, 1, 1, '#fffdf5');
 }
 const RUNP = [   // 8-frame walk cycle: contact, down, passing, up for each leg. [left leg lift, right leg lift, left arm dy, right arm dy, upper body dy, left leg x, right leg x]
   [0, 0, 1, -1, 0, 1, -1], [0, 1, 1, -1, 1, 0, -1], [0, 2, 0, 0, -1, 0, 0], [0, 1, -1, 1, 0, -1, 1],
@@ -7864,6 +7906,22 @@ function humanBmp(ci, pose, f, hurt) {   // stand / run
       r(5, 13, 2, 1, C.top2); r(9, 13, 2, 1, C.top2);
       for (const [x, a] of [[3, aL], [11, aR]]) { r(x, 9 + by + a, 2, 3, C.top2); r(x === 3 ? 3 : 12, 9 + by + a, 1, 2, C.top); r(x, 11 + by + a, 2, 1, B); r(x, 12 + by + a, 2, 2, C.skin); }
     }
+    else if (s === 'bride') {   // Grace: high lace collar, sheer lace yoke + sleeves, white sweetheart bodice, layered tulle skirt with scalloped hem, shell bandolier (leather strap, brass + red shells), high-top sneakers
+      const D = C.dress, D2 = C.dress2, Dh = C.dressH, L = C.lace, SH = C.sheer;
+      r(6, 9 + by, 4, 1, L); r(5, 9 + by, 1, 1, C.top2); r(10, 9 + by, 1, 1, C.top2);
+      for (let x = 5; x < 11; x++) { r(x, 10 + by, 1, 1, x & 1 ? L : SH); r(x, 11 + by, 1, 1, x & 1 ? C.top : L); r(x, 12 + by, 1, 1, x & 1 ? L : C.top); }
+      r(7, 11 + by, 2, 1, L); r(7, 12 + by, 2, 1, L);   // solid sweetheart bodice behind the lace
+      for (const [x, a] of [[3, aL], [11, aR]]) { for (let yy = 0; yy < 2; yy++) for (let xx = 0; xx < 2; xx++) r(x + xx, 9 + by + a + yy, 1, 1, (xx + yy) & 1 ? L : SH); r(x, 11 + by + a, 2, 1, L); }   // sheer lace sleeves + lace cuffs
+      r(5, 13, 6, 1, L); r(5, 13, 1, 1, D2); r(10, 13, 1, 1, D2);
+      r(4, 14, 8, 1, D); r(3, 15, 10, 2, D); r(2, 17, 12, 1, D); r(2, 18, 12, 1, D2);
+      r(5, 14, 2, 1, Dh); r(4, 15, 2, 2, Dh); r(3, 17, 2, 1, Dh);   // light side
+      r(10, 15, 1, 2, D2); r(11, 17, 1, 1, D2); r(7, 16, 1, 2, D2); r(5, 17, 1, 1, D2);   // soft folds
+      r(4, 18, 2, 1, D); r(8, 18, 3, 1, D);
+      r(3, 19, 2, 1, D2); r(7, 19, 2, 1, D2); r(11, 19, 2, 1, D2);
+      for (let i = 0; i < 5; i++) { r(5 + i, 10 + by + i, 2, 1, C.trim); r(5 + i + (i & 1), 10 + by + i, 1, 1, i & 1 ? '#d9a441' : '#b0302a'); }
+      r(5, 9 + by, 1, 1, '#c9a24a');   // buckle on the shoulder strap
+      r(5 + dL, 19 - lL, 2, 1, C.shoe); r(5 + dL + 1, 19 - lL, 1, 1, L); r(9 + dR, 19 - lR, 2, 1, C.shoe); r(9 + dR, 19 - lR, 1, 1, L);   // high-top sneakers: ankle + lace pixel
+    }
     else if (s === 'hat') { r(7, 9 + by, 2, 1, '#e8ecf4'); r(8, 10 + by, 1, 1, C.trim); r(8, 12 + by, 1, 1, C.trim); r(5, 13, 6, 1, C.cuff); r(3, 9 + by + aL, 2, 1, C.cuff); r(11, 9 + by + aR, 2, 1, C.cuff); }
     else { r(5, 9 + by, 6, 1, C.trim); r(8, 11 + by, 1, 1, C.trim); r(8, 13, 1, 1, C.trim); }
     headParts(r, C, by, 'n');
@@ -7881,6 +7939,7 @@ function hairLying(r, C, tb) {
   else if (s === 'wave') { r(15, 1 + tb, 8, 4, C.hair); r(11, 3 + tb, 5, 3, C.hair); r(9, 4 + tb, 3, 2, C.hair2); r(15, 5 + tb, 2, 3, C.hair); }
   else if (s === 'mike') { r(16, 1 + tb, 7, 3, C.hair); r(15, 2 + tb, 2, 4, C.hair); r(17, tb, 3, 1, C.hair); r(21, tb, 2, 1, C.hair); r(23, 2 + tb, 1, 2, C.hair); r(19, 1 + tb, 2, 1, C.hair2); r(16, 5 + tb, 3, 2, C.hair); r(16, tb, 2, 1, C.mask2); r(14, 1 + tb, 4, 3, C.mask); r(13, 3 + tb, 4, 2, C.mask); r(13, 4 + tb, 1, 1, C.teeth); r(15, 4 + tb, 1, 1, C.teeth); r(15, 2 + tb, 1, 1, '#2a0a0e'); }   // mask sits on the back of the head
   else if (s === 'hood') { r(15, 1 + tb, 8, 4, C.cap); r(15, 5 + tb, 3, 3, C.cap); r(16, tb, 5, 1, C.cap); r(21, 3 + tb, 2, 1, C.hair); }
+  else if (s === 'bride') { r(15, 1 + tb, 8, 4, C.hair); r(14, 3 + tb, 2, 3, C.hair2); r(16, 5 + tb, 3, 2, C.hair); r(17, tb, 3, 1, C.hair); for (let x = 15; x < 23; x++) { r(x, 1 + tb, 1, 1, x & 1 ? C.hair2 : C.hair); r(x, 2 + tb, 1, 1, x & 1 ? C.hair : C.hairD); } r(14, 6 + tb, 1, 1, C.hairD); }
   else if (s === 'hat') { r(17, tb - 1, 5, 3, C.cap); r(15, 2 + tb, 9, 1, C.cap); r(17, 1 + tb, 5, 1, C.cuff); r(16, 3 + tb, 1, 3, C.hair); }
   else { r(15, 2 + tb, 5, 7, C.hair); r(17, 1 + tb, 6, 2, C.hair); r(20, 2 + tb, 2, 1, C.hair2); }
 }
@@ -7890,7 +7949,9 @@ function downBmp(ci, f, hurt) {   // lying on the ground, head to the right. f 0
     if (C.style === 'dog') { dogDown(r, ex, ly, tb, hurt); return; }
     if (C.style === 'crew') { crewDown(r, ex, ly, tb, hurt); return; }
     r(0, 5 + ly[0], 8, 2, C.pants); r(0, 7 + ly[1], 8, 2, C.pants); r(0, 5 + ly[0], 2, 2, C.shoe); r(0, 7 + ly[1], 2, 2, C.shoe);
+    if (C.style === 'bride') { r(2, 3, 7, 8, C.dress); r(3, 9, 5, 2, C.dress2); r(4, 4, 2, 1, C.dress2); }   // tulle skirt over her legs (shoes stay visible)
     r(8, 3 + tb, 8, 7 - tb, C.top); r(8, 8, 8, 2, C.top2); if (C.tie) { r(15, 4 + tb, 1, 3, '#f8f4ea'); r(13, 5 + tb, 2, 1, C.tie); }
+    if (C.style === 'bride') for (let i = 0; i < 6; i++) { r(9 + i, 3 + tb + i, 2, 1, C.trim); r(9 + i + (i & 1), 3 + tb + i, 1, 1, i & 1 ? '#d9a441' : '#b0302a'); }   // bandolier across the back
     r(12, 11, 3, 1, C.top2); r(15, 11, 2 + ex[1] * 2, 1, '#d3ab86');   // far arm
     r(13, 10, 3, 2, C.top); r(16, 10, 2 + ex[0] * 2, 2, C.skin);        // near arm
     if (C.bare) { r(12, 11, 3, 1, '#d3ab86'); r(13, 10, 3, 2, C.skin); r(16, 10, 1, 2, C.band); r(15, 11, 1, 1, C.band); }
@@ -7910,6 +7971,7 @@ function hangBmp(ci, f, hurt) {   // hanging on the hook. f 0..3 = struggling (a
     const leg = (x, lift, out, sx) => { const o = lift ? out : 0; r(x + o + sw, y0 + 14, 2, 4 - lift, C.pants); r(sx + o + sw, y0 + 18 - lift, 3, 2, C.shoe); r(sx + o + sw, y0 + 19 - lift, 3, 1, C.sole || '#2a2a38'); };
     leg(5, k[0], -1, 4); leg(9, k[1], 1, 9);
     r(5, y0 + 7, 6, 6, C.top); r(5, y0 + 11, 6, 2, C.top2); r(5, y0 + 13, 6, 1, '#1a1a24');
+    if (C.style === 'bride') { r(4, y0 + 12, 8, 2, C.dress); r(3, y0 + 14, 10, 2, C.dress); r(3, y0 + 16, 10, 1, C.dress2); for (let i = 0; i < 5; i++) { r(5 + i, y0 + 7 + i, 2, 1, C.trim); r(5 + i + (i & 1), y0 + 7 + i, 1, 1, i & 1 ? '#d9a441' : '#b0302a'); } }   // Grace: tulle skirt + shell bandolier
     if (C.tie) { r(6, y0 + 7, 2, 1, '#f8f4ea'); r(9, y0 + 7, 2, 1, '#f8f4ea'); r(8, y0 + 8, 1, 4, C.tie); }
     headParts((x, y, w, h, c) => r(x + hx - 4, y + y0 - 2, w, h, c), C, 0, limp ? 'x' : 'o');
     if (hurt) { r(6, y0 + 8, 2, 2, '#a31621'); r(hx, y0 + 2, 1, 2, '#a31621'); }
@@ -8896,8 +8958,8 @@ function colorRing(e, rx, dy, col) {
 }
 
 /* ---- survivor flair: subtle per-character touches (all cosmetic, stateless: everything is computed from the clock) ---- */
-const SF = { 'Leon Kennedy': '#e6c27a', Eleven: '#6ec6ff', Courage: '#ff8fb8', 'Lorraine Warren': '#ffe08a', Denji: '#ff5a4a', 'Michael Afton': '#b46bff', Crewmate: '#9fd0e6', Georgie: '#ffd23c' };
-const HFX = { 'Leon Kennedy': [.6, .7], Eleven: [1, .9], Courage: [1.6, 1.2], 'Lorraine Warren': [.5, .6], Denji: [1.4, 1.3], 'Michael Afton': [1.2, 1], Crewmate: [1, 1], Georgie: [.8, .9] };   // hook struggle: [speed x, swing x]
+const SF = { 'Leon Kennedy': '#e6c27a', Eleven: '#6ec6ff', Courage: '#ff8fb8', 'Lorraine Warren': '#ffe08a', Denji: '#ff5a4a', 'Michael Afton': '#b46bff', Crewmate: '#9fd0e6', Georgie: '#ffd23c', Grace: '#ffe9b8' };
+const HFX = { 'Leon Kennedy': [.6, .7], Eleven: [1, .9], Courage: [1.6, 1.2], 'Lorraine Warren': [.5, .6], Denji: [1.4, 1.3], 'Michael Afton': [1.2, 1], Crewmate: [1, 1], Georgie: [.8, .9], Grace: [1.1, 1.1] };   // hook struggle: [speed x, swing x]
 const sfNm = ci => CHARS[ci].name, sfCol = ci => SF[CHARS[ci].name] || '#fff';
 const sfRnd = n => { const v = Math.sin(n * 127.1) * 43758.5453; return v - Math.floor(v); };
 function sfPuff(x, y, r, col, al) { ctx.globalAlpha = al; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
@@ -9040,7 +9102,7 @@ function atkAnim(ki, el) {
     case 3: return { dx: 9 * out, dy: 4 * Math.sin(Math.PI * s), rot: -.16 * back + .12 * out, sx: 1 - .3 * Math.sin(Math.PI * cl(s * 1.3)), sy: 1, ech: 0 };   // Nikki: leans back, then a quick hopping twist-slash
     case 4: return { dx: 13 * out - 2 * back, dy: 0, rot: -.07 * back + .24 * out, sx: 1 + .2 * out, sy: 1 + .12 * back - .1 * out, ech: 0 };   // Huggy: stretches tall, then slams down in a big grab
     case 5: return { dx: -5 * back + 19 * out + (s > 0 ? Math.sin(el / 13) * 1.5 * (1 - s) : 0), dy: 0, rot: -.22 * back + .26 * out, sx: 1, sy: 1 - .05 * out, ech: 2 };   // Boiled One: whiplash snap with a jittering recoil
-    case 7: return { dx: -3 * back + 13 * out, dy: 0, rot: -.08 * back + .14 * out, sx: 1, sy: 1, ech: 0 };   // Game Guard: a short, tight knife lunge
+    case 7: return { dx: -3 * back + 13 * out, dy: 0, rot: -.08 * back + .14 * out, sx: 1, sy: 1, ech: 0 };   // Participant: a short, tight knife lunge
     case 6: return { dx: -4 * back + 21 * out, dy: 2 * back, rot: -.1 * back + .14 * out, sx: 1 - .1 * out, sy: 1 + .16 * back + .1 * out, ech: 2 };   // Skinwalker: draws itself up unnaturally tall, then stretches far out and snaps back
   }
   return null;
@@ -9178,7 +9240,7 @@ const TRAIL = new Map();   // id -> [{x,y,t}]
 const effSt = id => { const s = (S.st[id] || {}).s || 'healthy'; return s === 'sent' && S.wo.um && (S.wo.um.hits[id] | 0) >= 1 ? 'injured' : s; };   // in the Upside Down, one hit from Vecna = injured (look + blood trail)
 function stepTrails(now) {
   for (const p of S.players) {
-    const inj = effSt(p.id) === 'injured', bl7 = !inj && k7Bleed(p.id, now);   // bl7: bleeding from Game Guard bullets (only while the bleed lasts)
+    const inj = effSt(p.id) === 'injured', bl7 = !inj && k7Bleed(p.id, now);   // bl7: bleeding from Participant bullets (only while the bleed lasts)
     if (!inj && !bl7) { const t0 = TRAIL.get(p.id); if (t0 && t0.k7) { while (t0.length && now - t0[0].t > CFG.BLOOD_LIFE_MS) t0.shift(); if (!t0.length) TRAIL.delete(p.id); } else TRAIL.delete(p.id); continue; }   // a bullet trail just fades out
     const q = posOf(p.id); if (!q) continue; let t = TRAIL.get(p.id); if (!t) { TRAIL.set(p.id, t = []); t.since = now; t.k7 = bl7; }
     while (t.length && now - t[0].t > CFG.BLOOD_LIFE_MS) t.shift();
@@ -9763,9 +9825,9 @@ function mmFrame(now, V, me) { if(inUD(me[0],me[1])){$('mm').classList.add('hidd
   const gg = S.map.gens || [], sz = Math.max(3, Math.round(4 * dpr));   // generators: grey = locked, yellow = open, green = fixed
   for (let i = 0; i < gg.length; i++) { const e = S.gs.g[i] || { st: 0 }; g.fillStyle = e.st === 2 ? '#5dff9a' : e.st === 1 ? '#ffd93a' : '#8a93a8'; g.fillRect(Math.round(gg[i][0] * k - sz / 2), Math.round(gg[i][1] * k - sz / 2), sz, sz); }
   if (S.wo.dd && myRole() === 'survivor') for (const e of S.wo.dd) if (e.id === S.me) { const v = ddVal(e, now), r = Math.max(3.2, 3.6 * dpr), x = e.x * k, y = e.y * k, low = v <= CFG.PK_DD_THRESH; g.fillStyle = low ? '#ff4a3a' : '#ff9a2a'; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.moveTo(x, y - r - 1); g.lineTo(x + r + 1, y); g.lineTo(x, y + r + 1); g.lineTo(x - r - 1, y); g.closePath(); g.fill(); g.stroke(); }   // Demonic Deal: my totem (orange diamond, red when the bar is low)
-  if (myRole() === 'killer' && isK7(S.me) && S.wo.k7) for (const l of S.wo.k7.L) {   // Game Guard: his lockers (reload points) as small pink locker icons
+  if (myRole() === 'killer' && isK7(S.me) && S.wo.k7) for (const l of S.wo.k7.L) {   // Participant: his lockers (reload points) as small teal locker icons
     const hz = l.ny !== 0, lw = Math.max(3, Math.round((hz ? 5 : 3.4) * dpr)), lh = Math.max(3, Math.round((hz ? 3.4 : 5) * dpr)), x = Math.round(l.x * k - lw / 2), y = Math.round(l.y * k - lh / 2);
-    g.fillStyle = '#ff2f7a'; g.fillRect(x, y, lw, lh); g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr * .7); g.strokeRect(x + .5, y + .5, lw - 1, lh - 1); g.fillStyle = '#2a0a16'; if (hz) g.fillRect(x + 1, y + (l.ny < 0 ? 1 : lh - 2), lw - 2, 1); else g.fillRect(x + (l.nx < 0 ? 1 : lw - 2), y + 1, 1, lh - 2); }
+    g.fillStyle = '#2ee6c5'; g.fillRect(x, y, lw, lh); g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, dpr * .7); g.strokeRect(x + .5, y + .5, lw - 1, lh - 1); g.fillStyle = '#06201c'; if (hz) g.fillRect(x + 1, y + (l.ny < 0 ? 1 : lh - 2), lw - 2, 1); else g.fillRect(x + (l.nx < 0 ? 1 : lw - 2), y + 1, 1, lh - 2); }
   g.fillStyle = '#fff'; g.strokeStyle = '#ff3b45'; g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(me[0] * k, me[1] * k, Math.max(2.5, 2.8 * dpr), 0, TAU); g.fill(); g.stroke();
 }
 /* ---------- auras: hooked teammates glow through the darkness; off-screen ones get an edge-pinned arrow (survivors only) ---------- */
